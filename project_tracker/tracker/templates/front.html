@@ -1,0 +1,43 @@
+{% extends "home.html" %}
+
+{% block title %}
+Join Us Now!
+{% endblock %}
+
+{% block content %}
+<div class="container text-center" style="margin-top: 5rem;">
+    <div class="p-5" style="background: linear-gradient(135deg, #4A90E2, #56CCF2); border-radius: 15px; color: white; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);">
+        <h1 style="font-size: 3rem; font-weight: bold; margin-bottom: 1rem;">Join Us Now!</h1>
+        <p style="font-size: 1.5rem; margin-bottom: 2rem;">For just <strong style="color: #FFD700;">$4.99/month</strong>, start your journey to financial success.</p>
+        <p style="font-size: 1.2rem;">We guarantee at least <strong style="color: #FFD700;">15% profit</strong> on your investments!</p>
+        
+        <div style="margin-top: 3rem;">
+            <a href="{% url 'register' %}" class="btn custom-button btn-lg" style="padding: 15px 40px; font-size: 1.2rem;">Get Started</a>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <p style="font-size: 0.9rem; color: #6c757d;">*Terms and conditions apply. Past performance does not guarantee future results.</p>
+    </div>
+</div>
+
+<style>
+    .custom-button {
+        background-color: #FFD700; 
+        color: #4A90E2;
+        font-weight: bold;
+        border: none;
+        border-radius: 25px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .custom-button:hover {
+        background-color: #F2D049; 
+        transform: scale(1.05);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    }
+</style>
+{% endblock %}

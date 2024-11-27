@@ -1,0 +1,10 @@
+{% extends 'home.html' %}
+
+{% block title %}Logout | Stock Portfolio Tracker{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2 class="text-center">You have been logged out</h2>
+  <p class="text-center">Thank you for visiting. You can <a href="{% url 'login' %}">login again</a>.</p>
+</div>
+{% endblock %}
