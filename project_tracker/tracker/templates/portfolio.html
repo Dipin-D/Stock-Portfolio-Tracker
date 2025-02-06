@@ -1,0 +1,32 @@
+{% extends 'home.html' %}
+
+{% block content %}
+  <div class="container mt-5">
+    <h2 class="mb-4">My Portfolio</h2>
+    
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Stock Symbol</th>
+          <th>Quantity</th>
+          <th>Current Price</th>
+          <th>Stock Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for stock in portfolio_data %}
+        <tr>
+          <td>{{ stock.symbol }}</td>
+          <td>{{ stock.quantity }}</td>
+          <td>${{ stock.current_price|floatformat:2 }}</td>
+          <td>${{ stock.stock_value|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+          <td colspan="3" class="text-end"><strong>Total Portfolio Value:</strong></td>
+          <td><strong>${{ total_value|floatformat:2 }}</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

@@ -1,0 +1,401 @@
+{% extends 'home.html' %}
+{% load static %}
+
+{% block title %}
+
+<style>
+    .content {
+        padding-top: 60px; 
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        background-color: #e5e5e5;
+        
+        
+    }
+    .top-main-content {
+        display: flex;
+    }
+
+    .top-main-left, .top-main-right {
+        display: flex;
+        align-items: center;
+        padding: 20px;
+        background-color: #e5e5e5;
+        margin-bottom: 20px;
+        justify-content: center; /* Ensures content is centered */
+    }
+    
+    /* Left Section */
+    .top-main-left {
+        width: 20%; 
+        margin-right: 2%; 
+        justify-content: flex-start; /* Aligns content to the left */
+    }
+    
+    /* Right Section */
+    .top-main-right {
+        width: 78%;
+        gap: 10px; 
+        display: flex; 
+
+    }
+
+    /* General Input Group Styling */
+    .input-group-top-left {
+        justify-content: center;
+        display: flex;
+        gap: 1px;
+        align-items: center;
+        width: 100%;
+    }
+    
+    /* Left Section Input Group */
+    .input-group-top-left label {
+        font-size: 14px;
+        margin-bottom: 5px;
+        width: 20%;
+    }
+    
+    .input-group-top-left input {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        width: 30%; 
+    }
+    
+    /* Right Section Input Group */
+    .input-group-top-right label {
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
+    
+    .input-group-top-right input {
+        padding: 10px; /* Slightly larger padding for visual hierarchy */
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        width: 200px; /* Expands to fill the available space */
+    }
+    
+    .button-group {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    .button-group button {
+        padding: 10px 20px;
+        background-color: #15618a;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    .button-group button:hover {
+        background-color: #0d4e6a;
+    }
+    .side-main-content {
+        height: 100%;
+        width: 20%;
+    
+        
+        /* Centering items */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        /* padding top right bottom left  */
+        padding: 10px 0px 20px 0px;
+        box-sizing: border-box;
+        overflow-y: auto;
+        background-color: #e5e5e5;
+    }
+    .option-panel-container {
+        /* Centering items */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 158.43px;
+        background-color: #e5e5e5;
+    }
+    .options-panel {
+        height: auto;
+        width: 158.43px;
+        padding-bottom: 64px;
+        
+    }
+    
+    .options-heading {
+        font-weight: bold;
+        margin-top: 10px;
+        font-size: 14px;
+        text-align: center;
+    }
+    .options-list {
+        width: 158.43px;
+        border-collapse: collapse;
+        background-color: rgb(255, 255, 255);
+    }
+    
+    /* Style for table cells */
+    .options-list td {
+        border: 1px solid #ddd; 
+        text-align: center;  
+        
+    }
+    .clickable {
+        all: unset; /* Removes button's default styling */
+        display: block;
+        width: 100%;
+        text-align: center;
+        background-color: transparent;
+        cursor: pointer;
+    }
+    .clickable:hover {
+        background-color: skyblue; /* Change to sky blue on hover */
+        color: white;
+    }
+    .active {
+        background-color: #187ed9;
+        color: white;
+    }
+    .center-main-content {
+        height: 100%;
+        width: 80%; /* Takes remaining space after side content */
+        padding: 20px;
+        background-color: #ffffff;
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        overflow-y: auto;
+    } 
+
+    /* Graph Widget Section */
+    .graph-widget-container {
+        width: 100%;
+        height: 60vh; /* Ensures the container takes up 60% of the viewport height */
+        max-width: 100%;
+        background-color: #f0f0f0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        margin-top: 20px;
+        position: relative;
+        overflow: hidden; /* Prevents overflow when the graph resizes */
+    }
+    
+    /* Placeholder where the graph will be rendered */
+    .graph-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center; /* Adds padding around the graph */
+    }
+    
+    /* Ensure chart fits well inside the container */
+    #chart {
+        width: 100%;
+        height: 100%;
+    }
+    
+    /* Optional: Add media query for smaller screens */
+    @media (max-width: 768px) {
+        .graph-widget-container {
+            height: 50vh; /* Reduce height for smaller screens */
+        }
+    
+        #chart {
+            width: 90%; /* Limit width to 90% on smaller screens */
+            height: 90%; /* Limit height to 90% on smaller screens */
+        }
+    }
+
+    .main-content-container {
+        height: 75%;
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        background-color: #f9f9f9;
+
+    }
+
+
+    
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="content">    
+    <div class="top-main-content">
+    <!-- Top-Left Section -->
+    <div class="top-main-left">
+        <!-- Ticker Input Section -->
+        <div class="input-group-top-left">
+            <label for="ticker-input" class="ticker-label">Ticker(s)</label>
+            <input 
+                type="text" id="ticker-input" class="ticker-input" 
+                placeholder="(e.g., AAPL, TSLA)" 
+            />
+        </div>
+    </div>
+    <!-- Top-Right Section -->
+    <div class="top-main-right">
+        <div class="input-group-top-right">
+            <label for="start-date">Test Start Date</label>
+            <input type="date" id="start-date" name="start_date">
+        </div>
+        <div class="input-group-top-right">
+            <label for="end-date">Backtest End Date</label>
+            <input type="date" id="end-date" name="end_date">
+        </div>
+        <div class="button-group">
+            <button id="render-graph-button">Start Backtest</button>
+        </div>
+    </div>
+    </div>
+
+    <div class="main-content-container">  
+        <div class="side-main-content">
+            <div class="option-panel-container"> 
+                <!-- Strategy Section -->
+                <div class="options-panel">
+                    <div class="options-heading">Strategy</div>  
+                    <table class="options-list">
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="Stock">Golden Cross</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="Call">Fibonacci Retracement</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="Put">Supply and Demand</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="Covered Call">*Technical*</button></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="options-panel">
+                    <div class="options-heading">Position</div>  
+                    <table class="options-list" id="position">
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="Long">Long</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="Short">Short</button></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="options-panel">
+                    <div class="options-heading">Earnings Handling</div>  
+                    <table class="options-list">
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="Nothing Special">Nothing Special</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="Never Trade Earnings">Never Trade Earnings</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="Only Trade Earnings">Only Trade Earnings</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="Custom Earnings">Custom Earnings</button></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="options-panel">
+                    <div class="options-heading">Open Trade When</div>  
+                    <table class="options-list">
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="*Technical Open*">*Technical Open*</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="Bull Squeeze">Bull Squeeze</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="Bear Squeeze">Bear Squeeze</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="Pullback">Pullback</button></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="center-main-content">
+            <!-- Graph Widget Placeholder -->
+            <div class="graph-widget-container">
+                <div class="graph-placeholder" id="graph-container">
+                    <div id="chart"></div> <!-- No need for inline style here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</main>
+    <!-- Chart Libraries -->
+   <!-- Chart Libraries -->
+   <script src="{% static '/js/lightweight-charts.js' %}"></script>  <!-- Load the chart library -->
+   
+   <script>
+        window.addEventListener("load", function() {
+            // Create the chart
+            const chart = LightweightCharts.createChart(document.getElementById('chart'), {
+                width: document.getElementById('chart').clientWidth,
+                height: document.getElementById('chart').clientHeight,
+                layout: {
+                   backgroundColor: '#ffffff',
+                   textColor: '#000000',
+                },
+                grid: {
+                    vertLines: {
+                       color: '#eeeeee',
+                    },
+                    horzLines: {
+                       color: '#eeeeee',
+                    },
+                },
+            });
+            // Add a Candlestick series
+            const candlestickSeries = chart.addCandlestickSeries();
+           
+            // Data passed from Django template
+            const spyData = {{ data|safe }};  // This will embed the `data` passed from Django as a JS object
+            
+            const formattedData = spyData.map(item => ({
+               time: new Date(item.Date).getTime(),  // Convert date to timestamp (in seconds)
+               open: item.Open,
+               high: item.High,
+               low: item.Low,
+               close: item.Close,
+            }));
+            console.log(formattedData);
+
+
+            candlestickSeries.setData(formattedData);
+         
+        });
+    </script>
+   
+   <!-- Buttons -->
+   <script>  
+       document.querySelectorAll('.clickable').forEach(function(button) {
+           button.addEventListener('click', function() {
+               position_clicked = false;
+               const isInPositionGroup = this.closest('#position');
+               if (!isInPositionGroup) {
+                   this.classList.toggle('active');
+               }
+               else { 
+                   document.querySelectorAll('#position .clickable.active').forEach(function(positionButton) {
+                       positionButton.classList.remove('active');
+                   });
+                   this.classList.add('active');
+
+               }
+           });
+       });
+   </script>   
+{% endblock %}
