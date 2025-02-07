@@ -14,6 +14,16 @@
         </tr>
       </thead>
       <tbody>
+<<<<<<< HEAD
+=======
+        <form method="POST">
+          {% csrf_token %}
+          <label for="amount">Enter Amount ($):</label>
+          <input type="number" name="amount" step="0.01" required>
+          <button type="submit">Invest</button>
+      </form>
+      
+>>>>>>> 56c9d25 (Portfolio Basic update)
         {% for stock in portfolio_data %}
         <tr>
           <td>{{ stock.symbol }}</td>
@@ -29,4 +39,13 @@
       </tbody>
     </table>
   </div>
+<<<<<<< HEAD
+=======
+  {% if pie_chart %}
+    <div>{{ pie_chart|safe }}</div>
+{% else %}
+    <p>No stocks in portfolio to display a chart.</p>
+{% endif %}
+
+>>>>>>> 56c9d25 (Portfolio Basic update)
 {% endblock %}
