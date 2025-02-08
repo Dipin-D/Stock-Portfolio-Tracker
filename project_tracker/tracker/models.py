@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+import yfinance as yf
 
 class Portfolio(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

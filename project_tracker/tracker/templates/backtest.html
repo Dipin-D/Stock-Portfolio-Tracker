@@ -329,6 +329,19 @@
             <div class="graph-widget-container">
                 <div class="graph-placeholder" id="graph-container">
                     <div id="chart"></div> <!-- No need for inline style here -->
+                    <div id="graph-error" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                        background: #ffebee; padding: 20px; border-radius: 8px; color: #b71c1c; font-weight: bold;">
+                        Ticker does not exist in database
+                    </div>
+                </div>
+            </div>
+            <div class="graph-widget-container">
+                <div class="graph-placeholder" id="graph-container">
+                    <div id="chart-strategy">Analysis</div> 
+                    <div id="graph-error" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                        background: #ffebee; padding: 20px; border-radius: 8px; color: #b71c1c; font-weight: bold;">
+                        Ticker does not exist in database
+                    </div>
                 </div>
             </div>
         </div>
@@ -340,9 +353,12 @@
    <script src="{% static '/js/lightweight-charts.js' %}"></script>  <!-- Load the chart library -->
    
    <script>
+        let chart;
+        let candlestickSeries;
+        
         window.addEventListener("load", function() {
             // Create the chart
-            const chart = LightweightCharts.createChart(document.getElementById('chart'), {
+            chart = LightweightCharts.createChart(document.getElementById('chart'), {
                 width: document.getElementById('chart').clientWidth,
                 height: document.getElementById('chart').clientHeight,
                 layout: {
@@ -359,24 +375,88 @@
                 },
             });
             // Add a Candlestick series
-            const candlestickSeries = chart.addCandlestickSeries();
-           
-            // Data passed from Django template
-            const spyData = {{ data|safe }};  // This will embed the `data` passed from Django as a JS object
-            
-            const formattedData = spyData.map(item => ({
-               time: new Date(item.Date).getTime(),  // Convert date to timestamp (in seconds)
-               open: item.Open,
-               high: item.High,
-               low: item.Low,
-               close: item.Close,
-            }));
-            console.log(formattedData);
-
-
-            candlestickSeries.setData(formattedData);
-         
+            candlestickSeries = chart.addCandlestickSeries();
+            loadInitialData()
         });
+
+        async function loadInitialData() {
+            try {
+                const response = await fetch('/fetch_stock_data/');
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                updateChart(data.data);
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        function updateChart(rawData) {
+            const formattedData = rawData.map(item => ({
+                time: new Date(item.Date).getTime(),
+                open: item.Open,
+                high: item.High,
+                low: item.Low,
+                close: item.Close,
+            }));
+            candlestickSeries.setData(formattedData);
+        }
+           
+            
+        // Unified fetch function
+        async function fetchData() {
+            const ticker = document.getElementById('ticker-input').value.trim().toUpperCase();
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            const errorDiv = document.getElementById('graph-error');
+
+            errorDiv.style.display = 'none';
+            chart.resize(0, 0);
+            
+            if (!ticker) return;
+
+            try {
+                const response = await fetch(
+                    `/fetch_stock_data/?ticker=${ticker}&start_date=${startDate}&end_date=${endDate}`
+                );
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error);
+                }
+
+                const data = await response.json();
+                
+                if (data.valid) { // Add this flag to your backend response
+                    updateChart(data.data);
+                    chart.resize(document.getElementById('chart').clientWidth, 
+                               document.getElementById('chart').clientHeight);
+                } else {
+                    errorDiv.style.display = 'block';
+                }
+            }
+            
+            catch (error) {
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = error.message;
+            }
+        }
+        function debounce(func, delay=500) {
+            let timeout;
+            return (...args) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        document.getElementById('ticker-input').addEventListener('input', debounce(function(e) {
+            const ticker = e.target.value.trim().toUpperCase();
+            if (ticker.length >= 3) {  // Only fetch if input is 3+ characters
+                fetchData();
+            }
+        }));
+        document.getElementById('start-date').addEventListener('change', fetchData);
+        document.getElementById('end-date').addEventListener('change', fetchData);
+        document.getElementById('render-graph-button').addEventListener('click', fetchData); 
     </script>
    
    <!-- Buttons -->

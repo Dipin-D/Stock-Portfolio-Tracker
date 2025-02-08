@@ -2,6 +2,10 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth import authenticate
 from django.contrib import messages
+from .utils import download_n_clean_data
+from django.http import JsonResponse
+from .models import Stock
+
 import yfinance as yf
 <<<<<<< HEAD
 from django.contrib.auth.decorators import login_required
@@ -18,8 +22,9 @@ import plotly.io as pio
 
 def front_view(request):
     return render(request, 'front.html')
+
 def backtest_view(request):
-# Set the symbol and date range
+    # Set the symbol and date range
     symbol = 'SPY'
     start_date = '1993-01-01'
     end_date = '2020-02-16'
@@ -32,6 +37,39 @@ def backtest_view(request):
 
     # Pass the data to the template
     return render(request, 'backtest.html', context)
+    
+def fetch_stock_data(request):
+    ticker = request.GET.get('ticker', 'SPY').upper()
+    start_date = request.GET.get('start_date', '1993-01-01')
+    end_date = request.GET.get('end_date', '2020-02-16')
+
+
+    #### checks input data against models database
+    if not Stock.objects.filter(symbol=ticker).exists():
+        return JsonResponse({
+            'valid': False,
+            'error': f'Ticker {ticker} not found in database'
+        }, status=200)
+    
+
+    try:
+        # Use your existing utility function
+        clean_data = download_n_clean_data(ticker, start_date, end_date)
+        
+        # Convert timestamp back to datetime for frontend
+       
+        return JsonResponse({
+            'valid': True,
+            'data': clean_data.to_dict(orient='records')
+            
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'valid': False,
+            'error': str(e)
+        }, status=200)
+    
 # Login view
 def login_view(request):
     if request.method == 'POST':
