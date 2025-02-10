@@ -182,3 +182,7 @@ def portfolio_view(request):
 
 
 >>>>>>> 56c9d25 (Portfolio Basic update)
+def stock_list(request, group_name):
+    group = Stock_Group.objects.get(name=group_name)
+    stocks = group.stocks.all()
+    return render(request, 'pro_scan.html', {'stocks': stocks})
