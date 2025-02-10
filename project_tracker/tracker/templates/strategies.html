@@ -1,0 +1,288 @@
+{% extends 'home.html' %}
+{% load static %}
+
+{% block title %}
+
+<style>
+    .content {
+        padding-top: 30px; 
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        background-color: #e5e5e5;
+        
+        
+    }
+    .main-content-container {
+        height: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        background-color: #f9f9f9;
+        overflow: hidden; /* Prevent full container from scrolling */
+        }
+
+    .left-main-content {
+        width: 20%;
+        height: 100vh;
+    
+        /* Centering items */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        /* padding top right bottom left  */
+        padding: 50px 0px 0px 0px;
+        background-color: #e5e5e5;
+        border-right: 1px solid black;
+    }
+
+    .option-panel-container {
+        /* before strategy button is clicked */
+        
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 250px;
+        background-color: #e5e5e5;
+    }
+
+    .options-panel {
+        height: auto;
+        width: 250px;
+        padding-bottom: 64px;
+        
+    }
+    
+    .options-heading {
+        font-weight: bold;
+        margin-top: 10px;
+        font-size: 14px;
+        text-align: center;
+    }
+
+    .options-list {
+        width: 250px;
+        border-collapse: collapse;
+        background-color: rgb(255, 255, 255);
+        border: 1px solid #2C3539;
+    }
+    
+    /* Style for table cells */
+    .options-list td {
+        border: 1px solid #ddd; 
+        text-align: center; 
+        height: 30px;
+        
+    }
+
+    .center-main-content {
+        width: 60%; /* Takes remaining space after side content */
+        padding: 20px;
+        background-color: #ffffff;
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        overflow-y: auto;
+    }
+    .strategy-container {
+        width: 50%;
+        background: white;
+        
+        margin: auto;
+    }
+    h2 {
+        text-align: center;
+        color: #333;
+    }
+    label {
+        font-weight: bold;
+    }
+    select, input, button {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+    button {
+        background-color: #007bff;
+        color: white;
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #0056b3;
+    }
+    .checkbox-group {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    .checkbox-group label {
+        flex: 1 1 50%;
+        margin-bottom: 5px;
+    }
+
+
+    .right-main-content {
+        width: 20%;
+        height: 100vh;
+
+        /* padding top right bottom left  */
+        padding: 50px 0px 20px 0px;
+        background-color: #e5e5e5;
+        border-left: 1px solid black;
+       
+        /* Centering items */
+        display: flex;
+        flex-direction: column;
+        align-items: center;    
+    }
+
+    .clickable {
+        all: unset; /* Removes button's default styling */
+        display: block;
+        width: 100%;
+        text-align: center;
+        background-color: transparent;
+        cursor: pointer;
+    }
+    .clickable:hover {
+        background-color: skyblue; /* Change to sky blue on hover */
+        color: white;
+        height: 100%;
+    }
+    .active {
+        background-color: #187ed9;
+        color: white;
+    } 
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="content">    
+    <div class="main-content-container">  
+        <div class="left-main-content">
+            <div class="option-panel-container" id="option-panel-container">  
+                <!-- Strategy Section -->
+                <div class="options-panel">
+                    <div class="options-heading">Strategy</div>  
+                    <table class="options-list">
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="techinal">Golden Cross</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="techinal">Fibonacci Retracement</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="price-action">Supply and Demand</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="techinal">RSI Overbought/Oversold</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="techinal">Buy The Dip</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="techinal">Volume Weighted Average Price</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="techinal">MACD Divergence</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="techinal">Bollinger Bands</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="price-action">Support and Resistance Bounce</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="price-action">Doji, Engulfing, Hammer</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="momentum">Relative Volume Spike</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="momentum">Gap and Go</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="momentum">ADX Trend Strength</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="event-driven">News-Based Trading</button></td>
+                        </tr>
+                        <tr>
+                            <td><button type="button" class="clickable" data-option="event-driven">Short Squeeze Trading</button></td>
+                        </tr>
+                    </table>
+                </div>
+                
+                
+            </div>
+        </div>
+        <div class="center-main-content">
+            <div class="strategy-container">
+                <h2>Golden Cross</h2>
+        
+                <label for="timeframe">Timeframe:</label>
+                <select id="timeframe">
+                    <option value="1m">1 Minute</option>
+                    <option value="5m">5 Minutes</option>
+                    <option value="1h">1 Hour</option>
+                    <option value="1d">1 Day</option>
+                </select>
+        
+                <label for="stopLoss">Stop-Loss (%):</label>
+                <input type="number" id="stopLoss" placeholder="e.g. 5">
+        
+                <label for="takeProfit">Take-Profit (%):</label>
+                <input type="number" id="takeProfit" placeholder="e.g. 10">
+
+                <label for="takeProfit">Moving Average I:</label>
+                <select id="timeframe">
+                    <option value="1m">20-day</option>
+                    <option value="5m">50-day</option>
+                    <option value="1h">75-day</option>
+                    <option value="1d">100-day</option>
+                    <option value="1d">200-day</option>
+                </select>
+
+                <label for="takeProfit">Moving Average II:</label>
+                <select id="timeframe">
+                    <option value="1m">20-day</option>
+                    <option value="5m">50-day</option>
+                    <option value="1h">75-day</option>
+                    <option value="1d">100-day</option>
+                    <option value="1d">200-day</option>
+                </select>
+        
+                <button onclick="saveSettings()">Modify</button>
+                <button style="background-color: #dc3545;" onclick="resetSettings()">Reset</button>
+            </div>
+        
+        </div>
+        <div class="right-main-content"> </div>
+    </div>
+    
+</main>
+    <!-- Buttons -->
+   <script>  
+       document.querySelectorAll('.clickable').forEach(function(button) {
+           button.addEventListener('click', function() {
+               position_clicked = false;
+               const isInPositionGroup = this.closest('#position');
+               if (!isInPositionGroup) {
+                   this.classList.toggle('active');
+               }
+               else { 
+                   document.querySelectorAll('#position .clickable.active').forEach(function(positionButton) {
+                       positionButton.classList.remove('active');
+                   });
+                   this.classList.add('active');
+
+               }
+           });
+       });
+   </script>
+
+{% endblock %}

@@ -1,0 +1,239 @@
+{% extends 'home.html' %}
+
+{% block title %}
+<style>
+    /* General Styling */
+    body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 30px;
+        padding: 20px;
+    }
+    
+    /* Title */
+    .title {
+        margin: 20px 0;
+        font-size: 28px;
+        color: #333;
+    }
+
+    /* Container for tables */
+    .grid-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 20px;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    /* Individual Table Box */
+    .container {
+        text-align: center;
+        width: 400px;
+    }
+    
+    /* Table Styling */
+    .box {
+        width: 100%;
+        margin-top: 3px;
+        border-collapse: collapse;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    thead {
+        background-color: #0a192f;
+        color: white; /* Change to white for better contrast */
+        font-weight: bold;
+    }
+
+    .box th, .box td {
+        height: 19px;
+        padding: 10px;
+        text-align: center;
+    }
+
+    .box tr:nth-child(even) {
+        background-color: #e6eef8;
+    }
+
+
+</style>
+{% endblock %}
+
+{% block content %}
+    <h1 class="title">Trading Pro® Active Triggers</h1>
+
+    <div class="grid-container">
+        <!-- MACD Momentum -->
+        <div class="container">
+            <h2>MACD Momentum</h2>
+            <table class="box"> 
+                <thead>
+                    <tr>
+                        <th>Ticker</th>
+                        <th>Return</th>
+                        <th>Wins</th>
+                        <th>Losses</th>
+                        <th>Triggered</th>
+                    </tr>
+                </thead>
+                <tbody>    
+                    <tr>
+                        <td>SPY</td>
+                        <td>73.9%</td>
+                        <td>5</td>
+                        <td>1</td>
+                        <td>Today</td>
+                    </tr>
+                    {% for _ in range_list %}
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>  
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Buy the Dip -->
+        <div class="container">
+            <h2>Buy the Dip</h2>
+            <table class="box">
+                <thead>
+                    <tr>
+                        <th>Ticker</th>
+                        <th>Return</th>
+                        <th>Wins</th>
+                        <th>Losses</th>
+                        <th>Triggered</th>
+                    </tr>
+                </thead>
+                <tbody>    
+                    <tr>
+                        <td>AAPL</td>
+                        <td>120.5%</td>
+                        <td>8</td>
+                        <td>2</td>
+                        <td>Friday</td>
+                    </tr>
+                    {% for _ in range_list %}
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>  
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Golden Cross Strategy -->
+        <div class="container">
+            <h2>Golden Crossover</h2>
+            <table class="box">
+                <thead>
+                    <tr>
+                        <th>Ticker</th>
+                        <th>Return</th>
+                        <th>Wins</th>
+                        <th>Losses</th>
+                        <th>Triggered</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>AMD</td>
+                        <td>85.3%</td>
+                        <td>6</td>
+                        <td>2</td>
+                        <td>Monday</td>
+                    </tr>
+                    {% for _ in range_list %}
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>  
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Bullish Burst -->
+        <div class="container">
+            <h2>Bullish Burst</h2>
+            <table class="box">
+                <thead>
+                    <tr>
+                        <th>Ticker</th>
+                        <th>Return</th>
+                        <th>Wins</th>
+                        <th>Losses</th>
+                        <th>Triggered</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>TSLA</td>
+                        <td>95.7%</td>
+                        <td>7</td>
+                        <td>3</td>
+                        <td>Yesterday</td>
+                    </tr>
+                    {% for _ in range_list %}
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>  
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Fade the Gap -->
+        <div class="container">
+            <h2>Fade the Gap</h2>
+            <table class="box">
+                <thead>
+                    <tr>
+                        <th>Ticker</th>
+                        <th>Return</th>
+                        <th>Wins</th>
+                        <th>Losses</th>
+                        <th>Triggered</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>NVDA</td>
+                        <td>102.3%</td>
+                        <td>9</td>
+                        <td>1</td>
+                        <td>Tuesday</td>
+                        {% for _ in range_list %}
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>  
+                        </tr>
+                        {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

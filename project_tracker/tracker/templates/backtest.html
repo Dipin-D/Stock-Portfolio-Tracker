@@ -4,6 +4,7 @@
 {% block title %}
 
 <style>
+    
     .content {
         padding-top: 60px; 
         width: 100%;
@@ -13,6 +14,7 @@
         
         
     }
+
     .top-main-content {
         display: flex;
     }
@@ -94,33 +96,56 @@
     .button-group button:hover {
         background-color: #0d4e6a;
     }
-    .side-main-content {
-        height: 100%;
-        width: 20%;
     
-        
+    .main-content-container {
+        height: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        background-color: #f9f9f9;
+        overflow: hidden; /* Prevent full container from scrolling */
+    }
+
+    .side-main-content {
+        width: 20%;
+        height: 100vh; /* Ensure it takes full viewport height */
+        overflow-y: auto;
+        background-color: #e5e5e5;
+       
         /* Centering items */
         display: flex;
         flex-direction: column;
         align-items: center;
 
+      
         /* padding top right bottom left  */
         padding: 10px 0px 20px 0px;
         box-sizing: border-box;
-        overflow-y: auto;
-        background-color: #e5e5e5;
     }
+
+
+
+    .center-main-content {
+        height: 100vh;
+        width: 80%; /* Takes remaining space after side content */
+        padding: 20px;
+        background-color: #ffffff;
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        overflow-y: auto;
+    } 
+
     .option-panel-container {
         /* Centering items */
         display: flex;
         flex-direction: column;
         align-items: center;
-        width: 158.43px;
+        width: 250px;
         background-color: #e5e5e5;
     }
     .options-panel {
         height: auto;
-        width: 158.43px;
+        width: 250px;
         padding-bottom: 64px;
         
     }
@@ -132,7 +157,7 @@
         text-align: center;
     }
     .options-list {
-        width: 158.43px;
+        width: 250px;
         border-collapse: collapse;
         background-color: rgb(255, 255, 255);
     }
@@ -159,15 +184,7 @@
         background-color: #187ed9;
         color: white;
     }
-    .center-main-content {
-        height: 100%;
-        width: 80%; /* Takes remaining space after side content */
-        padding: 20px;
-        background-color: #ffffff;
-        box-sizing: border-box;
-        border: 1px solid #ddd;
-        overflow-y: auto;
-    } 
+
 
     /* Graph Widget Section */
     .graph-widget-container {
@@ -212,14 +229,7 @@
         }
     }
 
-    .main-content-container {
-        height: 75%;
-        width: 100%;
-        display: flex;
-        flex-direction: row;
-        background-color: #f9f9f9;
 
-    }
 
 
     
@@ -329,6 +339,24 @@
             <div class="graph-widget-container">
                 <div class="graph-placeholder" id="graph-container">
                     <div id="chart"></div> <!-- No need for inline style here -->
+                    <div id="graph-error" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                        background: #ffebee; padding: 20px; border-radius: 8px; color: #b71c1c; font-weight: bold;">
+                        Ticker does not exist in database
+                    </div>
+                </div>
+            </div>
+            <div class="graph-widget-container">
+                <div class="graph-placeholder" id="graph-container">
+                    <div id="chart-strategy">Analysis</div> 
+                    <div id="graph-error" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                        background: #ffebee; padding: 20px; border-radius: 8px; color: #b71c1c; font-weight: bold;">
+                        Ticker does not exist in database
+                    </div>
+                </div>
+            </div>
+            <div class="graph-widget-container">
+                <div class="graph-placeholder" id="graph-container">
+                    <div id="chart-strategy">Analysis</div> 
                     <div id="graph-error" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
                         background: #ffebee; padding: 20px; border-radius: 8px; color: #b71c1c; font-weight: bold;">
                         Ticker does not exist in database
