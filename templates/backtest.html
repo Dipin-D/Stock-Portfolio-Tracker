@@ -3,630 +3,1432 @@
 
 {% block head %}
     {{ block.super }}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="{% static 'js/indicator/indicator.js' %}"></script>
+    <script src="{% static 'js/lightweight-charts.js' %}"></script>
+    <script src="{% static 'js/backtest/strategy_visuals.js' %}"></script>
+    <script src="{% static 'js/backtest/chart_and_indicators.js' %}"></script>
+    <script src="{% static 'js/components/strategy_panel.js' %}"></script>
+    <script src="{% static 'js/components/posterior_panel.js' %}"></script>
+    <script src="{% static 'js/backtest/bayes_backtest.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
     <style>
-        /* Style for table cells */
-        .options-list td {
-            border: 1px solid #ddd; 
-            text-align: center;  
-            
+        .backtest-page {
+            --backtest-display-font: 'Cormorant Garamond', Georgia, serif;
+            --backtest-body-font: 'Manrope', 'Inter', sans-serif;
+            --backtest-text: #132238;
+            --backtest-muted: #526277;
+            --backtest-border: #d6e1ef;
+            --backtest-soft: #f5f8fc;
+            --backtest-strong: #0f172a;
+            --backtest-accent: #2563eb;
+            --backtest-surface-padding: 1.5rem;
+            --backtest-surface-gap: 1.5rem;
+            --backtest-card-gap: 1rem;
+            min-height: calc(100vh - 60px);
+            background:
+                radial-gradient(circle at top left, rgba(14, 165, 233, 0.12), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.08), transparent 24%),
+                linear-gradient(180deg, #eff5fb 0%, #f8fbff 100%);
+            padding: 1.4rem;
+            font-family: var(--backtest-body-font);
+            color: var(--backtest-text);
         }
-        .clickable {
-            all: unset; /* Removes button's default styling */
-            display: block;
+
+        .backtest-page *,
+        .backtest-page input,
+        .backtest-page select,
+        .backtest-page button,
+        .backtest-page table {
+            font-family: inherit;
+        }
+
+        .backtest-shell {
+            display: grid;
+            grid-template-columns: 290px minmax(0, 1fr);
+            gap: 1.4rem;
+            min-height: calc(100vh - 112px);
+        }
+
+        .backtest-sidebar,
+        .backtest-main {
+            border: 1px solid var(--backtest-border);
+            border-radius: 28px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 250, 255, 0.95) 100%);
+            box-shadow: 0 22px 54px rgba(15, 23, 42, 0.08);
+        }
+
+        .backtest-sidebar {
+            padding: 1.2rem;
+            overflow-y: auto;
+        }
+
+        .backtest-main {
+            padding: 1.6rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.7rem;
+        }
+
+        .backtest-filter-group {
+            margin-bottom: 1.15rem;
+            padding: 1rem;
+            border: 1px solid #e3ebf5;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.96);
+        }
+
+        .backtest-filter-group h3 {
+            margin: 0 0 0.95rem;
+            padding-bottom: 0.55rem;
+            border-bottom: 1px solid #e5edf7;
+            color: #5d6b7b !important;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 0.82rem;
+            font-weight: 800;
+        }
+
+        .btn-clickable {
             width: 100%;
-            text-align: center;
-            background-color: transparent;
+            border: 1px solid #dbe5f1;
+            border-radius: 15px;
+            background: linear-gradient(180deg, #fbfdff 0%, #f5f9ff 100%);
+            color: #132238;
+            padding: 0.84rem 0.95rem;
+            font-weight: 700;
+            text-align: left;
+            transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+        }
+
+        .btn-clickable:hover {
+            transform: translateY(-1px);
+            border-color: #93c5fd;
+            background: #eff6ff;
+            box-shadow: 0 12px 26px rgba(37, 99, 235, 0.12);
+        }
+
+        .btn-clickable-active {
+            background: linear-gradient(135deg, #0ea5e9, #2563eb);
+            border-color: #38bdf8;
+            color: #eff6ff;
+            box-shadow: 0 18px 34px rgba(37, 99, 235, 0.28);
+        }
+
+        .backtest-topbar,
+        .backtest-section-card,
+        .backtest-chart-card,
+        .backtest-results-card,
+        .backtest-analysis-card {
+            border: 1px solid var(--backtest-border);
+            border-radius: 26px;
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 16px 38px rgba(15, 23, 42, 0.06);
+            color: var(--backtest-text);
+        }
+
+        .backtest-topbar {
+            padding: var(--backtest-surface-padding);
+        }
+
+        .backtest-topbar-grid {
+            display: grid;
+            grid-template-columns: minmax(260px, 1.9fr) minmax(280px, 1.5fr) repeat(3, minmax(150px, 0.9fr)) auto;
+            gap: 1.15rem;
+            align-items: end;
+        }
+
+        .backtest-control {
+            display: flex;
+            flex-direction: column;
+            gap: 0.48rem;
+            min-width: 0;
+        }
+
+        .backtest-date-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(125px, 1fr));
+            gap: 0.8rem;
+        }
+
+        .backtest-label {
+            color: #4d5b6d;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .backtest-input {
+            width: 100%;
+            border: 1px solid #cfd9e7;
+            border-radius: 16px;
+            background: #fff;
+            color: #132238;
+            padding: 0.92rem 1rem;
+            box-sizing: border-box;
+            box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+            transition: border-color 160ms ease, box-shadow 160ms ease;
+        }
+
+        .backtest-input:focus {
+            outline: none;
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.12);
+        }
+
+        .backtest-select {
+            appearance: none;
+        }
+
+        .backtest-toolbar-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .backtest-primary-btn,
+        .backtest-secondary-btn {
+            border-radius: 16px;
+            padding: 0.95rem 1.3rem;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            transition: transform 160ms ease, box-shadow 160ms ease;
+            white-space: nowrap;
+        }
+
+        .backtest-primary-btn {
+            border: 0;
+            background: linear-gradient(135deg, #0ea5e9, #2563eb);
+            color: #eff6ff;
+            box-shadow: 0 16px 30px rgba(37, 99, 235, 0.25);
+        }
+
+        .backtest-secondary-btn {
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .backtest-primary-btn:hover,
+        .backtest-secondary-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .backtest-section-card,
+        .backtest-chart-card,
+        .backtest-results-card,
+        .backtest-analysis-card {
+            padding: var(--backtest-surface-padding);
+        }
+
+        .backtest-section-kicker {
+            margin: 0 0 0.28rem;
+            color: #4b6b93;
+            font-size: 0.82rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+        }
+
+        .backtest-section-title,
+        .indicator-card-title,
+        .bayes-math-link,
+        .trade-log-kpi strong {
+            font-family: var(--backtest-display-font);
+        }
+
+        .backtest-section-title {
+            margin: 0;
+            font-size: 1.65rem;
+            line-height: 1;
+            font-weight: 700;
+            color: #10213b;
+            letter-spacing: 0.01em;
+        }
+
+        .backtest-section-subcopy,
+        .bayes-workflow-note,
+        .strategy-panel-note,
+        .backtest-empty-state,
+        .bayes-metric-label,
+        .bayes-metric-subtext,
+        .indicator-card-status {
+            color: var(--backtest-muted);
+        }
+
+        .backtest-section-subcopy,
+        .bayes-workflow-note {
+            margin: 0;
+            max-width: 72ch;
+            line-height: 1.7;
+        }
+
+        .bayes-workflow-card {
+            overflow: hidden;
+        }
+
+        .bayes-workflow-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid #e4edf7;
+        }
+
+        .bayes-workflow-heading {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .bayes-workflow-grid,
+        .backtest-card-grid {
+            display: grid;
+            gap: var(--backtest-surface-gap);
+            align-items: stretch;
+        }
+
+        .bayes-workflow-grid {
+            grid-template-columns: minmax(380px, 1.1fr) minmax(360px, 0.9fr);
+        }
+
+        .backtest-card-grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .backtest-analysis-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+            gap: var(--backtest-surface-gap);
+            align-items: stretch;
+        }
+
+        .backtest-analysis-column {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: var(--backtest-card-gap);
+        }
+
+        .backtest-source-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 1rem 1.15rem;
+            border: 1px solid #d7e5f3;
+            border-radius: 22px;
+            background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+            box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+        }
+
+        .backtest-source-copy {
+            display: flex;
+            flex-direction: column;
+            gap: 0.22rem;
+        }
+
+        .backtest-source-copy strong {
+            color: #10213b;
+            font-size: 1rem;
+        }
+
+        .backtest-source-copy span {
+            color: var(--backtest-muted);
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+
+        .backtest-source-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 0.55rem;
+        }
+
+        .backtest-source-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.42rem 0.82rem;
+            border-radius: 999px;
+            background: #e0f2fe;
+            color: #0c4a6e;
+            font-size: 0.82rem;
+            font-weight: 800;
+        }
+
+        .indicator-card,
+        .strategy-panel,
+        .bayes-note-card,
+        .bayes-metric-card {
+            border: 1px solid #e2eaf4;
+            border-radius: 22px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.95rem;
+        }
+
+        .bayes-workflow-surface {
+            min-height: 360px;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .backtest-analysis-surface {
+            min-height: 340px;
+            padding: 0;
+            overflow: hidden;
+            border: 0;
+            background: transparent;
+            box-shadow: none;
+        }
+
+        .indicator-card-header,
+        .bayes-panel-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .indicator-card-title {
+            margin: 0;
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: #10213b;
+        }
+
+        .indicator-card-status {
+            margin: 0.2rem 0 0;
+            font-size: 0.92rem;
+        }
+
+        .indicator-card-actions,
+        .indicator-modal-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+        }
+
+        .indicator-card-btn {
+            border: 1px solid #cbd5e1;
+            border-radius: 999px;
+            background: #fff;
+            color: #0f172a;
+            padding: 0.55rem 0.95rem;
+            font-size: 0.88rem;
+            font-weight: 700;
             cursor: pointer;
         }
-        .clickable:hover {
-            background-color: skyblue; /* Change to sky blue on hover */
-            color: white;
-        }
-        .active {
-            background-color: #187ed9;
-            color: white;
+
+        .indicator-card-btn:hover {
+            background: #eff6ff;
         }
 
+        .indicator-card-btn-primary {
+            background: #2563eb;
+            color: #fff;
+            border-color: #2563eb;
+        }
 
-        /* Ensure chart fits well inside the container */
-        #chart {
-            width: 100%;
+        .indicator-card-btn-danger {
+            color: #b91c1c;
+        }
+
+        .strategy-step-badge,
+        .bayes-pill,
+        .trade-outcome-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            white-space: nowrap;
+            font-weight: 800;
+        }
+
+        .strategy-step-badge {
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-size: 0.82rem;
+            padding: 0.42rem 0.86rem;
+        }
+
+        .bayes-pill {
+            background: #e0f2fe;
+            color: #0c4a6e;
+            padding: 0.48rem 0.95rem;
+            font-size: 0.86rem;
+        }
+
+        .bayes-summary-eyebrow {
+            margin: 0 0 0.18rem;
+            color: #4b6b93;
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .bayes-metric-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: var(--backtest-card-gap);
+        }
+
+        .bayes-metric-grid-wide {
+            margin: 0;
+        }
+
+        .bayes-metric-card {
+            min-height: 156px;
+            justify-content: space-between;
+            position: relative;
+            isolation: isolate;
+        }
+
+        .bayes-metric-card strong {
+            font-size: 2.15rem;
+            line-height: 1;
+            color: #10213b;
+        }
+
+        .bayes-metric-card-emphasis {
+            background: linear-gradient(180deg, #f3f8ff 0%, #ffffff 100%);
+            border-color: #bfd6fb;
+        }
+
+        .bayes-metric-card.is-clickable {
+            text-decoration: none;
+            color: inherit;
+            transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+            cursor: pointer;
+            display: flex;
+            pointer-events: auto;
+            z-index: 1;
+        }
+
+        .bayes-metric-card.is-clickable:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 34px rgba(37, 99, 235, 0.12);
+            border-color: #93c5fd;
+        }
+
+        .bayes-math-link,
+        .bayes-text-link {
+            color: #1d4ed8;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .bayes-math-link {
+            font-size: 1.05rem;
+        }
+
+        .bayes-math-link-disabled {
+            color: #94a3b8;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .bayes-text-link-disabled {
+            color: #94a3b8;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .bayes-text-link:hover,
+        .bayes-math-link:hover {
+            text-decoration: underline;
+        }
+
+        .bayes-workflow-footnote {
+            margin: 0;
+            color: #5a6a7f;
+            line-height: 1.6;
+        }
+
+        .bayes-summary-shell,
+        .bayes-evidence-shell,
+        .bayes-performance-shell {
+            height: 100%;
+            padding: 1.35rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .bayes-summary-footer {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            margin-top: auto;
+        }
+
+        .bayes-metric-card-copy {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+
+        .bayes-metric-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: #1d4ed8;
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .bayes-metric-cta::after {
+            content: '↗';
+            font-size: 0.86rem;
+        }
+
+        .bayes-metric-cta-muted {
+            color: #94a3b8;
+        }
+
+        .bayes-inline-link {
+            color: #1d4ed8;
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .bayes-inline-link:hover {
+            text-decoration: underline;
+        }
+
+        .bayes-table-wrap,
+        .trade-log-table-wrap {
+            overflow: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            background: #fff;
+        }
+
+        .bayes-table-wrap {
+            flex: 1;
+            min-height: 0;
+            max-height: none;
+        }
+
+        .trade-log-table-wrap {
+            max-height: 430px;
+        }
+
+        .zebra-table {
+            background: #fff;
+            color: #10213b;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .zebra-table thead {
+            background: #edf3fb !important;
+        }
+
+        .zebra-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: #edf3fb;
+            box-shadow: inset 0 -1px 0 #dce6f2;
+        }
+
+        .zebra-table td,
+        .zebra-table th {
+            border-color: #e2e8f0;
+        }
+
+        .zebra-table tbody tr:nth-child(even) {
+            background: #fafcff;
+        }
+
+        .trade-log-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .trade-log-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 0.85rem;
+        }
+
+        .trade-log-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.85rem;
+        }
+
+        .trade-log-kpi {
+            border: 1px solid #e2eaf4;
+            border-radius: 18px;
+            background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+            padding: 0.95rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .trade-log-kpi-label {
+            color: #617286;
+            font-size: 0.82rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .trade-log-kpi strong {
+            font-size: 1.45rem;
+            color: #10213b;
+        }
+
+        .trade-log-positive {
+            color: #047857;
+        }
+
+        .trade-log-negative {
+            color: #b91c1c;
+        }
+
+        .trade-strategy-kpi {
+            border: 1px solid var(--strategy-accent-border);
+            border-radius: 18px;
+            background: linear-gradient(180deg, #ffffff 0%, var(--strategy-accent-soft) 100%);
+            padding: 0.95rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+        }
+
+        .trade-strategy-kpi-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            color: #42556b;
+        }
+
+        .trade-strategy-kpi-stats strong {
+            font-size: 1rem;
+            color: #10213b;
+        }
+
+        .trade-outcome-pill {
+            padding: 0.34rem 0.72rem;
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .trade-outcome-win {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .trade-outcome-loss {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .strategy-parameter-list {
+            margin: 0;
+            padding-left: 1.15rem;
+            color: #334155;
+            line-height: 1.7;
+        }
+
+        .bayes-chain-list {
+            padding-left: 0;
+            list-style: none;
+        }
+
+        .bayes-chain-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.7rem 0;
+            border-bottom: 1px solid #edf3fb;
+        }
+
+        .bayes-chain-item:last-child {
+            border-bottom: 0;
+        }
+
+        .bayes-chain-item-copy {
+            color: #46586f;
+            line-height: 1.5;
+        }
+
+        .bayes-note-stack {
+            display: flex;
+            flex-direction: column;
+            gap: var(--backtest-card-gap);
             height: 100%;
         }
-        
-        /* Optional: Add media query for smaller screens */
-        @media (max-width: 768px) {
-            .graph-widget-container {
-                height: 50vh; /* Reduce height for smaller screens */
-            }
-        
-            #chart {
-                width: 90%; /* Limit width to 90% on smaller screens */
-                height: 90%; /* Limit height to 90% on smaller screens */
-            }
-        }  
-    </style>
 
-    <script src="{% static 'js/indicator/indicator.js' %}"></script>
-    <script src="{% static 'js/strategy/golden_cross_sim.js' %}"></script>
-    
-    <!-- Chart Libraries -->
-    <script src="{% static 'js/lightweight-charts.js' %}"></script> 
+        .backtest-empty-state {
+            margin: auto;
+            padding: 1rem 0;
+            text-align: center;
+            line-height: 1.7;
+            max-width: 42ch;
+        }
+
+        .bayes-performance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: var(--backtest-card-gap);
+        }
+
+        .bayes-strategy-performance-card {
+            border: 1px solid var(--strategy-accent-border);
+            border-radius: 22px;
+            background: linear-gradient(180deg, #ffffff 0%, var(--strategy-accent-soft) 100%);
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+            padding: 1.15rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .bayes-strategy-performance-card strong {
+            font-size: 2rem;
+            line-height: 1;
+            color: #10213b;
+        }
+
+        .bayes-strategy-performance-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.7rem;
+            flex-wrap: wrap;
+        }
+
+        .bayes-performance-stat-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            color: #4b5d73;
+            line-height: 1.6;
+        }
+
+        .strategy-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            align-self: flex-start;
+            border-radius: 999px;
+            border: 1px solid var(--strategy-accent-border);
+            background: var(--strategy-accent-soft);
+            color: var(--strategy-accent-text);
+            padding: 0.42rem 0.82rem;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+        }
+
+        .strategy-badge-swatch,
+        .chart-legend-swatch,
+        .indicator-color-swatch {
+            width: 0.82rem;
+            height: 0.82rem;
+            border-radius: 999px;
+            box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.4);
+            flex-shrink: 0;
+        }
+
+        .indicator-card-legend {
+            min-height: 1.25rem;
+        }
+
+        .indicator-color-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+        }
+
+        .indicator-color-chip,
+        .chart-legend-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            border-radius: 999px;
+            border: 1px solid #d8e3f0;
+            background: #f8fbff;
+            padding: 0.42rem 0.78rem;
+            color: #385069;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .chart-legend-chip-marker {
+            background: #fff;
+        }
+
+        .chart-legend-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.1rem;
+            height: 1.1rem;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            font-weight: 800;
+        }
+
+        .chart-legend-icon-entry {
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        .chart-legend-icon-exit {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .chart-legend-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+            margin-top: 1rem;
+        }
+
+        .chart-legend-empty {
+            color: #6b7c91;
+            line-height: 1.6;
+        }
+
+        .strategy-signal-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 0.34rem 0.72rem;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .strategy-signal-pill-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .strategy-signal-pill-inactive {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .trade-strategy-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+        }
+
+        .trade-row-accent {
+            width: 0.4rem;
+            height: 2.25rem;
+            border-radius: 999px;
+            background: var(--strategy-accent);
+            flex-shrink: 0;
+        }
+
+        .trade-log-row td {
+            vertical-align: middle;
+        }
+
+        .indicator-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.62);
+            padding: 1.25rem;
+        }
+
+        .indicator-modal.hidden {
+            display: none;
+        }
+
+        .indicator-modal-card {
+            width: min(720px, 100%);
+            border-radius: 24px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 28px 70px rgba(15, 23, 42, 0.22);
+            border: 1px solid #dbe4f0;
+            padding: 1.5rem;
+        }
+
+        .indicator-modal-header h3 {
+            margin: 0 0 0.35rem;
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .indicator-modal-header p {
+            margin: 0 0 1rem;
+            color: #475569;
+        }
+
+        .indicator-form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .indicator-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+        }
+
+        .indicator-field span {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .indicator-input {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            background: #fff;
+            padding: 0.8rem 0.9rem;
+            font: inherit;
+            color: #0f172a;
+        }
+
+        .indicator-color-input {
+            min-height: 48px;
+            padding: 0.35rem;
+        }
+
+        .indicator-modal-actions {
+            justify-content: flex-end;
+            margin-top: 1.25rem;
+        }
+
+        #indicator-options {
+            border: 1px solid #dbe4f0 !important;
+            background: #fff !important;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.10) !important;
+        }
+
+        #indicator-options button {
+            color: #0f172a;
+        }
+
+        #indicator-options button:hover {
+            background: #eff6ff;
+        }
+
+        #chart-section {
+            border: 1px solid #dbe4f0;
+            background: #f8fafc !important;
+        }
+
+        #chart-placeholder {
+            background: rgba(248, 250, 252, 0.92) !important;
+            color: #64748b !important;
+        }
+
+        #graph-error {
+            background: #fee2e2 !important;
+            color: #b91c1c !important;
+        }
+
+        #analysis-golden-cross,
+        #bayes-chain-panel,
+        #posterior-panel,
+        #evidence-panel {
+            width: 100% !important;
+            min-height: 240px;
+        }
+
+        @media (max-width: 1340px) {
+            .backtest-topbar-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .bayes-workflow-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .backtest-analysis-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 960px) {
+            .backtest-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .backtest-main {
+                padding: 1.15rem;
+            }
+
+            .bayes-metric-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .backtest-page {
+                padding: 1rem;
+            }
+
+            .backtest-topbar-grid,
+            .backtest-date-grid,
+            .trade-log-summary,
+            .trade-log-breakdown,
+            .bayes-metric-grid,
+            .bayes-performance-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .backtest-toolbar-actions {
+                justify-content: stretch;
+            }
+
+            .backtest-primary-btn,
+            .backtest-secondary-btn {
+                width: 100%;
+            }
+
+            .backtest-section-card,
+            .backtest-chart-card,
+            .backtest-results-card,
+            .backtest-analysis-card,
+            .backtest-topbar {
+                padding: 1.1rem;
+            }
+
+            .bayes-workflow-header,
+            .indicator-card-header,
+            .bayes-panel-header {
+                flex-direction: column;
+            }
+
+            .bayes-workflow-header {
+                gap: 0.85rem;
+            }
+        }
+    </style>
 {% endblock %}
 
-
-{% block title %}Backtest | Trading Pro{% endblock %}
+{% block title %}
+    Backtest | Trading Pro
+{% endblock %}
 
 {% block content %}
-<main class="pt-[60px] w-full min-h-screen bg-[#e5e5e5]">    
-    <div class="flex">
-        <!-- Top-Left Section -->
-        <div class="flex items-center p-5 bg-[#e5e5e5] mb-5 w-[20%] mr-[2%] justify-start">
-            <!-- Ticker Input Section -->
-            <div class="flex justify-center gap-[1px] items-center w-full">
-                <label for="ticker-input" class="text-[14px] mb-[5px] w-[20%]">Ticker(s)</label>
-                <input 
-                    type="text" id="ticker-input" class="p-2 border border-gray-300 rounded-md w-[30%]" 
-                    placeholder="(e.g., AAPL, TSLA)" 
-                />
-            </div>
-        </div>
-        <!-- Top-Right Section -->
-        <div class="flex items-center p-5 bg-[#e5e5e5] mb-5 w-[78%] gap-[10px] justify-center">
-            <div>
-                <label class="text-[14px] mb-[5px]" for="start-date">Test Start Date</label>
-                <input class="p-2.5 border border-gray-300 rounded-md w-[200px]" type="date" id="start-date" name="start_date">
-            </div>
-            <div>
-                <label class="text-[14px] mb-[5px]" for="end-date">Backtest End Date</label>
-                <input class="p-2.5 border border-gray-300 rounded-md w-[200px]" type="date" id="end-date" name="end_date">
-            </div>
-            <div class="flex flex-col justify-center items-center">
-                <button class="px-5 py-2.5 bg-[#15618a] text-white rounded-md cursor-pointer hover:bg-[#0d4e6a]" id="render-graph-button">Start Backtest</button>
-            </div>
+    <div
+        class="backtest-page"
+        data-initial-ticker="{{ initial_ticker }}"
+        data-initial-start-date="{{ initial_start_date }}"
+        data-initial-end-date="{{ initial_end_date }}"
+        data-initial-autoload="{{ initial_autoload|yesno:'1,0' }}"
+        data-initial-analysis-mode="{{ initial_analysis_mode }}"
+        data-initial-prior-mode="{{ initial_prior_mode }}"
+        data-initial-prefill-strategy="{{ initial_prefill_strategy }}"
+        data-initial-horizon-days="{{ initial_horizon_days }}"
+        data-initial-source-list="{{ initial_source_context.source_list|default:'' }}"
+        data-initial-source-rank="{{ initial_source_context.source_rank|default:'' }}"
+        data-initial-source-score="{{ initial_source_context.source_score|default:'' }}"
+        data-initial-source-signal="{{ initial_source_context.source_signal|default:'' }}"
+    >
+        <div class="backtest-shell">
+            <aside class="backtest-sidebar space-y-6">
+                <section class="backtest-filter-group space-y-3">
+                    <h3>Strategy</h3>
+                    <div class="space-y-2">
+                        <button class="btn-clickable" data-strategy-slug="golden_cross" data-strategy-button="1">Golden Cross</button>
+                        <button class="btn-clickable" data-strategy-slug="momentum_12m" data-strategy-button="1">Momentum</button>
+                        <button class="btn-clickable" data-coming-soon="1" data-strategy-button="1">Value Investing (High VE)</button>
+                        <button class="btn-clickable" data-coming-soon="1" data-strategy-button="1">Low Volatility Anomaly</button>
+                        <button class="btn-clickable" data-coming-soon="1" data-strategy-button="1">*Technical*</button>
+                    </div>
+                </section>
+
+                <section id="position" class="backtest-filter-group space-y-3">
+                    <h3>Position</h3>
+                    <div class="space-y-2">
+                        <button class="btn-clickable" data-option="Long">Long</button>
+                        <button class="btn-clickable" data-option="Short">Short</button>
+                    </div>
+                </section>
+
+                <section class="backtest-filter-group space-y-3">
+                    <h3>Earnings Handling</h3>
+                    <div class="space-y-2">
+                        <button class="btn-clickable" data-option="Nothing Special">Nothing Special</button>
+                        <button class="btn-clickable" data-option="Never Trade Earnings">Never Trade Earnings</button>
+                        <button class="btn-clickable" data-option="Only Trade Earnings">Only Trade Earnings</button>
+                        <button class="btn-clickable" data-option="Custom Earnings">Custom Earnings</button>
+                    </div>
+                </section>
+
+                <section class="backtest-filter-group space-y-3">
+                    <h3>Open Trade When</h3>
+                    <div class="space-y-2">
+                        <button class="btn-clickable" data-option="*Technical Open*">*Technical Open*</button>
+                        <button class="btn-clickable" data-option="Bull Squeeze">Bull Squeeze</button>
+                        <button class="btn-clickable" data-option="Bear Squeeze">Bear Squeeze</button>
+                        <button class="btn-clickable" data-option="Pullback">Pullback</button>
+                    </div>
+                </section>
+            </aside>
+
+            <main class="backtest-main">
+                {% if initial_source_context %}
+                    <section class="backtest-source-banner">
+                        <div class="backtest-source-copy">
+                            <strong>Watchlist source context</strong>
+                            <span>
+                                This ticker arrived from {{ initial_source_context.source_list|default:"Watchlist" }}.
+                                Keep this context in view while you compare the watchlist score to the backtest outcome.
+                            </span>
+                        </div>
+                        <div class="backtest-source-chip-row">
+                            {% if initial_source_context.source_rank %}
+                                <span class="backtest-source-chip">Rank {{ initial_source_context.source_rank }}</span>
+                            {% endif %}
+                            {% if initial_source_context.source_score %}
+                                <span class="backtest-source-chip">Score {{ initial_source_context.source_score }}</span>
+                            {% endif %}
+                            {% if initial_source_context.source_signal_label %}
+                                <span class="backtest-source-chip">{{ initial_source_context.source_signal_label }}</span>
+                            {% endif %}
+                        </div>
+                    </section>
+                {% endif %}
+
+                <section class="backtest-topbar">
+                    <div class="backtest-topbar-grid">
+                        <div class="backtest-control">
+                            <label for="ticker-input" class="backtest-label">Ticker</label>
+                            <input type="text" id="ticker-input" class="backtest-input" placeholder="e.g. AAPL, TSLA">
+                        </div>
+
+                        <div class="backtest-control">
+                            <label class="backtest-label">Date Window</label>
+                            <div class="backtest-date-grid">
+                                <input type="date" id="start-date" name="start_date" class="backtest-input" aria-label="Test Start Date">
+                                <input type="date" id="end-date" name="end_date" class="backtest-input" aria-label="Backtest End Date">
+                            </div>
+                        </div>
+
+                        <div class="backtest-control">
+                            <label for="analysis-mode" class="backtest-label">Mode</label>
+                            <select id="analysis-mode" class="backtest-input backtest-select">
+                                <option value="single">Single Strategy Analysis</option>
+                                <option value="multi">Multi-Strategy Analysis</option>
+                            </select>
+                        </div>
+
+                        <div class="backtest-control">
+                            <label for="prior-mode" class="backtest-label">Prior Source</label>
+                            <select id="prior-mode" class="backtest-input backtest-select">
+                                <option value="universe">Universe Prior</option>
+                                <option value="golden_cross">Golden Cross Prior</option>
+                            </select>
+                        </div>
+
+                        <div class="backtest-control">
+                            <label for="benchmark-input" class="backtest-label">Benchmark (Optional)</label>
+                            <input type="text" id="benchmark-input" class="backtest-input" value="{{ initial_benchmark }}" maxlength="10">
+                        </div>
+
+                        <div class="backtest-toolbar-actions">
+                            <button id="render-graph-button" class="backtest-secondary-btn" type="button">Load Chart</button>
+                            <button id="run-bayes-button" class="backtest-primary-btn" type="button">Run Bayesian Analysis</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="backtest-section-card bayes-workflow-card">
+                    <div class="bayes-workflow-header">
+                        <div class="bayes-workflow-heading">
+                            <p class="backtest-section-kicker">Probability Dashboard</p>
+                            <h3 class="backtest-section-title">Bayesian Workflow</h3>
+                            <p id="analysis-mode-help" class="bayes-workflow-note">
+                                Single strategy mode: run one evidence source at a time and inspect its prior-to-posterior move.
+                            </p>
+                            <p class="bayes-workflow-note">
+                                The workflow cards below stay separate by design: the left side is your probability ladder, and the right side is the evidence chain that pushed the posterior.
+                            </p>
+                        </div>
+                        <span id="bayes-run-status" class="bayes-pill">Waiting for posterior</span>
+                    </div>
+                    <div class="bayes-workflow-grid">
+                        <div id="posterior-panel" class="indicator-card bayes-workflow-surface">
+                            <p class="backtest-empty-state">Prior and posterior probabilities will appear here after the first run.</p>
+                        </div>
+                        <div id="evidence-panel" class="indicator-card bayes-workflow-surface">
+                            <p class="backtest-empty-state">Evidence contributions will appear here after the first run.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="backtest-section-card relative">
+                    <div class="bayes-panel-header">
+                        <div>
+                            <p class="backtest-section-kicker">Chart Tools</p>
+                            <h3 class="backtest-section-title">Indicators</h3>
+                            <p class="backtest-section-subcopy">Use overlays and studies without crowding the Bayesian workflow area.</p>
+                        </div>
+                        <button id="indicator-toggle" class="indicator-card-btn" type="button">Indicators</button>
+                    </div>
+
+                    <div id="indicator-options" class="hidden absolute right-6 z-20 mt-2 w-64 rounded-md border shadow-lg" style="top: 88px;">
+                        <button data-indicator="ma" class="block w-full text-left px-4 py-2">Moving Average (MA)</button>
+                        <button data-indicator="rsi" class="block w-full text-left px-4 py-2">Relative Strength Index (RSI)</button>
+                        <button data-indicator="bbands" class="block w-full text-left px-4 py-2">Bollinger Bands</button>
+                        <button data-indicator="stoch" class="block w-full text-left px-4 py-2">Stochastic Oscillator</button>
+                        <button data-indicator="adx" class="block w-full text-left px-4 py-2">Average Directional Index (ADX)</button>
+                        <button data-indicator="ichimoku" class="block w-full text-left px-4 py-2">Ichimoku Cloud</button>
+                        <button data-indicator="psar" class="block w-full text-left px-4 py-2">Parabolic SAR</button>
+                        <button data-indicator="obv" class="block w-full text-left px-4 py-2">On-Balance Volume (OBV)</button>
+                    </div>
+
+                    <div id="indicator-panels" class="backtest-card-grid mt-6"></div>
+                </section>
+
+                <section class="backtest-section-card">
+                    <div class="bayes-panel-header">
+                        <div>
+                            <p class="backtest-section-kicker">Configured Chain</p>
+                            <h3 class="backtest-section-title">Active Strategies</h3>
+                            <p class="backtest-section-subcopy">Each saved panel represents one step in the Bayesian chain you are about to run or extend.</p>
+                        </div>
+                    </div>
+                    <div id="strategy-panels" class="backtest-card-grid mt-6">
+                        <p class="backtest-empty-state">Configure Golden Cross or Momentum to create the Bayesian strategy chain.</p>
+                    </div>
+                </section>
+
+                <section class="backtest-chart-card">
+                    <div class="bayes-panel-header">
+                        <div>
+                            <p class="backtest-section-kicker">Market Context</p>
+                            <h3 class="backtest-section-title">Backtest Chart</h3>
+                        </div>
+                    </div>
+                    <div id="chart-legend" class="chart-legend-bar">
+                        <span class="chart-legend-empty">Apply moving averages or run a strategy to populate the chart legend.</span>
+                    </div>
+                    <div id="chart-section" class="relative mt-6 h-[60vh] w-full overflow-hidden rounded-[18px]">
+                        <div id="chart" class="h-full w-full"></div>
+                        <div id="chart-placeholder" class="absolute inset-0 z-10 flex items-center justify-center text-xl">
+                            Enter ticker and date range to display chart
+                        </div>
+                        <div id="graph-error" class="hidden absolute inset-0 z-20 flex items-center justify-center p-5">
+                            Ticker does not exist in database
+                        </div>
+                    </div>
+                </section>
+
+                <section class="backtest-results-card">
+                    <div class="bayes-panel-header">
+                        <div>
+                            <p class="backtest-section-kicker">Execution Record</p>
+                            <h3 class="backtest-section-title">Trade Log</h3>
+                            <p class="backtest-section-subcopy">A cleaner run ledger with win/loss formatting, quick totals, and a proper scroll body.</p>
+                        </div>
+                    </div>
+                    <div id="trade-log-golden-cross" class="mt-6 w-full">
+                        <p class="backtest-empty-state">Trade log output will appear here after the first run.</p>
+                    </div>
+                </section>
+
+                <section class="backtest-analysis-card">
+                    <div class="bayes-panel-header">
+                        <div>
+                            <p class="backtest-section-kicker">Interpretation</p>
+                            <h3 class="backtest-section-title">Posterior Analysis</h3>
+                            <p class="backtest-section-subcopy">Strategy metrics, posterior notes, and chain state now live in separate rails so the analysis layer reads cleanly instead of collapsing into one crowded box.</p>
+                        </div>
+                    </div>
+                    <div class="backtest-analysis-grid mt-6">
+                        <div class="backtest-analysis-column">
+                            <div id="analysis-golden-cross" class="backtest-analysis-surface">
+                                <p class="backtest-empty-state">Strategy metrics will appear here after the first run.</p>
+                            </div>
+                        </div>
+                        <div class="backtest-analysis-column">
+                            <div id="bayes-chain-panel" class="backtest-analysis-surface">
+                                <p class="backtest-empty-state">Posterior notes and chain status will appear here after the first run.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
         </div>
     </div>
 
-    <div class="w-full min-h-screen flex flex-row bg-[#f9f9f9] overflow-hidden">  
-        <div class="w-[20%] h-screen overflow-y-auto bg-[#e5e5e5] flex flex-col items-center pt-[10px] pb-[20px] box-border">
-            <div class="flex flex-col items-center w-[250px] bg-[#e5e5e5]"> 
-                <!-- Strategy Section -->
-                <div class="w-[250px] pb-16">
-                    <div class="font-bold mt-[10px] text-[14px] text-center">Strategy</div>  
-                    <table class="w-[250px] border-collapse bg-white">
-                        <tr>
-                            <td><button type="button" class="clickable" data-option="Stock">Golden Cross</button></td>
-                        </tr>
-                        <tr>
-                            <td><button type="button" class="clickable" data-option="Call">Fibonacci Retracement</button></td>
-                        </tr>
-                        <tr>
-                            <td><button type="button" class="clickable" data-option="Put">Supply and Demand</button></td>
-                        </tr>
-                        <tr>
-                            <td><button type="button" class="clickable" data-option="Covered Call">*Technical*</button></td>
-                        </tr>
-                    </table>
-                </div>
-                <div class="w-[250px] pb-16">
-                    <div class="font-bold mt-[10px] text-[14px] text-center">Position</div>  
-                    <table class="w-[250px] border-collapse bg-white" id="position">
-                        <tr>
-                            <td><button type="button" class="clickable" data-option="Long">Long</button></td>
-                        </tr>
-                        <tr>
-                            <td><button type="button" class="clickable" data-option="Short">Short</button></td>
-                        </tr>
-                    </table>
-                </div>
-                <div class="w-[250px] pb-16">
-                    <div class="font-bold mt-[10px] text-[14px] text-center">Earnings Handling</div>  
-                    <table class="w-[250px] border-collapse bg-white">
-                        <tr>
-                            <td><button type="button" class="clickable" data-option="Nothing Special">Nothing Special</button></td>
-                        </tr>
-                        <tr>
-                            <td><button type="button" class="clickable" data-option="Never Trade Earnings">Never Trade Earnings</button></td>
-                        </tr>
-                        <tr>
-                            <td><button type="button" class="clickable" data-option="Only Trade Earnings">Only Trade Earnings</button></td>
-                        </tr>
-                        <tr>
-                            <td><button type="button" class="clickable" data-option="Custom Earnings">Custom Earnings</button></td>
-                        </tr>
-                    </table>
-                </div>
-                <div class="w-[250px] pb-16">
-                    <div class="font-bold mt-[10px] text-[14px] text-center">Open Trade When</div>  
-                    <table class="w-[250px] border-collapse bg-white">
-                        <tr>
-                            <td><button type="button" class="clickable" data-option="*Technical Open*">*Technical Open*</button></td>
-                        </tr>
-                        <tr>
-                            <td><button type="button" class="clickable" data-option="Bull Squeeze">Bull Squeeze</button></td>
-                        </tr>
-                        <tr>
-                            <td><button type="button" class="clickable" data-option="Bear Squeeze">Bear Squeeze</button></td>
-                        </tr>
-                        <tr>
-                            <td><button type="button" class="clickable" data-option="Pullback">Pullback</button></td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <div class="h-screen w-[80%] p-5 bg-white box-border border border-gray-300 overflow-y-auto space-y-3 relative">
-            <!-- Indicator Menu & Panels -->
-            <div id="indicator-menu" class="absolute top-2 right-2 z-10">
-                <!-- Trigger Button -->
-                <button id="indicator-toggle" class="bg-white text-black border border-gray-300 rounded-md px-3 py-1 focus:outline-none">
-                   Indicators
-                </button>
-                <!-- Dropdown Container; initially hidden -->
-                <div id="indicator-options" class="hidden absolute right-0 mt-2 w-64 bg-white border border-gray-200 shadow-lg rounded-md">
-                    <button data-indicator="ma" class="indicator-option block w-full text-left px-3 py-2 hover:bg-gray-100">
-                       Moving Average (MA)
-                    </button>
-                    <button data-indicator="rsi" class="indicator-option block w-full text-left px-3 py-2 hover:bg-gray-100">
-                        Relative Strength Index (RSI)
-                    </button>
-                    <button data-indicator="bbands" class="indicator-option block w-full text-left px-3 py-2 hover:bg-gray-100">
-                        Bollinger Bands
-                    </button>
-                    <button data-indicator="stoch" class="indicator-option block w-full text-left px-3 py-2 hover:bg-gray-100">
-                        Stochastic Oscillator
-                    </button>
-                    <button data-indicator="adx" class="indicator-option block w-full text-left px-3 py-2 hover:bg-gray-100">
-                        Average Directional Index (ADX)
-                    </button>
-                    <button data-indicator="ichimoku" class="indicator-option block w-full text-left px-3 py-2 hover:bg-gray-100">
-                        Ichimoku Cloud
-                    </button>
-                    <button data-indicator="psar" class="indicator-option block w-full text-left px-3 py-2 hover:bg-gray-100">
-                        Parabolic SAR
-                    </button>
-                    <button data-indicator="obv" class="indicator-option block w-full text-left px-3 py-2 hover:bg-gray-100">
-                        On-Balance Volume (OBV)
-                    </button>
-                    <button data-indicator="cmf" class="indicator-option block w-full text-left px-3 py-2 hover:bg-gray-100">
-                        Chaikin Money Flow (CMF)
-                    </button>
-                    <button data-indicator="cci" class="indicator-option block w-full text-left px-3 py-2 hover:bg-gray-100">
-                        Commodity Channel Index (CCI)
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Placeholder for dynamic indicator panels (the partials) -->
-            <div id="indicator-panels" class="flex flex-wrap bottom-2 left-2 right-2 p-2 space-x-4 border w-[91%]"></div>
-
-            <!-- Placeholder for dynamic Strategy panels (the partials) -->
-            <div id="strategy-panels" class="flex flex-wrap bottom-2 left-2 right-2 p-2 space-x-4 border w-[91%]"></div>
-            
-            
-            <!-- Graph Widget Container for the chart -->
-            <div class="w-full h-[60vh] max-w-full bg-[#f0f0f0] flex justify-center items-center rounded-[10px] border border-gray-300 mt-5 relative overflow-hidden">
-                <div id="graph-container" class="w-full h-[60vh] bg-[#f0f0f0] flex justify-center items-center rounded-[10px] border border-gray-300 mt-5 relative overflow-hidden">
-                    <div id="chart" class="w-full h-full"></div>
-                    <!-- Placeholder overlay -->
-                    <div id="chart-placeholder" class="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-500 text-xl z-50">
-                        Enter ticker to display chart
-                    </div>
-                    <div id="graph-error" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-100 p-5 rounded text-red-700 font-bold">
-                      Ticker does not exist in database
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Analysis container for Golden Cross (Primary Analysis) -->
-            <div class="w-full bg-[#f0f0f0] flex flex-col justify-start items-center rounded-lg border border-gray-300 mt-5 p-4">
-                <h2 class="w-full text-center text-xl font-bold mb-3">Golden Cross Analysis for SPY</h2>
-                <div id="chart-container-2" class="w-full h-[600px] overflow-auto">
-                <div id="golden-cross-chart" class="w-full h-full"></div>
-                </div>
-            </div>
-            
-            <!-- Analysis container for Golden Cross (Additional Analysis 2) -->
-            <div class="w-full bg-[#f0f0f0] flex flex-col justify-start items-center rounded-lg border border-gray-300 mt-5 p-4 min-h-[200px]">
-                <h2 class="w-full text-center text-xl font-bold mb-3">Additional Analysis 2</h2>
-                <div class="w-full h-full overflow-auto">
-                <!-- Placeholder for additional analysis content -->
-                <p class="text-center text-gray-500">No data available.</p>
-                </div>
-            </div>
-            
-            <!-- Analysis container for Golden Cross (Additional Analysis 3) -->
-            <div class="w-full bg-[#f0f0f0] flex flex-col justify-start items-center rounded-lg border border-gray-300 mt-5 p-4 min-h-[200px]">
-                <h2 class="w-full text-center text-xl font-bold mb-3">Additional Analysis 3</h2>
-                <div class="w-full h-full overflow-auto">
-                <!-- Placeholder for additional analysis content -->
-                <p class="text-center text-gray-500">No data available.</p>
-                </div>
-            </div>
-        </div>
-    </div>     
-</main>
-    <!-- Include the MovingAverage Indicator Modal Partial (from your partials folder) -->
-    {% include "partials/indicators/indicator_modal_ma.html" %}
-
-    <!-- Include the Golden Cross partial from the strategy folder when needed -->
     {% include "partials/strategies/backtest_golden_cross_form.html" %}
-   
-    
-    <!-- ===== MAIN SCRIPT: Chart1, Data Fetching, and MA Logic ===== -->
+    {% include "partials/strategies/backtest_momentum_form.html" %}
+
+    <div id="indicator-config-modal" class="indicator-modal hidden" aria-hidden="true">
+        <div class="indicator-modal-card">
+            <div class="indicator-modal-header">
+                <h3 id="indicator-modal-title">Add Indicator</h3>
+                <p>Configure the indicator, save the panel, then apply it to the loaded chart data.</p>
+            </div>
+            <form id="indicator-config-form">
+                <div id="indicator-modal-fields" class="indicator-form-grid"></div>
+                <div class="indicator-modal-actions">
+                    <button type="button" id="indicator-cancel" class="indicator-card-btn">Cancel</button>
+                    <button type="submit" class="indicator-card-btn indicator-card-btn-primary">
+                        <span id="indicator-save-label">Create Panel</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
-        // ===== Global Variables =====
-        let chart;
-        let candlestickSeries;
-        let rawChartData = [];           // Holds the current fetched data
-        let addedMAseries = [];          // Tracks dynamically added MA overlays
-        const maxMAIndicators = 5;
-        const defaultColors = ['#FF0000', '#00FF00', '#0000FF', '#FFA500', '#800080'];
-        
-        function getColorForIndicator() {
-            return defaultColors[addedMAseries.length % defaultColors.length];
-        }
-        
-        // ===== MA Indicator Manager =====
-        const MAIndicatorManager = {
-            addIndicator: function(maType, period, color) {
-                if (addedMAseries.length >= maxMAIndicators) {
-                    alert(`Maximum of ${maxMAIndicators} indicators reached.`);
-                    return null;
-                }
-                let newSeries = chart.addLineSeries({ color: color, lineWidth: 2 });
-                let indicatorData = (maType === 'sma')
-                        ? computeSMA(rawChartData, period)
-                        : computeEMA(rawChartData, period);
-                newSeries.setData(indicatorData);
-                addedMAseries.push({ series: newSeries, id: Date.now() });
-                return newSeries;
-            },
-            removeIndicator: function(seriesToRemove) {
-                seriesToRemove.setData([]);
-                addedMAseries = addedMAseries.filter(obj => obj.series !== seriesToRemove);
-            }
-        };
-        
-        // ===== Chart Initialization =====
-        window.addEventListener("load", function() {
-            chart = LightweightCharts.createChart(document.getElementById('chart'), {
-                width: document.getElementById('chart').clientWidth,
-                height: document.getElementById('chart').clientHeight,
-                layout: { backgroundColor: '#ffffff', textColor: '#000000' },
-                grid: { vertLines: { color: '#eeeeee' }, horzLines: { color: '#eeeeee' } }
-            });
-            candlestickSeries = chart.addCandlestickSeries();
-            // Base MA series are created but remain empty.
-            let baseSMA50 = chart.addLineSeries({ color: '#FF0000', lineWidth: 2 });
-            baseSMA50.setData([]);
-            let baseSMA200 = chart.addLineSeries({ color: '#0000FF', lineWidth: 2 });
-            baseSMA200.setData([]);
-            
-        });
-        
-        // ===== Data Updating =====
-        function updateChart(rawData) {
-            // Convert each item’s date; if raw data has a "time" field, use it; otherwise, convert from "Date".
-            const formattedCandlestick = rawData.map(item => ({
-                time: item.time ? item.time : new Date(item.Date * 1000).toISOString().slice(0,10),
-                open: item.Open,
-                high: item.High,
-                low: item.Low,
-                close: item.Close
-            }));
-
-            candlestickSeries.setData(formattedCandlestick);
-            
-            // Clear any previously added MA overlays.
-            addedMAseries.forEach(obj => { obj.series.setData([]); });
-            addedMAseries = [];
-
-              // Hide the placeholder overlay since valid data is loaded.
-            document.getElementById('chart-placeholder').style.display = 'none';
-        
-            console.log("Chart updated with:", formattedCandlestick);
-        }
-        
-        // ===== fetchData() =====
-        async function fetchData() {
-            const ticker = document.getElementById('ticker-input').value.trim().toUpperCase();
-            const startDate = document.getElementById('start-date').value;
-            const endDate = document.getElementById('end-date').value;
-            const errorDiv = document.getElementById('graph-error');
-            errorDiv.style.display = 'none';
-          
-            // Ensure all inputs are provided before making request.
-            if (!ticker || !startDate || !endDate) {
-              console.log("Ticker or dates missing");
-              return;
-            }
-          
-            try {
-                const response = await fetch(`/fetch_stock_data/?ticker=${ticker}&start_date=${startDate}&end_date=${endDate}`);
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error);
-                }
-                const data = await response.json();
-                if (data.valid) {
-                    rawChartData = data.data;
-                    updateChart(data.data);
-                    chart.resize(document.getElementById('chart').clientWidth, document.getElementById('chart').clientHeight);
-                } else {
-                    errorDiv.style.display = 'block';
-                }
-            } catch (error) {
-                errorDiv.style.display = 'block';
-                errorDiv.textContent = error.message;
-            }
-        }
-          
-        
-        function debounce(func, delay = 500) {
-            let timeout;
-            return (...args) => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(this, args), delay);
-            };
-        }
-
-        document.getElementById('ticker-input').addEventListener('input', debounce(function(e) {
-            if (e.target.value.trim().length >= 3) { fetchData(); }
-            }));
-
-        document.getElementById('start-date').addEventListener('change', fetchData);
-        document.getElementById('end-date').addEventListener('change', fetchData);
-        document.getElementById('render-graph-button').addEventListener('click', fetchData);
-        
-        // ===== MA Modal & Indicator Panel Logic =====
-        const indicatorToggle = document.getElementById('indicator-toggle');
-        const indicatorOptions = document.getElementById('indicator-options');
-        const maModal = document.getElementById('ma-modal');
-        const maCancel = document.getElementById('ma-cancel');
-        const maForm = document.getElementById('ma-form');
-        
-        indicatorToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            indicatorOptions.classList.toggle('hidden');
-        });
-        
-        document.addEventListener('click', () => { indicatorOptions.classList.add('hidden'); });
-        
-        document.querySelector('[data-indicator="ma"]').addEventListener('click', () => {
-            indicatorOptions.classList.add('hidden');
-            maModal.classList.remove('hidden');
-        });
-        
-        maCancel.addEventListener('click', () => { maModal.classList.add('hidden'); });
-        
-        maForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const maType = document.querySelector('input[name="ma_type"]:checked').value;
-            const period = parseInt(document.getElementById('ma-period').value, 10);
-            const color = document.getElementById('ma-color').value;
-            console.log("MA Form Submitted:", maType.toUpperCase(), "Period:", period, "Color:", color);
-            maModal.classList.add('hidden');
-        
-            // Create the indicator panel element.
-            const panel = document.createElement('div');
-            panel.className = "indicator-panel p-4 border border-gray-200 rounded-lg bg-white shadow-md mb-4 flex flex-col sm:flex-row sm:items-center justify-between w-full md:w-1/3";
-            panel.innerHTML = `
-                <div class="flex-1">
-                <span class="text-sm font-medium">
-                    ${maType.toUpperCase()}: Period = <span class="ma-period-value">${period}</span> | Color = <span class="ma-color-value">${color}</span>
-                </span>
-                </div>
-                <div class="flex space-x-2 mt-2 sm:mt-0">
-                <button class="apply-indicator px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">Apply</button>
-                <button class="edit-indicator px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors">Edit</button>
-                <button class="delete-indicator px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">Delete</button>
-                </div>
-                `;
-            const indicatorPanels = document.getElementById('indicator-panels');
-            indicatorPanels.appendChild(panel);
-        
-            // Delete: Remove panel and its MA overlay.
-            panel.querySelector('.delete-indicator').addEventListener('click', () => {
-                const panels = Array.from(indicatorPanels.children);
-                const index = panels.indexOf(panel);
-                if (addedMAseries[index]) {
-                MAIndicatorManager.removeIndicator(addedMAseries[index].series);
-                }
-                panel.remove();
-            });
-        
-        
-            // Edit: Reopen modal prefilled and remove current panel (and applied overlay if any).
-            panel.querySelector('.edit-indicator').addEventListener('click', () => {
-                document.getElementById('ma-period').value = panel.querySelector('.ma-period-value').innerText;
-                document.querySelector(`input[name="ma_type"][value="${maType}"]`).checked = true;
-                document.getElementById('ma-color').value = panel.querySelector('.ma-color-value').innerText;
-                maModal.classList.remove('hidden');
-                const panels = Array.from(indicatorPanels.children);
-                const index = panels.indexOf(panel);
-                if (addedMAseries[index]) {
-                MAIndicatorManager.removeIndicator(addedMAseries[index].series);
-                }
-                panel.remove();
-            });
-            
-            // Apply: Compute the MA indicator and add the overlay.
-            panel.querySelector('.apply-indicator').addEventListener('click', () => {
-                if (addedMAseries.length >= maxMAIndicators) {
-                    alert("Maximum of " + maxMAIndicators + " indicators reached.");
+        document.querySelectorAll('.btn-clickable').forEach((button) => {
+            button.addEventListener('click', function () {
+                if (this.dataset.strategyButton === '1') {
                     return;
                 }
-                let newSeries = MAIndicatorManager.addIndicator(maType, period, color);
-                if (newSeries) { panel.querySelector('.apply-indicator').disabled = true; }
+
+                const inPositionGroup = this.closest('#position');
+                if (!inPositionGroup) {
+                    this.classList.toggle('btn-clickable-active');
+                    return;
+                }
+
+                document
+                    .querySelectorAll('#position .btn-clickable-active')
+                    .forEach((activeButton) => activeButton.classList.remove('btn-clickable-active'));
+                this.classList.add('btn-clickable-active');
             });
         });
     </script>
-    
-    <!-- Golden Cross Modal partial and panel, strategy-->
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Get references to the modal and form elements
-            const goldenCrossButton = document.querySelector('.clickable[data-option="Stock"]');
-            const goldenCrossModal = document.getElementById('golden-cross-modal');
-            const gcCancel = document.getElementById('gc-cancel');
-            const gcForm = document.getElementById('golden-cross-form');
-            const strategyPanels = document.getElementById('strategy-panels');
-            const analysisContainer = document.getElementById('golden-cross-chart'); // Div where simulation results are shown
-        
-            // Show modal when Golden Cross button is clicked
-            goldenCrossButton.addEventListener('click', () => {
-                goldenCrossModal.classList.remove('hidden');
-            });
-            
-            // Hide modal when Cancel is clicked
-            gcCancel.addEventListener('click', () => {
-                goldenCrossModal.classList.add('hidden');
-            });
-        
-            // Handle Golden Cross form submission
-            gcForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                // Retrieve form values
-                const fastSMAVal = parseInt(document.getElementById('fast-sma').value, 10);
-                const slowSMAVal = parseInt(document.getElementById('slow-sma').value, 10);
-                const orderPercentage = parseFloat(document.getElementById('order-percentage').value);
-                const startingCash = parseFloat(document.getElementById('starting-cash').value);
-                const overrideShares = document.getElementById('override-shares').value;
-                
-                // Hide the modal after submission
-                goldenCrossModal.classList.add('hidden');
-                
-                // Create strategy panel element with all provided parameters.
-                const panel = document.createElement('div');
-                panel.className = "strategy-panel p-6 border border-gray-200 rounded-lg bg-white shadow-md mb-6 flex flex-col sm:flex-row sm:items-center justify-between w-full md:w-1/3 flex-shrink-0";
-                panel.innerHTML = `
-                    <div class="flex-1">
-                        <h4 class="text-lg font-semibold text-gray-800">Golden Cross Strategy</h4>
-                        <p class="text-sm text-gray-600">
-                            Fast SMA: <span class="fast-sma-value">${fastSMAVal}</span> | 
-                            Slow SMA: <span class="slow-sma-value">${slowSMAVal}</span><br>
-                            Order %: <span class="order-percentage-value">${orderPercentage}</span>% | 
-                            Starting Cash: $<span class="starting-cash-value">${startingCash}</span><br>
-                            Override Shares: <span class="override-shares-value">${overrideShares || 'Auto'}</span>
-                        </p>
-                    </div>
-                    <div class="mt-4 sm:mt-0 flex space-x-2">
-                        <button class="edit-strategy px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors">Edit</button>
-                        <button class="delete-strategy px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">Delete</button>
-                        <!-- Apply button will run the simulation using reusable code -->
-                        <button class="apply-strategy px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">Apply</button>
-                    </div>
-                `;
-                strategyPanels.appendChild(panel);
-                
-                // Attach Delete handler to remove the panel.
-                panel.querySelector('.delete-strategy').addEventListener('click', () => {
-                    panel.remove();
-                });
-                
-                // Attach Edit handler: Reopen modal prefilled with current values, then remove the panel.
-                panel.querySelector('.edit-strategy').addEventListener('click', () => {
-                    document.getElementById('fast-sma').value = panel.querySelector('.fast-sma-value').innerText;
-                    document.getElementById('slow-sma').value = panel.querySelector('.slow-sma-value').innerText;
-                    document.getElementById('order-percentage').value = panel.querySelector('.order-percentage-value').innerText;
-                    document.getElementById('starting-cash').value = panel.querySelector('.starting-cash-value').innerText;
-                    let overrideVal = panel.querySelector('.override-shares-value').innerText;
-                    document.getElementById('override-shares').value = (overrideVal === "Auto") ? "" : overrideVal;
-                    goldenCrossModal.classList.remove('hidden');
-                    panel.remove();
-                });
-                
-                // Attach Apply handler: Run the simulation using the reusable function.
-                panel.querySelector('.apply-strategy').addEventListener('click', () => {
-                    if (!rawChartData.length) {
-                        alert("Please load a ticker and date range (and click Start Backtest) before applying a strategy.");
-                        return;
-                    }
-                    const simResult = runGoldenCrossStrategySim(
-                        rawChartData,
-                        fastSMAVal,
-                        slowSMAVal,
-                        orderPercentage,
-                        startingCash,
-                        overrideShares
-                    );
-                    analysisContainer.innerHTML = renderSignalsTable(simResult);
-                    panel.querySelector('.apply-strategy').disabled = true;
-                });
-                /*
-                * renderSignalsTable*/
-                function renderSignalsTable(simResult) {
-                    const signals = simResult.signals;
-                    const finalCash = simResult.finalCash;
-                    if (signals.length === 0) {
-                    return "<p class='text-center text-gray-500'>No signals generated.</p>";
-                    }
-                    let html = `<table class="min-w-full text-sm text-gray-700 border border-gray-300">
-                                    <thead class="bg-gray-200">
-                                        <tr>
-                                            <th class="px-2 py-1 border">Date</th>
-                                            <th class="px-2 py-1 border">Action</th>
-                                            <th class="px-2 py-1 border">Price</th>
-                                            <th class="px-2 py-1 border">Shares</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>`;
-                    signals.forEach(sig => {
-                    html += `<tr>
-                                <td class="px-2 py-1 border">${sig.date}</td>
-                                <td class="px-2 py-1 border">${sig.action}</td>
-                                <td class="px-2 py-1 border">${sig.price.toFixed(2)}</td>
-                                <td class="px-2 py-1 border">${sig.shares}</td>
-                            </tr>
-                            <tr class="bg-gray-50 text-xs text-gray-500">
-                                <td colspan="4" class="px-2 py-1 border italic">
-                                    SMA50 (prev/today): ${sig.prevFast.toFixed(4)} → ${sig.currentFast.toFixed(4)} |
-                                    SMA200 (prev/today): ${sig.prevSlow.toFixed(4)} → ${sig.currentSlow.toFixed(4)}
-                                </td>
-                            </tr>`;
-                    });
-                    html += `</tbody></table>
-                            <p class="mt-2 text-sm font-medium text-center">Final Cash: $${finalCash.toFixed(2)}</p>`;
-                    return html;
-                }
-                
-                // Expose globally
-                window.renderSignalsTable = renderSignalsTable;
-                
-                                // Do NOT immediately run the simulation here.
-                // (Remove any code that directly calls runGoldenCrossStrategySim immediately after form submission.)
-            });            
-        });
-    </script>
-    
-
-
-    <!-- ===== Clickable Button Logic ===== -->
-    <script>  
-        document.querySelectorAll('.clickable').forEach(function(button) {
-            button.addEventListener('click', function() {
-                position_clicked = false;
-                const isInPositionGroup = this.closest('#position');
-                if (!isInPositionGroup) {
-                    this.classList.toggle('active');
-                }
-                else { 
-                    document.querySelectorAll('#position .clickable.active').forEach(function(positionButton) {
-                        positionButton.classList.remove('active');
-                    });
-                    this.classList.add('active');
- 
-                }
-            });
-        });
-    </script> 
-      
-      
-      
-
-      
-
-    
 {% endblock %}

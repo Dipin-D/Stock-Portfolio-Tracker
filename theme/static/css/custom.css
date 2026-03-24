@@ -1,0 +1,27 @@
+/* =========  Zebra striping for JS-generated tables  ========= */
+.zebra-table tbody tr:nth-child(even) {
+  background-color: #e6eef8;   /* light blue, same as Tailwind's blue-50 */
+}
+
+
+/* ───── Custom button styles (formerly @apply) ───── */
+.btn-clickable {
+  display: block;          /* block                         */
+  width: 100%;             /* w-full                        */
+  text-align: center;      /* text-center                   */
+  cursor: pointer;         /* cursor-pointer                */
+  border: 1px solid #D1D5DB;   /* border & light-gray ring   */
+  background-color: transparent; /* bg-transparent          */
+  color: inherit;          /* text-current                  */
+  transition: background-color 150ms, color 150ms, border-color 150ms;
+}
+
+.btn-clickable:hover {
+  background-color: #38bdf8;   /* sky-blue-400               */
+  color: #ffffff;              /* white text                 */
+}
+
+.btn-clickable-active {
+  background-color: #187ed9;   /* “Trading-Pro” blue         */
+  color: #ffffff;              /* white text                 */
+}

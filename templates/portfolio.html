@@ -2,455 +2,1923 @@
 {% load static %}
 
 {% block head %}
-<script src="{% static 'js/apexcharts.min.js' %}"></script>
+    {{ block.super }}
+    <script src="{% static 'js/apexcharts.min.js' %}"></script>
+    <style>
+        .portfolio-page {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem 4rem;
+            color: #0f172a;
+        }
+
+        .portfolio-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .portfolio-balance-card,
+        .portfolio-shell,
+        .portfolio-builder,
+        .portfolio-footer {
+            border: 1px solid #dbe4f0;
+            border-radius: 24px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+        }
+
+        .portfolio-balance-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+            padding: 1.75rem 2rem;
+        }
+
+        .portfolio-eyebrow {
+            margin: 0 0 0.45rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .portfolio-balance-title,
+        .portfolio-section-title {
+            margin: 0;
+            font-size: clamp(1.35rem, 2vw, 1.9rem);
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .portfolio-muted {
+            margin: 0.35rem 0 0;
+            color: #475569;
+            line-height: 1.5;
+        }
+
+        .portfolio-balance-amount {
+            font-size: clamp(2rem, 3vw, 2.75rem);
+            font-weight: 800;
+            color: #0f766e;
+            line-height: 1;
+            text-align: right;
+        }
+
+        .portfolio-balance-side {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 1rem;
+        }
+
+        .portfolio-balance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 0.85rem;
+            width: 100%;
+            margin-top: 1.2rem;
+        }
+
+        .portfolio-balance-kpi {
+            border: 1px solid #dbe4f0;
+            border-radius: 18px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            padding: 0.95rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .portfolio-balance-kpi span {
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .portfolio-balance-kpi strong {
+            font-size: 1.15rem;
+            color: #0f172a;
+        }
+
+        .portfolio-balance-controls {
+            display: grid;
+            grid-template-columns: auto minmax(120px, 160px) auto;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .portfolio-balance-input {
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .portfolio-shell,
+        .portfolio-builder,
+        .portfolio-footer {
+            padding: 1.75rem;
+        }
+
+        .portfolio-shell-header,
+        .portfolio-builder-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .portfolio-carousel-controls,
+        .portfolio-action-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .portfolio-btn {
+            appearance: none;
+            border: 0;
+            border-radius: 999px;
+            padding: 0.85rem 1.25rem;
+            font: inherit;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+        }
+
+        .portfolio-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .portfolio-btn:focus-visible {
+            outline: 3px solid rgba(37, 99, 235, 0.2);
+            outline-offset: 2px;
+        }
+
+        .portfolio-btn-primary {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #fff;
+            box-shadow: 0 14px 28px rgba(37, 99, 235, 0.24);
+        }
+
+        .portfolio-btn-primary:hover {
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+        }
+
+        .portfolio-btn-secondary {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #fff;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.22);
+        }
+
+        .portfolio-btn-secondary:hover {
+            background: linear-gradient(135deg, #111827, #0f172a);
+        }
+
+        .portfolio-btn-accent {
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            color: #fff;
+            box-shadow: 0 14px 28px rgba(249, 115, 22, 0.22);
+        }
+
+        .portfolio-btn-accent:hover {
+            background: linear-gradient(135deg, #ea580c, #c2410c);
+        }
+
+        .portfolio-btn-ghost {
+            background: #eef2ff;
+            color: #312e81;
+            border: 1px solid #c7d2fe;
+        }
+
+        .portfolio-btn-ghost:hover {
+            background: #e0e7ff;
+        }
+
+        .portfolio-btn.is-disabled,
+        .portfolio-btn:disabled {
+            background: #e2e8f0;
+            color: #94a3b8;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .portfolio-btn-nav {
+            min-width: 110px;
+            background: #e2e8f0;
+            color: #0f172a;
+            box-shadow: none;
+        }
+
+        .portfolio-btn-nav:hover {
+            background: #cbd5e1;
+        }
+
+        .portfolio-carousel-viewport {
+            overflow: hidden;
+            border-radius: 22px;
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+        }
+
+        .portfolio-carousel-track {
+            display: flex;
+            transition: transform 320ms ease;
+        }
+
+        .portfolio-slide {
+            width: 100%;
+            min-width: 100%;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        .portfolio-dots {
+            display: flex;
+            justify-content: center;
+            gap: 0.65rem;
+            margin-top: 1rem;
+        }
+
+        .portfolio-dot {
+            width: 0.8rem;
+            height: 0.8rem;
+            border: 0;
+            border-radius: 999px;
+            background: #bfdbfe;
+            cursor: pointer;
+            transition: transform 160ms ease, background-color 160ms ease;
+        }
+
+        .portfolio-dot.is-active {
+            background: #2563eb;
+            transform: scale(1.15);
+        }
+
+        .portfolio-panel-card {
+            position: relative;
+            border-radius: 22px;
+            border: 1px solid #dbe4f0;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+            padding: 1.5rem;
+            min-height: 100%;
+        }
+
+        .portfolio-summary-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-bottom: 1rem;
+            padding: 0.35rem 0.8rem;
+            border-radius: 999px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .portfolio-summary-name {
+            margin: 0 0 1rem;
+            font-size: 1.55rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .portfolio-summary-grid {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .portfolio-allocation-shell {
+            margin-top: 1.2rem;
+        }
+
+        .portfolio-allocation-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .portfolio-allocation-row {
+            display: grid;
+            grid-template-columns: minmax(90px, 110px) minmax(0, 1fr) auto;
+            gap: 0.8rem;
+            align-items: center;
+        }
+
+        .portfolio-allocation-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.12rem;
+            color: #475569;
+        }
+
+        .portfolio-allocation-meta strong {
+            color: #0f172a;
+        }
+
+        .portfolio-allocation-bar {
+            height: 0.75rem;
+            border-radius: 999px;
+            background: #dbeafe;
+            overflow: hidden;
+        }
+
+        .portfolio-allocation-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+        }
+
+        .portfolio-summary-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            border: 1px solid #dbe4f0;
+            border-radius: 16px;
+            background: #f8fafc;
+            padding: 0.95rem 1rem;
+        }
+
+        .portfolio-summary-label {
+            font-weight: 700;
+            color: #475569;
+        }
+
+        .portfolio-summary-value {
+            text-align: right;
+            font-weight: 700;
+            color: #0f172a;
+            overflow-wrap: anywhere;
+        }
+
+        .portfolio-chart-card {
+            min-height: 360px;
+            background: radial-gradient(circle at top, #173766 0%, #0a192f 70%);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            color: #fff;
+        }
+
+        .portfolio-chart-card h3 {
+            margin: 0 0 0.25rem;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .portfolio-chart-card p {
+            margin: 0 0 1rem;
+            color: #cbd5e1;
+        }
+
+        #chart {
+            min-height: 280px;
+        }
+
+        .portfolio-menu {
+            position: relative;
+        }
+
+        .portfolio-menu-popover {
+            position: absolute;
+            top: calc(100% + 0.6rem);
+            left: 0;
+            min-width: 240px;
+            padding: 0.5rem;
+            border: 1px solid #dbe4f0;
+            border-radius: 18px;
+            background: #fff;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
+            z-index: 30;
+        }
+
+        .portfolio-menu-popover.hidden {
+            display: none;
+        }
+
+        .portfolio-menu-item {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            border-radius: 12px;
+            padding: 0.85rem 0.95rem;
+            text-align: left;
+            font: inherit;
+            color: #0f172a;
+            cursor: pointer;
+        }
+
+        .portfolio-menu-item:hover {
+            background: #eff6ff;
+        }
+
+        .portfolio-forms-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1.25rem;
+            align-items: start;
+        }
+
+        .portfolio-builder-limit-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.85rem 1rem;
+            border-radius: 18px;
+            border: 1px solid #bfdbfe;
+            background: #f8fbff;
+            color: #334155;
+            font-size: 1rem;
+            line-height: 1.4;
+            margin-bottom: 1.25rem;
+        }
+
+        .portfolio-builder-workspace-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.85rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .portfolio-builder-counter {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.8rem 1rem;
+            border-radius: 18px;
+            border: 1px solid #dbe4f0;
+            background: #f8fbff;
+            color: #334155;
+            font-weight: 700;
+        }
+
+        .portfolio-limit-helper {
+            margin: 0;
+            color: #475569;
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        .portfolio-empty-state {
+            margin: 0;
+            padding: 1.5rem;
+            border: 1px dashed #bfd1e7;
+            border-radius: 18px;
+            background: #f8fbff;
+            color: #475569;
+            text-align: center;
+        }
+
+        .portfolio-form-card {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            overflow: hidden;
+        }
+
+        .portfolio-card-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .portfolio-icon-btn {
+            border: 0;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #fff;
+            padding: 0.7rem 0.9rem;
+            font: inherit;
+            font-size: 0.88rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.18);
+        }
+
+        .portfolio-icon-btn-save {
+            background: linear-gradient(135deg, #9333ea, #7c3aed);
+            box-shadow: 0 12px 24px rgba(124, 58, 237, 0.18);
+        }
+
+        .portfolio-icon-btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 12px 24px rgba(220, 38, 38, 0.18);
+        }
+
+        .portfolio-card-tag {
+            display: inline-flex;
+            align-items: center;
+            min-height: 2.5rem;
+            padding: 0.4rem 0.9rem;
+            border-radius: 999px;
+            background: #e0f2fe;
+            color: #0369a1;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .portfolio-card-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .portfolio-card-btn {
+            border: 1px solid #cbd5e1;
+            border-radius: 999px;
+            background: #fff;
+            color: #0f172a;
+            padding: 0.55rem 0.95rem;
+            font: inherit;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .portfolio-card-btn:hover {
+            background: #eff6ff;
+            border-color: #93c5fd;
+        }
+
+        .portfolio-card-btn-danger {
+            color: #b91c1c;
+        }
+
+        .portfolio-form-body {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .portfolio-builder-meta-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(140px, 0.45fr);
+            gap: 0.9rem;
+        }
+
+        .portfolio-builder-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+        }
+
+        .portfolio-builder-field-name {
+            width: 100%;
+        }
+
+        .portfolio-builder-field label {
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #475569;
+        }
+
+        .portfolio-builder-toggle-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            border: 1px solid #dbe4f0;
+            border-radius: 18px;
+            background: #f8fbff;
+            padding: 0.95rem 1rem;
+        }
+
+        .portfolio-inline-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        .portfolio-inline-toggle-default {
+            margin-left: auto;
+        }
+
+        .portfolio-holdings-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+            border: 1px solid #dbe4f0;
+            border-radius: 20px;
+            background: #fbfdff;
+            padding: 1rem;
+        }
+
+        .portfolio-holdings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .portfolio-holdings-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        .portfolio-sleeve-counter {
+            color: #475569;
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+
+        .portfolio-builder-section-title {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .portfolio-holding-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .portfolio-holding-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 130px 52px;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .portfolio-holding-row input {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            background: #fff;
+            padding: 0.85rem 0.95rem;
+            color: #0f172a;
+            font: inherit;
+        }
+
+        .portfolio-holding-remove {
+            border: 0;
+            width: 2.85rem;
+            height: 2.85rem;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 12px 24px rgba(220, 38, 38, 0.16);
+        }
+
+        .portfolio-holdings-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px dashed #cdd8e5;
+        }
+
+        .portfolio-holdings-total-label {
+            font-size: 0.82rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .portfolio-holdings-total-value {
+            font-size: 1.3rem;
+            color: #0f172a;
+        }
+
+        .portfolio-holdings-total-value.is-valid {
+            color: #166534;
+        }
+
+        .portfolio-holdings-total-value.is-invalid {
+            color: #b91c1c;
+        }
+
+        .portfolio-form-submit-row {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .portfolio-glidepath-shell {
+            margin-top: 2.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .portfolio-glidepath-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .portfolio-glidepath-card {
+            border: 1px solid #dbe4f0;
+            border-radius: 22px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .portfolio-glidepath-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .portfolio-glidepath-name {
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            background: #fff;
+            padding: 0.85rem 0.95rem;
+            color: #0f172a;
+            font: inherit;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .portfolio-glidepath-table {
+            overflow: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            background: #fff;
+        }
+
+        .portfolio-glidepath-table table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .portfolio-glidepath-table th,
+        .portfolio-glidepath-table td {
+            padding: 0.85rem 0.9rem;
+            text-align: left;
+            border-bottom: 1px solid #edf3fb;
+        }
+
+        .portfolio-glidepath-table thead th {
+            background: #edf3fb;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #475569;
+        }
+
+        .portfolio-glidepath-table input {
+            width: 92px;
+            box-sizing: border-box;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            background: #fff;
+            padding: 0.65rem 0.75rem;
+            font: inherit;
+            color: #0f172a;
+        }
+
+        .portfolio-glidepath-total {
+            font-weight: 800;
+            color: #166534;
+        }
+
+        .portfolio-glidepath-total.is-invalid {
+            color: #b91c1c;
+        }
+
+        .portfolio-glidepath-total.is-neutral {
+            color: #475569;
+        }
+
+        .portfolio-glidepath-input-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .portfolio-glidepath-input-wrap span {
+            color: #64748b;
+            font-weight: 700;
+        }
+
+        .portfolio-default-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            border: 1px solid #dbe4f0;
+            border-radius: 16px;
+            background: #f8fafc;
+            padding: 0.85rem 1rem;
+        }
+
+        .portfolio-default-toggle label {
+            margin: 0;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        .portfolio-default-toggle input[type="checkbox"] {
+            width: 1.1rem;
+            height: 1.1rem;
+        }
+
+        .portfolio-form-body p {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            margin: 0;
+        }
+
+        .portfolio-form-body label {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        .portfolio-input,
+        .portfolio-select,
+        .portfolio-form-body input[type="text"],
+        .portfolio-form-body input[type="number"],
+        .portfolio-form-body select {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            background: #fff;
+            padding: 0.85rem 0.95rem;
+            color: #0f172a;
+            font: inherit;
+        }
+
+        .portfolio-form-body input[type="checkbox"] {
+            width: 1rem;
+            height: 1rem;
+            accent-color: #2563eb;
+        }
+
+        .portfolio-save-btn {
+            align-self: flex-end;
+        }
+
+        .portfolio-footer {
+            display: grid;
+            gap: 0.9rem;
+            color: #475569;
+        }
+
+        .portfolio-footer p {
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .portfolio-footer-strong {
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        @media (max-width: 1179px) {
+            .portfolio-forms-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .portfolio-balance-card,
+            .portfolio-shell-header,
+            .portfolio-builder-header,
+            .portfolio-card-toolbar,
+            .portfolio-default-toggle {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .portfolio-builder-workspace-bar,
+            .portfolio-holdings-header,
+            .portfolio-holdings-actions {
+                align-items: stretch;
+            }
+
+            .portfolio-balance-amount {
+                text-align: left;
+            }
+
+            .portfolio-balance-side {
+                width: 100%;
+                align-items: stretch;
+            }
+
+            .portfolio-allocation-row {
+                grid-template-columns: 1fr;
+            }
+
+            .portfolio-builder-meta-grid,
+            .portfolio-holding-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .portfolio-page {
+                padding-inline: 1rem;
+            }
+
+            .portfolio-shell,
+            .portfolio-builder,
+            .portfolio-footer,
+            .portfolio-balance-card {
+                padding: 1.25rem;
+                border-radius: 20px;
+            }
+
+            .portfolio-btn,
+            .portfolio-btn-nav,
+            .portfolio-card-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .portfolio-menu-popover {
+                width: 100%;
+                min-width: 0;
+            }
+        }
+    </style>
 {% endblock %}
 
 {% block title %}Trading Pro®{% endblock %}
 
 {% block content %}
-<div class="flex flex-col mt-[76px] space-y-12 pt-16 justify-center px-8">
-
-    <!-- 1) Portfolio Account -->
-    <div class="flex items-center justify-between">
-        <h3 class="text-lg font-medium text-gray-700">Available Balance</h3>
-        <div class="flex items-center gap-3">
-            <span class="text-2xl font-bold text-green-600">$20,000.00</span>
-            <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                + Add Funds
-            </button>
-        </div>
-    </div>
-        
-    <!-- Carousel Container -->
-    <div class="relative mx-auto max-w-3xl overflow-hidden">
-        <!-- Carousel slides container -->
-        <div id="carousel-wrapper" class="flex transition-transform duration-500 ease-out">
-            <!-- Slide 1: Default Portfolio Panel -->
-            <div id="default-panel-container" class="slide w-full flex-shrink-0">
-                {% include "partials/default_portfolio_panel.html" %}
-            </div>
-            <!-- Slide 2: Piechart Panel -->
-            <div class="slide w-full flex-shrink-0">
-                <div id="chart" class="w-full h-full p-4 bg-[#0a192f] rounded-lg shadow-xl flex items-center justify-center">
-                <!-- Insert your chart content here -->
+<div
+    class="portfolio-page"
+    data-portfolio-page
+    data-chart-data="{{ chart_data|escapejs }}"
+    data-portfolio-limit="{{ portfolio_builder_limit }}"
+    data-ticker-limit="{{ portfolio_ticker_limit }}"
+    data-initial-balance="{{ portfolio_balance_total }}"
+>
+    <div class="portfolio-stack">
+        <section class="portfolio-balance-card">
+            <div>
+                <p class="portfolio-eyebrow">Portfolio Balance</p>
+                <h1 class="portfolio-balance-title">Default mix, sleeve size, and notional exposure</h1>
+                <p class="portfolio-muted">This card now reflects the current default portfolio instead of only a static placeholder. Use the controls on the right to increase or reduce the notional base and the sleeve dollars will update in place.</p>
+                <div class="portfolio-balance-grid">
+                    <div class="portfolio-balance-kpi">
+                        <span>Largest Sleeve</span>
+                        <strong>{{ portfolio_top_sleeve.ticker|default:"Unavailable" }}</strong>
+                    </div>
+                    <div class="portfolio-balance-kpi">
+                        <span>Largest Weight</span>
+                        <strong>{{ portfolio_top_sleeve.weight_display|default:"Unavailable" }}</strong>
+                    </div>
+                    <div class="portfolio-balance-kpi">
+                        <span>Top Sleeve Dollars</span>
+                        <strong id="portfolio-top-sleeve-notional">{{ portfolio_top_sleeve.notional_display|default:"Unavailable" }}</strong>
+                    </div>
+                    <div class="portfolio-balance-kpi">
+                        <span>Rebalance</span>
+                        <strong>{{ default_portfolio.rebalance_frequency }}</strong>
+                    </div>
+                    <div class="portfolio-balance-kpi">
+                        <span>Drag</span>
+                        <strong>{{ default_portfolio.drag_percentage }}%</strong>
+                    </div>
                 </div>
             </div>
-        </div>
-        <!-- Navigation Buttons -->
-        <button id="prev" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-white bg-gray-700 p-2 rounded-full hover:bg-gray-600">
-            Prev
-        </button>
-
-        <button id="next" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-white bg-gray-700 p-2 rounded-full hover:bg-gray-600">
-            Next
-        </button>
-    </div>
-
-    <!-- Dot Navigation -->
-    <div class="flex justify-center mt-4 space-x-2">
-        <button data-index="0" class="dot w-3 h-3 rounded-full bg-blue-400"></button>
-        <button data-index="1" class="dot w-3 h-3 rounded-full bg-blue-200"></button>
-    </div> 
-    <!-- JavaScript for Carousel and Dot Navigation -->
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            // A) ApexChart
-            var chartData = JSON.parse('{{ chart_data|safe }}');
-            var chartOptions = {
-                chart: { type: 'pie', height: 350 },
-                series: chartData.series,
-                labels: chartData.labels,
-                tooltip: {
-                    y: {
-                        formatter: function (val) { return val + "%"; }
-                    }
-                }
-            };
-            var chart = new ApexCharts(document.querySelector("#chart"), chartOptions);
-            chart.render();
-        });
-
-        document.addEventListener("DOMContentLoaded", function() {
-            const carouselWrapper = document.getElementById('carousel-wrapper');
-            const slides = document.querySelectorAll('.slide');
-            const totalSlides = slides.length;
-            let currentSlide = 0;
-            
-            const prevBtn = document.getElementById('prev');
-            const nextBtn = document.getElementById('next');
-            const dots = document.querySelectorAll('.dot');
-            
-            function updateCarousel() {
-                // Update transform based on slide width
-                const slideWidth = slides[0].clientWidth;
-                carouselWrapper.style.transform = `translateX(-${currentSlide * slideWidth}px)`;
-                
-                // Update dot colors to reflect active slide
-                dots.forEach((dot, idx) => {
-                dot.classList.toggle('bg-blue-400', idx === currentSlide);
-                dot.classList.toggle('bg-blue-200', idx !== currentSlide);
-                });
-            }
-            
-            // Next/Previous button functionality
-            nextBtn.addEventListener('click', function() {
-                currentSlide = (currentSlide + 1) % totalSlides;
-                updateCarousel();
-            });
-            prevBtn.addEventListener('click', function() {
-                currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
-                updateCarousel();
-            });
-            
-            // Dot navigation: clicking a dot goes to that slide
-            dots.forEach((dot, idx) => {
-                dot.addEventListener('click', function() {
-                currentSlide = idx;
-                updateCarousel();
-                });
-            });
-            
-            // Initialize the carousel view
-            updateCarousel();
-        
-
-        });          
-    </script>
-    
-    <!-- 3) Custom Portfolio Section -->
-    <div id="custom-portfolio-container" class="grid grid-cols-1 mx-auto w-[85%] rounded-lg bg-white border border-gray-200 p-6 shadow-lg">
-
-        <!-- 3A) Section Header: ADD EMPTY, ADD PRESET, ADD SAVED -->
-        <div class="flex flex-row gap-4 p-4 md:items-center z-50">
-            <h2 class="text-2xl font-semibold text-gray-800">Portfolio</h2>
-            <div class="flex flex-wrap gap-4">
-                <!-- Add Empty -->
-                <button id="add-empty-btn" 
-                        class="flex-1 px-6 py-3 text-sm font-medium bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 transition-colors duration-200 min-w-[120px]">
-                    ADD EMPTY
+            <div class="portfolio-balance-side">
+                <div id="portfolio-balance-amount" class="portfolio-balance-amount">{{ portfolio_balance_display }}</div>
+                <div class="portfolio-balance-controls">
+                    <button id="portfolio-balance-decrease" type="button" class="portfolio-card-btn">- $1,000</button>
+                    <input id="portfolio-balance-input" type="number" class="portfolio-input portfolio-balance-input" min="0" step="100" value="{{ portfolio_balance_total|floatformat:0 }}">
+                    <button id="portfolio-balance-increase" type="button" class="portfolio-card-btn">+ $1,000</button>
+                </div>
+                <button id="scroll-to-builder" type="button" class="portfolio-btn portfolio-btn-primary">
+                    Manage Portfolios
                 </button>
+            </div>
+        </section>
 
-                <!-- Add Preset -->
-                <div class="relative group z-50">
-                    <button id="preset-toggle" 
-                            class="flex-1 w-48 px-6 py-3 text-sm font-medium bg-orange-500 text-white rounded-md shadow-md hover:bg-orange-600 transition-colors duration-200 min-w-[120px]">
-                        ADD PRESET
-                    </button>
-                    <div id="preset-menu" class="absolute hidden bg-white border rounded-md shadow-lg border-gray-200">
-                        <div class="p-2">
-                            <button type="button" class="preset-portfolio-btn w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
-                                    data-preset-name="permanent">
-                                Permanent Portfolio
-                            </button>
-                            <button type="button" class="preset-portfolio-btn w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
-                                    data-preset-name="snp500">
-                                S&amp;P 500
-                            </button>
-                            <button type="button" class="preset-portfolio-btn w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
-                                    data-preset-name="threefund">
-                                Three Fund Portfolio
-                            </button>
+        <section class="portfolio-shell">
+            <div class="portfolio-shell-header">
+                <div>
+                    <p class="portfolio-eyebrow">Portfolio Overview</p>
+                    <h2 class="portfolio-section-title">Default allocation and sleeve mix</h2>
+                    <p class="portfolio-muted">Use the arrows or dots to switch between your default portfolio snapshot and the live allocation chart derived from that mix.</p>
+                </div>
+                <div class="portfolio-carousel-controls">
+                    <button id="prev" type="button" class="portfolio-btn portfolio-btn-nav">Previous</button>
+                    <button id="next" type="button" class="portfolio-btn portfolio-btn-nav">Next</button>
+                </div>
+            </div>
+
+            <div class="portfolio-carousel-viewport">
+                <div id="carousel-wrapper" class="portfolio-carousel-track">
+                    <div id="default-panel-container" class="portfolio-slide">
+                        {% include "partials/default_portfolio_panel.html" %}
+                    </div>
+                    <div class="portfolio-slide">
+                        <div class="portfolio-panel-card portfolio-chart-card">
+                            <p class="portfolio-eyebrow" style="color: #93c5fd;">Allocation Chart</p>
+                            <h3>Current default allocation</h3>
+                            <p>The pie now reflects the active default portfolio tickers and weights instead of generic sector placeholders.</p>
+                            <div id="chart"></div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Add Saved -->
-                <div class="relative z-50">
-                    <button id="saved-toggle" 
-                            class="flex-1 w-48 px-6 py-3 text-sm font-medium bg-purple-500 text-white rounded-md shadow-md hover:bg-purple-600 transition-colors duration-200 min-w-[120px]">
-                        ADD SAVED
-                    </button>
-                    <div id="saved-menu" class="absolute hidden bg-white border rounded-md shadow-lg border-gray-200">
-                        <div class="p-2">
+            <div class="portfolio-dots" aria-label="Portfolio carousel navigation">
+                <button type="button" data-index="0" class="portfolio-dot dot is-active" aria-label="Show default portfolio panel"></button>
+                <button type="button" data-index="1" class="portfolio-dot dot" aria-label="Show allocation chart"></button>
+            </div>
+        </section>
+
+        <section id="custom-portfolio-container" class="portfolio-builder">
+            <div class="portfolio-builder-header">
+                <div>
+                    <p class="portfolio-eyebrow">Portfolio Builder</p>
+                    <h2 class="portfolio-section-title">Builder workspace and glide path</h2>
+                    <p class="portfolio-muted">Add empty, preset, or saved portfolio cards into the workspace. Glide paths automatically combine the cards currently open in this builder.</p>
+                </div>
+                <div class="portfolio-action-row">
+                    <button id="add-empty-btn" type="button" class="portfolio-btn portfolio-btn-primary">Add Empty</button>
+
+                    <div class="portfolio-menu">
+                        <button id="preset-toggle" type="button" class="portfolio-btn portfolio-btn-accent">Add Preset</button>
+                        <div id="preset-menu" class="portfolio-menu-popover hidden">
+                            <button type="button" class="portfolio-menu-item preset-portfolio-btn" data-preset-name="permanent">Permanent Portfolio</button>
+                            <button type="button" class="portfolio-menu-item preset-portfolio-btn" data-preset-name="snp500">S&amp;P 500</button>
+                            <button type="button" class="portfolio-menu-item preset-portfolio-btn" data-preset-name="threefund">Three Fund Portfolio</button>
+                        </div>
+                    </div>
+
+                    <div class="portfolio-menu">
+                        <button id="saved-toggle" type="button" class="portfolio-btn portfolio-btn-ghost">Add Saved</button>
+                        <div id="saved-menu" class="portfolio-menu-popover hidden">
                             {% for portfolio, form in saved_forms %}
-                                <button class="saved-portfolio-btn w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
-                                        data-portfolio-id="{{ portfolio.id }}">
+                                <button type="button" class="portfolio-menu-item saved-portfolio-btn" data-portfolio-id="{{ portfolio.id }}">
                                     {{ portfolio.name|safe }}
                                 </button>
                             {% empty %}
-                                <div class="px-3 py-2 text-sm text-gray-500">No saved portfolios</div>
+                                <div class="portfolio-menu-item" style="cursor: default; color: #64748b;">No saved portfolios</div>
                             {% endfor %}
                         </div>
                     </div>
+
+                    <button id="add-glidepath-btn" type="button" class="portfolio-btn portfolio-btn-secondary">Add Glidepath</button>
                 </div>
             </div>
-        </div>
 
-        <!-- 3B) Containers for forms -->
-        <div id="portfolio-form-containers" class="flex flex-wrap gap-6 p-4">
-            <!-- Where "ADD SAVED" forms are appended -->
-            <div id="saved-portfolio-container" class="flex flex-wrap gap-6 p-4"></div>
+            <div class="portfolio-builder-limit-pill">
+                <strong>Limits:</strong> {{ portfolio_builder_limit }} portfolios · {{ portfolio_ticker_limit }} tickers/portfolio · {{ portfolio_glidepath_leg_limit }} cashflow legs
+            </div>
+            <div class="portfolio-builder-workspace-bar">
+                <div id="portfolio-builder-counter" class="portfolio-builder-counter">0 / {{ portfolio_builder_limit }} cards open</div>
+                <p id="portfolio-limit-helper" class="portfolio-limit-helper">Open up to {{ portfolio_builder_limit }} portfolio cards in this workspace. The desktop layout stays fixed at two cards per row.</p>
+            </div>
 
-            <!-- Template hidden by default; cloned on 'ADD EMPTY' -->
-            <div id="portfolio-form-template" class="portfolio-form grid grid-cols-1 p-6 hidden border shadow-lg w-[450px] flex-shrink-0 relative">
-                <!-- Action buttons -->
-                <div class="absolute top-0 left-0 z-20">
-                    <button class="clone-btn bg-[#0a192f] text-white shadow-md p-1">clone</button>
-                    <button id="remove-btn" class="remove-btn bg-[#0a192f] text-white shadow-md p-1">remove</button>
-                </div>
-               
-                <!-- Actual form -->
-                <form method="POST" class="space-y-4 border relative z-10">
-                    <input type="hidden" name="portfolio_id" value="">
-                    {% csrf_token %}
-                    {{ form.as_p }}
-                    
-                    <!-- "Set as Default" checkbox -->
-                    <div class="flex absolute top-0 right-0 items-center space-x-3 p-1 bg-[#0a192f] border z-20">
-                        <label class="text-white">Set as Default:</label>
-                        <input type="checkbox" name="is_default" class="border p-1">
+            <div id="portfolio-form-containers" class="portfolio-forms-grid" aria-live="polite"></div>
+            <p id="portfolio-empty-state" class="portfolio-empty-state">No portfolio cards are open yet. Use one of the buttons above to start building.</p>
+
+            <div id="glidepath-shell" class="portfolio-glidepath-shell">
+                <div class="portfolio-builder-header" style="margin-bottom: 1rem;">
+                    <div>
+                        <p class="portfolio-eyebrow">Glide Path</p>
+                        <h3 class="portfolio-section-title">Blend the current workspace portfolios</h3>
+                        <p class="portfolio-muted">Each glide path reads the portfolio cards currently open in the builder. Start and end rows let you rotate exposure from one saved mix to another.</p>
                     </div>
-
-                    <button type="submit" class="absolute bottom-0 right-0 bg-[#0a192f] text-white shadow-md p-1">save</button>
-                </form>
+                </div>
+                <div id="glidepath-container" class="portfolio-glidepath-grid"></div>
+                <p id="glidepath-empty-state" class="portfolio-empty-state">Add at least one portfolio card, then click “Add Glidepath” to combine the currently open workspace portfolios.</p>
             </div>
-        </div>
+        </section>
 
-        <!-- 3C) JavaScript for handling forms -->
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                // =====================================================
-                // 1) CONSTANTS & HELPER FUNCTIONS
-                // =====================================================
-                const maxPortfolio = 5;
-                const container = document.getElementById('portfolio-form-containers');
-                const savedPortfolioArea = document.getElementById('saved-portfolio-container');
-                
-                // Elements for toggling the preset and saved menus:
-                const presetToggleBtn = document.getElementById('preset-toggle');
-                const presetMenu = document.getElementById('preset-menu');
-                const savedToggleBtn = document.getElementById('saved-toggle');
-                const savedMenu = document.getElementById('saved-menu');
-                
-                // Helper function: Returns count of visible portfolio forms
-                function getCurrentPortfolioCount() {
-                    return container.querySelectorAll('.portfolio-form:not(.hidden)').length;
+        <section class="portfolio-footer">
+            <p class="portfolio-footer-strong">Report a Bug • Contact Us • Terms of Service • Privacy Policy</p>
+            <p>Market data updates at 9PM Eastern on weekdays.</p>
+            <p>Disclaimer: Past performance does not indicate future results. The information provided on this website is for educational purposes only and is not intended as financial advice. No guarantees are made regarding the accuracy or completeness of the data and computations provided. Always seek the advice of your financial advisor or other qualified financial services provider regarding any investment. © 2025</p>
+        </section>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const page = document.querySelector('[data-portfolio-page]');
+        if (!page) {
+            return;
+        }
+
+        const portfolioLimit = Number(page.dataset.portfolioLimit || 5);
+        const tickerLimit = Number(page.dataset.tickerLimit || 10);
+        const balanceStep = 1000;
+        let currentBalance = Number(page.dataset.initialBalance || 20000);
+        let portfolioSequence = 0;
+        let glidepathSequence = 0;
+        const glidepaths = [];
+        const chartTarget = document.querySelector('#chart');
+        const chartPayload = page.dataset.chartData;
+        const carouselWrapper = document.getElementById('carousel-wrapper');
+        const slides = Array.from(document.querySelectorAll('.portfolio-slide'));
+        const dots = Array.from(document.querySelectorAll('.dot'));
+        const prevBtn = document.getElementById('prev');
+        const nextBtn = document.getElementById('next');
+        const addEmptyBtn = document.getElementById('add-empty-btn');
+        const presetToggleBtn = document.getElementById('preset-toggle');
+        const savedToggleBtn = document.getElementById('saved-toggle');
+        const presetMenu = document.getElementById('preset-menu');
+        const savedMenu = document.getElementById('saved-menu');
+        const scrollToBuilderBtn = document.getElementById('scroll-to-builder');
+        const emptyState = document.getElementById('portfolio-empty-state');
+        const glidepathShell = document.getElementById('glidepath-shell');
+        const glidepathContainer = document.getElementById('glidepath-container');
+        const glidepathEmptyState = document.getElementById('glidepath-empty-state');
+        const addGlidepathBtn = document.getElementById('add-glidepath-btn');
+        const builderCounter = document.getElementById('portfolio-builder-counter');
+        const limitHelper = document.getElementById('portfolio-limit-helper');
+        const balanceAmount = document.getElementById('portfolio-balance-amount');
+        const balanceInput = document.getElementById('portfolio-balance-input');
+        const balanceIncreaseBtn = document.getElementById('portfolio-balance-increase');
+        const balanceDecreaseBtn = document.getElementById('portfolio-balance-decrease');
+        const topSleeveNotional = document.getElementById('portfolio-top-sleeve-notional');
+        let currentSlide = 0;
+
+        const getFormContainer = () => document.getElementById('portfolio-form-containers');
+        const getCards = () => Array.from(getFormContainer().querySelectorAll('.portfolio-form'));
+
+        function getCsrfToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        }
+
+        function formatCurrency(value) {
+            return Number(value || 0).toLocaleString(undefined, {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatWeightValue(value) {
+            const numeric = Number(value || 0);
+            if (!Number.isFinite(numeric)) {
+                return '';
+            }
+            return numeric.toFixed(2).replace(/\.00$/, '').replace(/(\.\d*[1-9])0+$/, '$1');
+        }
+
+        function parseCsv(value) {
+            return String(value || '')
+                .split(',')
+                .map((item) => item.trim())
+                .filter(Boolean);
+        }
+
+        function parseNumericCsv(value) {
+            return parseCsv(value).map((item) => {
+                const parsed = Number(item);
+                return Number.isFinite(parsed) ? parsed : 0;
+            });
+        }
+
+        function getCurrentPortfolioCount() {
+            return getCards().length;
+        }
+
+        function updateEmptyState() {
+            const hasForms = getCurrentPortfolioCount() > 0;
+            emptyState.hidden = hasForms;
+        }
+
+        function closeMenus() {
+            presetMenu.classList.add('hidden');
+            savedMenu.classList.add('hidden');
+        }
+
+        function parsePortfolioForm(html) {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = html.trim();
+            return wrapper.querySelector('.portfolio-form');
+        }
+
+        function createHoldingRow(symbol = '', weight = '') {
+            const row = document.createElement('div');
+            row.className = 'portfolio-holding-row';
+            row.innerHTML = `
+                <input type="text" class="portfolio-holding-symbol" placeholder="Ticker" maxlength="12">
+                <input type="number" class="portfolio-holding-weight" min="0" step="0.01" placeholder="0">
+                <button type="button" class="portfolio-holding-remove" title="Remove ticker">−</button>
+            `;
+            const symbolInput = row.querySelector('.portfolio-holding-symbol');
+            const weightInput = row.querySelector('.portfolio-holding-weight');
+            if (symbolInput) {
+                symbolInput.value = symbol;
+            }
+            if (weightInput) {
+                weightInput.value = weight;
+            }
+            return row;
+        }
+
+        function getHoldingRows(card) {
+            return Array.from(card.querySelectorAll('.portfolio-holding-row'));
+        }
+
+        function getCardName(card, index = 0) {
+            const nameInput = card.querySelector('input[name="name"]');
+            return nameInput?.value?.trim() || `Portfolio ${index + 1}`;
+        }
+
+        function getPortfolioSnapshot(card, index = 0) {
+            return {
+                key: card.dataset.portfolioCardKey,
+                name: getCardName(card, index),
+            };
+        }
+
+        function getWorkspacePortfolios() {
+            return getCards().map((card, index) => getPortfolioSnapshot(card, index));
+        }
+
+        function normalizeCardMetadata(card) {
+            portfolioSequence += 1;
+            const key = `workspace-${portfolioSequence}`;
+            card.dataset.portfolioCardKey = key;
+            const form = card.querySelector('form');
+            const formId = `portfolio-form-${key}`;
+            if (form) {
+                form.id = formId;
+            }
+            const topSaveBtn = card.querySelector('.portfolio-icon-btn-save');
+            if (topSaveBtn) {
+                topSaveBtn.setAttribute('form', formId);
+            }
+            const checkbox = card.querySelector('input[name="is_default"]');
+            if (checkbox) {
+                checkbox.id = `is-default-${key}`;
+            }
+        }
+
+        function syncCardHoldings(card) {
+            const hiddenTickers = card.querySelector('.portfolio-hidden-tickers');
+            const hiddenAllocations = card.querySelector('.portfolio-hidden-allocations');
+            const totalTarget = card.querySelector('.portfolio-holdings-total-value');
+            const holdings = getHoldingRows(card).map((row) => {
+                const symbolInput = row.querySelector('.portfolio-holding-symbol');
+                const weightInput = row.querySelector('.portfolio-holding-weight');
+                const symbol = String(symbolInput?.value || '').trim().toUpperCase();
+                const weight = Number(weightInput?.value || 0);
+                if (symbolInput) {
+                    symbolInput.value = symbol;
                 }
-                
-                // =====================================================
-                // 2) HANDLERS FOR ADDING NEW FORMS
-                // =====================================================
-                
-                // 2A) Handler for "ADD EMPTY"
-                const addEmptyBtn = document.getElementById('add-empty-btn');
-                addEmptyBtn.addEventListener('click', function () {
-                    let portfolioCount = getCurrentPortfolioCount();
-                    if (portfolioCount >= maxPortfolio) {
-                        alert(`Maximum ${maxPortfolio} portfolios allowed`);
+                return {
+                    symbol,
+                    weight: Number.isFinite(weight) ? weight : 0,
+                };
+            }).filter((holding) => holding.symbol || holding.weight);
+
+            if (hiddenTickers) {
+                hiddenTickers.value = holdings.filter((holding) => holding.symbol).map((holding) => holding.symbol).join(', ');
+            }
+
+            if (hiddenAllocations) {
+                hiddenAllocations.value = holdings
+                    .filter((holding) => holding.symbol)
+                    .map((holding) => formatWeightValue(holding.weight))
+                    .join(',');
+            }
+
+            const total = holdings.reduce((sum, holding) => sum + Number(holding.weight || 0), 0);
+            if (totalTarget) {
+                totalTarget.textContent = `${total.toFixed(2)}%`;
+                totalTarget.classList.toggle('is-valid', Math.abs(total - 100) < 0.01);
+                totalTarget.classList.toggle('is-invalid', total > 100.01 || (holdings.length > 0 && total < 99.99));
+            }
+        }
+
+        function hydrateCardHoldings(card) {
+            const list = card.querySelector('.portfolio-holding-list');
+            if (!list) {
+                return;
+            }
+
+            list.innerHTML = '';
+            const symbols = parseCsv(card.querySelector('.portfolio-hidden-tickers')?.value);
+            const weights = parseNumericCsv(card.querySelector('.portfolio-hidden-allocations')?.value);
+            const count = Math.max(symbols.length, weights.length);
+
+            if (!count) {
+                list.appendChild(createHoldingRow('', ''));
+            } else {
+                for (let index = 0; index < Math.min(count, tickerLimit); index += 1) {
+                    list.appendChild(createHoldingRow(symbols[index] || '', formatWeightValue(weights[index] || 0)));
+                }
+            }
+
+            syncCardHoldings(card);
+        }
+
+        function registerPortfolioCard(card) {
+            if (!card) {
+                return;
+            }
+            normalizeCardMetadata(card);
+            hydrateCardHoldings(card);
+        }
+
+        function appendPortfolioForm(formElement) {
+            if (!formElement) {
+                return;
+            }
+            registerPortfolioCard(formElement);
+            getFormContainer().appendChild(formElement);
+            updateEmptyState();
+            syncGlidepathsWithWorkspace();
+            renderGlidepaths();
+        }
+
+        function updateCarousel() {
+            carouselWrapper.style.transform = `translateX(-${currentSlide * 100}%)`;
+            dots.forEach(function (dot, index) {
+                dot.classList.toggle('is-active', index === currentSlide);
+            });
+        }
+
+        function goToSlide(index) {
+            currentSlide = (index + slides.length) % slides.length;
+            updateCarousel();
+        }
+
+        function renderChart() {
+            if (!chartTarget || !window.ApexCharts) {
+                return;
+            }
+
+            let chartData = { labels: [], series: [] };
+            if (chartPayload) {
+                chartData = JSON.parse(chartPayload);
+            }
+
+            const chartOptions = {
+                chart: {
+                    type: 'pie',
+                    height: 300,
+                    toolbar: { show: false }
+                },
+                stroke: {
+                    colors: ['#0a192f']
+                },
+                dataLabels: {
+                    style: {
+                        fontSize: '13px',
+                        fontWeight: 700
+                    }
+                },
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        colors: '#e2e8f0'
+                    }
+                },
+                tooltip: {
+                    y: {
+                        formatter: function (val) {
+                            return val + '%';
+                        }
+                    }
+                },
+                labels: chartData.labels,
+                series: chartData.series,
+                colors: ['#60a5fa', '#34d399', '#f59e0b', '#f472b6', '#a78bfa']
+            };
+
+            const chart = new ApexCharts(chartTarget, chartOptions);
+            chart.render();
+        }
+
+        function refreshDefaultPanel() {
+            fetch('/get-default-panel/')
+                .then(function (response) {
+                    return response.text();
+                })
+                .then(function (html) {
+                    const defaultPanel = document.getElementById('default-panel-container');
+                    if (defaultPanel) {
+                        defaultPanel.innerHTML = html;
+                        syncBalanceDisplay();
+                    }
+                })
+                .catch(function (error) {
+                    console.error('Failed to refresh default panel', error);
+                });
+        }
+
+        function getAllocationRows() {
+            return Array.from(document.querySelectorAll('#default-panel-container [data-weight-pct]'));
+        }
+
+        function syncBalanceDisplay() {
+            if (balanceAmount) {
+                balanceAmount.textContent = formatCurrency(currentBalance);
+            }
+            if (balanceInput) {
+                balanceInput.value = Math.round(currentBalance);
+            }
+
+            let largestWeight = 0;
+            getAllocationRows().forEach((row) => {
+                const weight = Number(row.dataset.weightPct || 0);
+                const notional = currentBalance * (weight / 100);
+                const target = row.querySelector('.js-allocation-notional');
+                if (target) {
+                    target.textContent = formatCurrency(notional);
+                }
+                if (weight > largestWeight) {
+                    largestWeight = weight;
+                }
+            });
+
+            if (topSleeveNotional) {
+                topSleeveNotional.textContent = formatCurrency(currentBalance * (largestWeight / 100));
+            }
+        }
+
+        function setBalanceValue(nextValue) {
+            const numeric = Math.max(0, Number(nextValue || 0));
+            currentBalance = Number.isFinite(numeric) ? numeric : 0;
+            syncBalanceDisplay();
+        }
+
+        function loadPortfolioForm(url, duplicateSelector, duplicateMessage, dataAttributeName, dataAttributeValue) {
+            if (getCurrentPortfolioCount() >= portfolioLimit) {
+                alert(`Maximum ${portfolioLimit} portfolios allowed`);
+                return;
+            }
+
+            if (duplicateSelector && getFormContainer().querySelector(duplicateSelector)) {
+                alert(duplicateMessage);
+                return;
+            }
+
+            fetch(url)
+                .then(function (response) {
+                    return response.text();
+                })
+                .then(function (html) {
+                    const formElement = parsePortfolioForm(html);
+                    if (!formElement) {
                         return;
                     }
-                    
-                    fetch('/get-empty-form/')
-                        .then(res => res.text())
-                        .then(html => {
-                            const wrapper = document.createElement('div');
-                            wrapper.innerHTML = html.trim();
-                            const newForm = wrapper.querySelector('.portfolio-form');
-                            // Append the new form to the container
-                            container.appendChild(newForm);
-                        })
-                        .catch(err => console.error("Failed to load empty form", err));
-                });
-                
-                // 2B) Handler for "ADD SAVED"
-                document.addEventListener('click', function (e) {
-                    if (e.target.classList.contains('saved-portfolio-btn')) {
-                        const portfolioId = e.target.dataset.portfolioId;
-                        
-                        // Prevent duplicate addition of the same saved portfolio
-                        if (savedPortfolioArea.querySelector(`[data-loaded-id="${portfolioId}"]`)) {
-                            alert("This portfolio is already added.");
-                            return;
-                        }
-                        
-                        let portfolioCount = getCurrentPortfolioCount();
-                        if (portfolioCount >= maxPortfolio) {
-                            alert(`Maximum ${maxPortfolio} portfolios allowed`);
-                            return;
-                        }
-                        
-                        // Load the saved portfolio form HTML via AJAX
-                        fetch(`/get-portfolio-form/${portfolioId}/`)
-                            .then(res => res.text())
-                            .then(html => {
-                                const wrapper = document.createElement('div');
-                                wrapper.innerHTML = html.trim();
-                                const formElement = wrapper.querySelector('.portfolio-form');
-                                if (!formElement) {
-                                    console.error("No portfolio form found in the response");
-                                    return;
-                                }
-                                // Mark this element to track duplicates
-                                formElement.setAttribute('data-loaded-id', portfolioId);
-                                savedPortfolioArea.appendChild(formElement);
-                            })
-                            .catch(err => console.error("Failed to load portfolio", err));
+                    if (dataAttributeName) {
+                        formElement.setAttribute(dataAttributeName, dataAttributeValue);
                     }
+                    appendPortfolioForm(formElement);
+                })
+                .catch(function (error) {
+                    console.error('Failed to load portfolio form', error);
                 });
-                
-                // 2C) Handler for "ADD PRESET"
-                document.addEventListener('click', function (e) {
-                    const presetBtn = e.target.closest('.preset-portfolio-btn');
-                    if (presetBtn) {
-                        e.preventDefault();
-                        const presetName = presetBtn.dataset.presetName;
-                        
-                        let portfolioCount = getCurrentPortfolioCount();
-                        if (portfolioCount >= maxPortfolio) {
-                            alert(`Maximum ${maxPortfolio} portfolios allowed`);
-                            return;
-                        }
-                        
-                        // Prevent duplicate addition of the same preset if it is already visible
-                        if (container.querySelector(`[data-loaded-preset="${presetName}"]`)) {
-                            alert("This preset is already displayed.");
-                            return;
-                        }
-                        
-                        // Fetch the preset portfolio form via AJAX
-                        fetch(`/get-preset-form/${presetName}/`)
-                            .then(res => res.text())
-                            .then(html => {
-                                const wrapper = document.createElement('div');
-                                wrapper.innerHTML = html.trim();
-                                const formElement = wrapper.querySelector('.portfolio-form');
-                                if (!formElement) return;
-                                // Tag the form to identify its preset origin
-                                formElement.setAttribute('data-loaded-preset', presetName);
-                                container.appendChild(formElement);
-                            })
-                            .catch(err => console.error("Failed to load preset", err));
-                    }
-                });
-                
-                // =====================================================
-                // 3) MENU TOGGLING & HIDING (Previously missing in new code)
-                // =====================================================
-                
-                // Toggle the "Add Preset" menu when presetToggleBtn is clicked
-                if (presetToggleBtn && presetMenu) {
-                    presetToggleBtn.addEventListener('click', function (e) {
-                        e.stopPropagation();
-                        presetMenu.classList.toggle('hidden');
+        }
+
+        function buildDefaultWeights(portfolios, emphasis) {
+            const weights = {};
+            portfolios.forEach((portfolio) => {
+                weights[portfolio.key] = 0;
+            });
+
+            if (!portfolios.length) {
+                return weights;
+            }
+
+            if (emphasis === 'start') {
+                weights[portfolios[0].key] = 100;
+            } else {
+                weights[portfolios[portfolios.length - 1].key] = 100;
+            }
+
+            return weights;
+        }
+
+        function syncGlidepathsWithWorkspace() {
+            const portfolios = getWorkspacePortfolios();
+            glidepaths.forEach((glidepath) => {
+                glidepath.portfolios = portfolios;
+                glidepath.legs.forEach((leg) => {
+                    const nextWeights = {};
+                    portfolios.forEach((portfolio) => {
+                        nextWeights[portfolio.key] = Number(leg.weights?.[portfolio.key] || 0);
                     });
-                }
-                
-                // Toggle the "Add Saved" menu when savedToggleBtn is clicked
-                if (savedToggleBtn && savedMenu) {
-                    savedToggleBtn.addEventListener('click', function (e) {
-                        e.stopPropagation();
-                        savedMenu.classList.toggle('hidden');
-                    });
-                }
-                
-                // Hide menus when clicking outside of them
-                document.addEventListener('click', function (e) {
-                    if (presetMenu && !presetMenu.contains(e.target) && !presetToggleBtn.contains(e.target)) {
-                        presetMenu.classList.add('hidden');
-                    }
-                    if (savedMenu && !savedMenu.contains(e.target) && !savedToggleBtn.contains(e.target)) {
-                        savedMenu.classList.add('hidden');
-                    }
-                });
-                
-                // =====================================================
-                // 4) HANDLING FORM SUBMISSIONS VIA AJAX
-                // =====================================================
-                
-                container.addEventListener('submit', function (e) {
-                    // Ensure we intercept only actual form submissions
-                    if (e.target.tagName === 'FORM') {
-                        e.preventDefault();
-                        const formData = new FormData(e.target);
-                        
-                        fetch(window.location.href, {
-                            method: 'POST',
-                            body: formData,
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        })
-                        .then(response => response.text())
-                        .then(html => {
-                            // Parse the new HTML response returned from the server
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(html, 'text/html');
-                            // Refresh the custom portfolio forms container
-                            const newFormsHtml = doc.getElementById('portfolio-form-containers');
-                            if (newFormsHtml) {
-                                container.innerHTML = newFormsHtml.innerHTML;
-                            }
-                            // Refresh the default portfolio panel
-                            fetch('/get-default-panel/')
-                                .then(res => res.text())
-                                .then(panelHtml => {
-                                    const defaultPanel = document.getElementById('default-panel-container');
-                                    if (defaultPanel) {
-                                        defaultPanel.innerHTML = panelHtml;
-                                    }
-                                });
-                        })
-                        .catch(err => console.error("Failed to submit form", err));
-                    }
-                });
-                
-                // =====================================================
-                // 5) HANDLING REMOVAL AND CLONING OF FORMS
-                // =====================================================
-                container.addEventListener('click', function (e) {
-                    // A) Remove a form when "remove-btn" is clicked
-                    if (e.target.classList.contains('remove-btn')) {
-                        const form = e.target.closest('.portfolio-form');
-                        if (!form) return;
-                        
-                        // Optionally, if the portfolio exists in the database, notify the backend of deletion
-                        const portfolioIdInput = form.querySelector('input[name="portfolio_id"]');
-                        if (portfolioIdInput && portfolioIdInput.value) {
-                            fetch(`/portfolio/delete/${portfolioIdInput.value}/`, {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                                    'X-Requested-With': 'XMLHttpRequest'
-                                }
-                            });
-                        }
-                        form.remove();
-                    }
-                    
-                    // B) Clone a form when "clone-btn" is clicked
-                    if (e.target.classList.contains('clone-btn')) {
-                        let portfolioCount = getCurrentPortfolioCount();
-                        if (portfolioCount >= maxPortfolio) {
-                            alert(`Maximum ${maxPortfolio} portfolios allowed`);
-                            return;
-                        }
-                        const formToClone = e.target.closest('.portfolio-form');
-                        if (!formToClone) return;
-                        
-                        const clone = formToClone.cloneNode(true);
-                        // Reset the portfolio_id so the clone creates a new portfolio rather than updating an existing one
-                        const pId = clone.querySelector('input[name="portfolio_id"]');
-                        if (pId) pId.value = '';
-                        // Ensure the cloned form does not inherit the "default" state
-                        const defChk = clone.querySelector('input[name="is_default"]');
-                        if (defChk) defChk.checked = false;
-                        // Append " (Copy)" to the name field to differentiate
-                        const nameInput = clone.querySelector('input[name="name"]');
-                        if (nameInput) {
-                            nameInput.value = nameInput.value + " (Copy)";
-                        }
-                        
-                        container.appendChild(clone);
-                    }
+                    leg.weights = nextWeights;
                 });
             });
-        </script>            
-    </div>
+        }
 
-    <!-- 4) Footer disclaimers -->
-    <h3 class="mx-auto">Report a Bug • Contact Us • Terms of Service • Privacy Policy</h3>
-    <h3 class="mx-auto">Market data updates at 9PM Eastern on weekdays.</h3>
-    <h3 class="mx-auto">
-        Disclaimer: Past performance does not indicate future results. The information provided on this website is for educational purposes only and is not intended as financial advice. No guarantees are made regarding the accuracy or completeness of the data and computations provided. Always seek the advice of your financial advisor or other qualified financial services provider regarding any investment. (etc.) © 2025
-    </h3>
+        function createGlidepath() {
+            const portfolios = getWorkspacePortfolios();
+            if (!portfolios.length) {
+                alert('Add at least one portfolio card before creating a glide path.');
+                return;
+            }
 
-</div>
+            glidepathSequence += 1;
+            glidepaths.push({
+                id: `glidepath-${glidepathSequence}`,
+                name: `Glidepath ${glidepathSequence}`,
+                portfolios,
+                legs: [
+                    { key: 'start', label: 'Starting Date', weights: buildDefaultWeights(portfolios, 'start') },
+                    { key: 'end', label: 'Ending Date', weights: buildDefaultWeights(portfolios, 'end') },
+                ],
+            });
+            renderGlidepaths();
+        }
+
+        function getGlidepathById(glidepathId) {
+            return glidepaths.find((glidepath) => glidepath.id === glidepathId);
+        }
+
+        function renderGlidepaths() {
+            syncGlidepathsWithWorkspace();
+            if (!glidepathContainer || !glidepathEmptyState || !glidepathShell) {
+                return;
+            }
+
+            glidepathShell.hidden = false;
+            glidepathEmptyState.hidden = glidepaths.length > 0;
+
+            if (!glidepaths.length) {
+                glidepathContainer.innerHTML = '';
+                return;
+            }
+
+            glidepathContainer.innerHTML = glidepaths.map((glidepath) => {
+                const portfolios = glidepath.portfolios || [];
+                if (!portfolios.length) {
+                    return `
+                        <div class="portfolio-glidepath-card" data-glidepath-id="${glidepath.id}">
+                            <div class="portfolio-glidepath-header">
+                                <input type="text" class="portfolio-glidepath-name" value="${escapeHtml(glidepath.name)}">
+                                <button type="button" class="portfolio-icon-btn portfolio-icon-btn-danger glidepath-remove-btn">Delete</button>
+                            </div>
+                            <p class="portfolio-empty-state">No workspace portfolios are open right now. Reopen portfolio cards to populate this glide path.</p>
+                        </div>
+                    `;
+                }
+
+                const headerCells = portfolios.map((portfolio) => `<th>${escapeHtml(portfolio.name)}</th>`).join('');
+                const rows = glidepath.legs.map((leg) => {
+                    const total = portfolios.reduce((sum, portfolio) => sum + Number(leg.weights?.[portfolio.key] || 0), 0);
+                    const totalClass = Math.abs(total - 100) < 0.01 ? '' : ' is-invalid';
+                    const cells = portfolios.map((portfolio) => `
+                        <td>
+                            <label class="portfolio-glidepath-input-wrap">
+                                <input
+                                    type="number"
+                                    class="portfolio-glidepath-weight"
+                                    data-glidepath-id="${glidepath.id}"
+                                    data-leg-key="${leg.key}"
+                                    data-portfolio-key="${portfolio.key}"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    value="${formatWeightValue(leg.weights?.[portfolio.key] || 0)}"
+                                >
+                                <span>%</span>
+                            </label>
+                        </td>
+                    `).join('');
+
+                    return `
+                        <tr>
+                            <th scope="row">${leg.label}</th>
+                            ${cells}
+                            <td><span class="portfolio-glidepath-total${totalClass}">${total.toFixed(2)}%</span></td>
+                        </tr>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="portfolio-glidepath-card" data-glidepath-id="${glidepath.id}">
+                        <div class="portfolio-glidepath-header">
+                            <input type="text" class="portfolio-glidepath-name" value="${escapeHtml(glidepath.name)}">
+                            <button type="button" class="portfolio-icon-btn portfolio-icon-btn-danger glidepath-remove-btn">Delete</button>
+                        </div>
+                        <div class="portfolio-glidepath-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Anchors</th>
+                                        ${headerCells}
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        prevBtn.addEventListener('click', function () {
+            goToSlide(currentSlide - 1);
+        });
+
+        nextBtn.addEventListener('click', function () {
+            goToSlide(currentSlide + 1);
+        });
+
+        dots.forEach(function (dot, index) {
+            dot.addEventListener('click', function () {
+                goToSlide(index);
+            });
+        });
+
+        addEmptyBtn.addEventListener('click', function () {
+            loadPortfolioForm('/get-empty-form/');
+        });
+
+        if (addGlidepathBtn) {
+            addGlidepathBtn.addEventListener('click', function () {
+                createGlidepath();
+            });
+        }
+
+        presetToggleBtn.addEventListener('click', function (event) {
+            event.stopPropagation();
+            savedMenu.classList.add('hidden');
+            presetMenu.classList.toggle('hidden');
+        });
+
+        savedToggleBtn.addEventListener('click', function (event) {
+            event.stopPropagation();
+            presetMenu.classList.add('hidden');
+            savedMenu.classList.toggle('hidden');
+        });
+
+        scrollToBuilderBtn.addEventListener('click', function () {
+            document.getElementById('custom-portfolio-container').scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        });
+
+        if (balanceDecreaseBtn) {
+            balanceDecreaseBtn.addEventListener('click', function () {
+                setBalanceValue(currentBalance - balanceStep);
+            });
+        }
+
+        if (balanceIncreaseBtn) {
+            balanceIncreaseBtn.addEventListener('click', function () {
+                setBalanceValue(currentBalance + balanceStep);
+            });
+        }
+
+        if (balanceInput) {
+            balanceInput.addEventListener('input', function () {
+                setBalanceValue(balanceInput.value);
+            });
+        }
+
+        document.addEventListener('click', function (event) {
+            if (!event.target.closest('.portfolio-menu')) {
+                closeMenus();
+            }
+
+            const savedBtn = event.target.closest('.saved-portfolio-btn');
+            if (savedBtn) {
+                closeMenus();
+                const portfolioId = savedBtn.dataset.portfolioId;
+                loadPortfolioForm(
+                    `/get-portfolio-form/${portfolioId}/`,
+                    `[data-loaded-id="${portfolioId}"]`,
+                    'This portfolio is already open.',
+                    'data-loaded-id',
+                    portfolioId
+                );
+                return;
+            }
+
+            const presetBtn = event.target.closest('.preset-portfolio-btn');
+            if (presetBtn) {
+                closeMenus();
+                const presetName = presetBtn.dataset.presetName;
+                loadPortfolioForm(
+                    `/get-preset-form/${presetName}/`,
+                    `[data-loaded-preset="${presetName}"]`,
+                    'This preset is already open.',
+                    'data-loaded-preset',
+                    presetName
+                );
+                return;
+            }
+
+            const removeBtn = event.target.closest('.remove-btn');
+            if (removeBtn) {
+                const card = removeBtn.closest('.portfolio-form');
+                if (!card) {
+                    return;
+                }
+
+                const portfolioId = card.querySelector('input[name="portfolio_id"]')?.value;
+                if (!portfolioId) {
+                    card.remove();
+                    updateEmptyState();
+                    syncGlidepathsWithWorkspace();
+                    renderGlidepaths();
+                    return;
+                }
+
+                fetch(`/portfolio/delete/${portfolioId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error('Delete request failed');
+                        }
+                        return response.json();
+                    })
+                    .then(function () {
+                        card.remove();
+                        updateEmptyState();
+                        window.location.reload();
+                    })
+                    .catch(function (error) {
+                        console.error('Failed to delete portfolio', error);
+                    });
+                return;
+            }
+
+            const cloneBtn = event.target.closest('.clone-btn');
+            if (cloneBtn) {
+                if (getCurrentPortfolioCount() >= portfolioLimit) {
+                    alert(`Maximum ${portfolioLimit} portfolios allowed`);
+                    return;
+                }
+
+                const card = cloneBtn.closest('.portfolio-form');
+                if (!card) {
+                    return;
+                }
+
+                const clone = card.cloneNode(true);
+                clone.removeAttribute('data-loaded-id');
+                clone.removeAttribute('data-loaded-preset');
+                clone.removeAttribute('data-portfolio-card-key');
+
+                const portfolioIdInput = clone.querySelector('input[name="portfolio_id"]');
+                if (portfolioIdInput) {
+                    portfolioIdInput.value = '';
+                }
+
+                const defaultCheckbox = clone.querySelector('input[name="is_default"]');
+                if (defaultCheckbox) {
+                    defaultCheckbox.checked = false;
+                }
+
+                const nameInput = clone.querySelector('input[name="name"]');
+                if (nameInput && nameInput.value) {
+                    nameInput.value = `${nameInput.value} (Copy)`;
+                }
+
+                appendPortfolioForm(clone);
+                return;
+            }
+
+            const addHoldingBtn = event.target.closest('.add-holding-btn');
+            if (addHoldingBtn) {
+                const card = addHoldingBtn.closest('.portfolio-form');
+                const list = card?.querySelector('.portfolio-holding-list');
+                if (!card || !list) {
+                    return;
+                }
+                if (getHoldingRows(card).length >= tickerLimit) {
+                    alert(`Maximum ${tickerLimit} tickers allowed per portfolio.`);
+                    return;
+                }
+                list.appendChild(createHoldingRow('', ''));
+                syncCardHoldings(card);
+                return;
+            }
+
+            const removeHoldingBtn = event.target.closest('.portfolio-holding-remove');
+            if (removeHoldingBtn) {
+                const card = removeHoldingBtn.closest('.portfolio-form');
+                const row = removeHoldingBtn.closest('.portfolio-holding-row');
+                const list = card?.querySelector('.portfolio-holding-list');
+                if (!card || !row || !list) {
+                    return;
+                }
+                row.remove();
+                if (!getHoldingRows(card).length) {
+                    list.appendChild(createHoldingRow('', ''));
+                }
+                syncCardHoldings(card);
+                return;
+            }
+
+            const glidepathRemoveBtn = event.target.closest('.glidepath-remove-btn');
+            if (glidepathRemoveBtn) {
+                const glidepathCard = glidepathRemoveBtn.closest('[data-glidepath-id]');
+                const glidepathId = glidepathCard?.dataset.glidepathId;
+                const index = glidepaths.findIndex((glidepath) => glidepath.id === glidepathId);
+                if (index >= 0) {
+                    glidepaths.splice(index, 1);
+                    renderGlidepaths();
+                }
+            }
+        });
+
+        document.addEventListener('input', function (event) {
+            const nameInput = event.target.closest('.portfolio-form input[name="name"]');
+            if (nameInput) {
+                renderGlidepaths();
+                return;
+            }
+
+            const holdingInput = event.target.closest('.portfolio-holding-symbol, .portfolio-holding-weight');
+            if (holdingInput) {
+                const card = holdingInput.closest('.portfolio-form');
+                if (card) {
+                    syncCardHoldings(card);
+                }
+                return;
+            }
+
+            const glidepathNameInput = event.target.closest('.portfolio-glidepath-name');
+            if (glidepathNameInput) {
+                const glidepathId = glidepathNameInput.closest('[data-glidepath-id]')?.dataset.glidepathId;
+                const glidepath = getGlidepathById(glidepathId);
+                if (glidepath) {
+                    glidepath.name = glidepathNameInput.value.trim() || glidepath.name;
+                }
+                return;
+            }
+
+            const glidepathWeightInput = event.target.closest('.portfolio-glidepath-weight');
+            if (glidepathWeightInput) {
+                const glidepath = getGlidepathById(glidepathWeightInput.dataset.glidepathId);
+                if (!glidepath) {
+                    return;
+                }
+                const leg = glidepath.legs.find((item) => item.key === glidepathWeightInput.dataset.legKey);
+                if (!leg) {
+                    return;
+                }
+                const nextValue = Math.max(0, Number(glidepathWeightInput.value || 0));
+                leg.weights[glidepathWeightInput.dataset.portfolioKey] = Number.isFinite(nextValue) ? nextValue : 0;
+                renderGlidepaths();
+            }
+        });
+
+        document.addEventListener('submit', function (event) {
+            if (!(event.target instanceof HTMLFormElement)) {
+                return;
+            }
+            const card = event.target.closest('.portfolio-form');
+            if (card) {
+                syncCardHoldings(card);
+            }
+        });
+
+        renderChart();
+        goToSlide(0);
+        updateEmptyState();
+        syncBalanceDisplay();
+        renderGlidepaths();
+    });
+</script>
 {% endblock %}

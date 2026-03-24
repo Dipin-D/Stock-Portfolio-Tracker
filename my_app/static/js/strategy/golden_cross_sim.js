@@ -19,6 +19,8 @@
  *   - signals: Array of trade signals (each with date, action, price, shares, and the SMA values used).
  *   - finalCash: Final cash balance (only closed trades count).
  */
+
+
 function runGoldenCrossStrategySim(data, fastPeriod, slowPeriod, orderPerc, startingCash, overrideShares) {
   // Compute moving averages (must be available from indicator.js)
   const fastSMA = computeSMA(data, fastPeriod);
@@ -114,7 +116,59 @@ function runGoldenCrossStrategySim(data, fastPeriod, slowPeriod, orderPerc, star
   
   console.log("Final cash balance:", cash);
   return { signals: signals, finalCash: cash };
-}
+};
 
 // Expose the function globally for reuse.
 window.runGoldenCrossStrategySim = runGoldenCrossStrategySim;
+
+
+
+/**
+ * summarizeTradeLog
+ *  Derives win/loss counts, win-rate, dollar gains & losses, and total return %
+ *  from the BUY/SELL signal pairs produced by runGoldenCrossStrategySim
+ *
+ * @param {Array} signals       – Array of BUY/SELL objects (already paired)
+ * @param {number} startCash    – Cash you began with (same one you passed in)
+ * @param {number} finalCash    – Cash returned by the simulator
+ *
+ * @returns {Object} {
+ *    wins, losses, winRate, dollarGains, dollarLosses, totalReturnPct
+ * }
+ */
+
+function summarizeTradeLog(signals, startCash, finalCash) {
+  let wins = 0, losses = 0;
+  let dollarGains = 0, dollarLosses = 0;
+
+  // Walk through signals two at a time (BUY then SELL)
+  for (let i = 0; i < signals.length; i += 2) {
+    const buy = signals[i];
+    const sell = signals[i + 1];
+    if (!buy || !sell) continue;                      // safety guard
+
+    const pnl = (sell.price - buy.price) * buy.shares;
+    if (pnl >= 0) {
+      wins += 1;
+      dollarGains += pnl;
+    } else {
+      losses += 1;
+      dollarLosses += Math.abs(pnl);
+    }
+  }
+
+  const totalTrades   = wins + losses;
+  const winRate       = totalTrades ? (wins / totalTrades) * 100 : 0;
+  const totalReturnPct = ((finalCash - startCash) / startCash) * 100;
+
+  return {
+    wins,
+    losses,
+    winRate: winRate.toFixed(2),
+    dollarGains: dollarGains.toFixed(2),
+    dollarLosses: dollarLosses.toFixed(2),
+    totalReturnPct: totalReturnPct.toFixed(2)
+  };
+};
+
+window.summarizeTradeLog = summarizeTradeLog;

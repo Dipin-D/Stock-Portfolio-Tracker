@@ -1,20 +1,53 @@
 {% if default_portfolio %}
-        <div class="mx-auto relative w-[500px] rounded-lg bg-[#f8fafc] border border-[#e2e8f0] px-6 pb-6 pt-10 shadow-lg space-y-6 flex-shrink-0">
-            <div class="absolute top-2 right-4 text-xs text-[#0a192f]">*default portfolio</div>
-            <div class="border border-[#cbd5e1] p-4 flex items-center w-[50%] mx-auto justify-center">
-                <h3 class="text-xl font-medium text-[#0a192f]">{{ default_portfolio.name }}</h3>
+    <div class="portfolio-panel-card">
+        <div class="portfolio-summary-pill">Default Portfolio</div>
+        <h3 class="portfolio-summary-name">{{ default_portfolio.name }}</h3>
+
+        <div class="portfolio-summary-grid">
+            <div class="portfolio-summary-row">
+                <span class="portfolio-summary-label">Tickers</span>
+                <span class="portfolio-summary-value">{{ default_portfolio.ticker }}</span>
             </div>
-            <div class="border border-[#cbd5e1] p-4 flex flex-row items-center space-x-4">
-                <div class="text-xl font-medium text-[#0a192f] bg-[#f1f5f9] p-2 rounded-md w-1/2">Tickers</div>
-                <div class="text-xl font-medium text-[#0a192f] bg-[#f1f5f9] p-2 rounded-md w-1/2 text-right">{{ default_portfolio.ticker }}</div>
+
+            <div class="portfolio-summary-row">
+                <span class="portfolio-summary-label">Total Return</span>
+                <span class="portfolio-summary-value">{{ default_portfolio.total_return|yesno:"Enabled,Disabled" }}</span>
             </div>
-            <div class="border border-[#cbd5e1] p-4 flex flex-row items-center space-x-4">
-                <div class="text-xl font-medium text-[#0a192f] bg-[#f1f5f9] p-2 rounded-md w-1/2">Total Return</div>
-                <div class="text-xl font-medium text-[#0a192f] bg-[#f1f5f9] p-2 rounded-md w-1/2 text-right">${{ default_portfolio.total_return|yesno:"1000,0" }}</div>
+
+            <div class="portfolio-summary-row">
+                <span class="portfolio-summary-label">Drag</span>
+                <span class="portfolio-summary-value">{{ default_portfolio.drag_percentage }}%</span>
             </div>
-            <div class="border border-[#cbd5e1] p-4 flex flex-row items-center space-x-4">
-                <div class="text-xl font-medium text-[#0a192f] bg-[#f1f5f9] p-2 rounded-md w-1/2">Drag</div>
-                <div class="text-xl font-medium text-[#0a192f] bg-[#f1f5f9] p-2 rounded-md w-1/2 text-right">{{ default_portfolio.drag_percentage }}%</div>
+
+            <div class="portfolio-summary-row">
+                <span class="portfolio-summary-label">Rebalance</span>
+                <span class="portfolio-summary-value">{{ default_portfolio.rebalance_frequency }}</span>
+            </div>
+
+            <div class="portfolio-summary-row">
+                <span class="portfolio-summary-label">Allocation</span>
+                <span class="portfolio-summary-value">{{ default_portfolio.allocation }}</span>
             </div>
         </div>
+
+        {% if portfolio_allocation_rows %}
+            <div class="portfolio-allocation-shell">
+                <p class="portfolio-eyebrow" style="margin-top: 1.25rem;">Allocation Breakdown</p>
+                <div class="portfolio-allocation-list">
+                    {% for row in portfolio_allocation_rows %}
+                        <div class="portfolio-allocation-row" data-weight-pct="{{ row.weight_pct|floatformat:2 }}">
+                            <div class="portfolio-allocation-meta">
+                                <strong>{{ row.ticker }}</strong>
+                                <span>{{ row.weight_display }}</span>
+                            </div>
+                            <div class="portfolio-allocation-bar">
+                                <div class="portfolio-allocation-fill" style="width: {{ row.weight_pct|floatformat:2 }}%;"></div>
+                            </div>
+                            <span class="portfolio-summary-value js-allocation-notional">{{ row.notional_display }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
 {% endif %}

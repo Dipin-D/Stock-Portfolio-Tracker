@@ -39,11 +39,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'my_app',
-    'tailwind',
-    'theme'
+
 ]
 
-TAILWIND_APP_NAME = 'theme'
+
+
+
+
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -121,14 +124,18 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 
 STATICFILES_DIRS = [
-    BASE_DIR / 'my_app' / 'static',  # Using pathlib for consistency
-    BASE_DIR / 'theme' / 'static',  # Using pathlib here too
+    BASE_DIR / "theme" / "static",   # <-- tells Django where styles.css lives
+    BASE_DIR / "my_app" / "static"
 ]
 
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_FINDERS = [
+  "django.contrib.staticfiles.finders.FileSystemFinder",
+  "django.contrib.staticfiles.finders.AppDirectoriesFinder",
+]
+
 
 
 # Default primary key field type

@@ -1,0 +1,968 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    {{ block.super }}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .math-page {
+            --math-display-font: 'Cormorant Garamond', Georgia, serif;
+            --math-body-font: 'Manrope', 'Inter', sans-serif;
+            --math-text: #132238;
+            --math-muted: #5b6b7d;
+            --math-border: #d7e2ef;
+            --math-soft: #f4f8fd;
+            min-height: calc(100vh - 60px);
+            background:
+                radial-gradient(circle at top left, rgba(14, 165, 233, 0.10), transparent 28%),
+                linear-gradient(180deg, #eef4fb 0%, #f8fbff 100%);
+            padding: 1.4rem;
+            color: var(--math-text);
+            font-family: var(--math-body-font);
+        }
+
+        .math-shell {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.35rem;
+        }
+
+        .math-hero,
+        .math-sidebar-shell,
+        .math-main-shell,
+        .math-panel,
+        .math-step-card,
+        .math-summary-card,
+        .math-module-card,
+        .math-alert {
+            border: 1px solid var(--math-border);
+            border-radius: 28px;
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 18px 42px rgba(15, 23, 42, 0.07);
+        }
+
+        .math-hero,
+        .math-sidebar-shell,
+        .math-main-shell,
+        .math-panel,
+        .math-step-card,
+        .math-summary-card,
+        .math-module-card {
+            padding: 1.35rem;
+        }
+
+        .math-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+            gap: 1rem;
+        }
+
+        .math-workspace {
+            display: grid;
+            grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+            gap: 1.35rem;
+            align-items: start;
+        }
+
+        .math-sidebar-shell {
+            position: sticky;
+            top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .math-main-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .math-kicker,
+        .math-section-kicker {
+            margin: 0 0 0.3rem;
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #4a6b93;
+        }
+
+        .math-title,
+        .math-section-title,
+        .math-card-title,
+        .math-summary-card strong,
+        .math-hero-stat strong {
+            font-family: var(--math-display-font);
+            color: #10213b;
+        }
+
+        .math-title {
+            margin: 0;
+            font-size: 2.35rem;
+            line-height: 0.98;
+            font-weight: 700;
+        }
+
+        .math-copy,
+        .math-subcopy,
+        .math-step-note,
+        .math-empty-state,
+        .math-module-card p,
+        .math-glossary-copy {
+            color: var(--math-muted);
+            line-height: 1.75;
+        }
+
+        .math-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-top: 1rem;
+        }
+
+        .math-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.42rem 0.82rem;
+            border-radius: 999px;
+            border: 1px solid #dbe7f6;
+            background: #f8fbff;
+            color: #355277;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .math-hero-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+
+        .math-hero-stat {
+            border: 1px solid #e2ebf5;
+            border-radius: 22px;
+            background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+            padding: 1rem 1.1rem;
+        }
+
+        .math-hero-stat span {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--math-muted);
+        }
+
+        .math-hero-stat strong {
+            display: block;
+            margin-top: 0.3rem;
+            font-size: 1.45rem;
+        }
+
+        .math-link-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            padding: 0.9rem 1.1rem;
+            background: linear-gradient(135deg, #0ea5e9, #2563eb);
+            color: #eff6ff;
+            font-weight: 800;
+            text-decoration: none;
+            box-shadow: 0 16px 30px rgba(37, 99, 235, 0.22);
+        }
+
+        .math-link-btn-secondary {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            box-shadow: none;
+        }
+
+        .math-alert {
+            padding: 1rem 1.1rem;
+            border-color: #fecaca;
+            background: #fff1f2;
+            color: #b91c1c;
+        }
+
+        .math-module-stack,
+        .math-anchor-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .math-module-card {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .math-module-status {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.74rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .math-module-live {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .math-module-soon {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .math-anchor-link {
+            display: block;
+            padding: 0.75rem 0.85rem;
+            border-radius: 18px;
+            background: #f8fbff;
+            border: 1px solid #dbe7f6;
+            color: #1d4ed8;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .math-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.9rem;
+        }
+
+        .math-summary-card {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .math-summary-card span {
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--math-muted);
+        }
+
+        .math-summary-card strong {
+            font-size: 1.8rem;
+        }
+
+        .math-section-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .math-section-title,
+        .math-card-title {
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .math-section-title {
+            font-size: 1.9rem;
+        }
+
+        .math-card-title {
+            font-size: 1.35rem;
+        }
+
+        .math-run-grid,
+        .math-input-grid,
+        .math-step-grid,
+        .math-glossary-grid {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .math-run-grid,
+        .math-input-grid {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+
+        .math-step-grid,
+        .math-glossary-grid {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .math-run-item,
+        .math-input-item,
+        .math-glossary-card {
+            border: 1px solid #e3ebf5;
+            border-radius: 20px;
+            background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+            padding: 0.95rem;
+        }
+
+        .math-run-item span,
+        .math-input-item span {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--math-muted);
+        }
+
+        .math-run-item strong,
+        .math-input-item strong {
+            display: block;
+            margin-top: 0.35rem;
+            font-size: 1rem;
+            color: #10213b;
+        }
+
+        .math-formula-block,
+        .math-derivation-block {
+            border: 1px solid #dbe7f6;
+            border-radius: 20px;
+            background: #f7faff;
+            padding: 1rem 1.1rem;
+            overflow-x: auto;
+        }
+
+        .math-formula-block code,
+        .math-derivation-block code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.95rem;
+            line-height: 1.8;
+            color: #1e293b;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .math-step-card {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .math-step-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .math-step-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 0.42rem 0.82rem;
+            font-size: 0.8rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .math-empty-state {
+            border: 1px dashed #bfd3ec;
+            border-radius: 22px;
+            background: #f8fbff;
+            padding: 1.35rem;
+        }
+
+        .math-table-wrap {
+            overflow: auto;
+            border: 1px solid #dbe7f6;
+            border-radius: 20px;
+            background: #fff;
+        }
+
+        .math-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .math-table thead {
+            background: #edf3fb;
+        }
+
+        .math-table th,
+        .math-table td {
+            padding: 0.85rem 0.9rem;
+            text-align: left;
+            border-bottom: 1px solid #edf3fb;
+            white-space: nowrap;
+        }
+
+        .math-table th {
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #475569;
+        }
+
+        .math-score-emphasis {
+            color: #1d4ed8;
+            font-weight: 800;
+        }
+
+        @media (max-width: 1120px) {
+            .math-workspace,
+            .math-hero,
+            .math-step-header {
+                grid-template-columns: 1fr;
+                display: grid;
+            }
+
+            .math-sidebar-shell {
+                position: static;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .math-page {
+                padding: 1rem;
+            }
+
+            .math-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block title %}
+    The Math | Trading Pro
+{% endblock %}
+
+{% block content %}
+    <div class="math-page">
+        <div class="math-shell">
+            <section class="math-hero">
+                <div>
+                    <p class="math-kicker">Transparent Computation</p>
+                    <h1 class="math-title">The Math</h1>
+                    <p class="math-copy">
+                        This page is the calculation layer behind Trading Pro. Bayesian run math is live for linked backtests, and the Watchlist Signals module now explains both the live Golden Cross composite score and the weighted 10-year Golden Cross ranking.
+                    </p>
+                    {% if selected_section == 'watchlist_signals' and math_watchlist_context %}
+                        <div class="math-chip-row">
+                            {% if math_watchlist_context.selected_ticker %}
+                                <span class="math-chip">{{ math_watchlist_context.selected_ticker }}</span>
+                            {% endif %}
+                            <span class="math-chip">Watchlist Signals</span>
+                            <span class="math-chip">
+                                {% if math_watchlist_context.selected_signal == 'golden_cross_weighted' %}
+                                    Golden Cross 10Y Weighted
+                                {% else %}
+                                    Golden Cross Composite
+                                {% endif %}
+                            </span>
+                        </div>
+                    {% elif math_run %}
+                        <div class="math-chip-row">
+                            <span class="math-chip">{{ math_run.ticker }}</span>
+                            <span class="math-chip">{% if math_run.analysis_mode == 'multi' %}Multi-Strategy Analysis{% else %}Single Strategy Analysis{% endif %}</span>
+                            <span class="math-chip">{% if math_run.prior_mode == 'golden_cross' %}Golden Cross Prior{% else %}Universe Prior{% endif %}</span>
+                            <span class="math-chip">{{ math_run.horizon_days }} Trading-Day Horizon</span>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="math-hero-actions">
+                    {% if selected_section == 'watchlist_signals' and math_watchlist_context %}
+                        <div class="math-hero-stat">
+                            <span>Current Module</span>
+                            <strong>Watchlist Signals</strong>
+                        </div>
+                        <a class="math-link-btn" href="{% url 'watchlist' %}">Open Watchlist</a>
+                    {% elif math_run %}
+                        <div class="math-hero-stat">
+                            <span>Linked Backtest Run</span>
+                            <strong>#{{ math_run.run_id }}</strong>
+                        </div>
+                        <a class="math-link-btn" href="{% url 'backtest' %}?ticker={{ math_run.ticker }}&start_date={{ math_run.start_date }}&end_date={{ math_run.end_date }}&autoload=1">Back to Backtest</a>
+                    {% else %}
+                        <div class="math-hero-stat">
+                            <span>Current State</span>
+                            <strong>Overview Mode</strong>
+                        </div>
+                        <a class="math-link-btn math-link-btn-secondary" href="{% url 'backtest' %}">Open Backtest</a>
+                    {% endif %}
+                </div>
+            </section>
+
+            {% if math_run_error %}
+                <div class="math-alert">{{ math_run_error }}</div>
+            {% endif %}
+
+            <div class="math-workspace">
+                <aside class="math-sidebar-shell">
+                    <div>
+                        <p class="math-kicker">Computation Layers</p>
+                        <h2 class="math-section-title">Computation Layers</h2>
+                        <p class="math-subcopy">Bayesian Math is live. The remaining modules stay visible here as future layers without turning the main canvas into a long stack of placeholders.</p>
+                    </div>
+
+                    <div class="math-module-stack">
+                        {% for module in math_modules %}
+                            <a class="math-module-card" href="{{ module.href }}">
+                                <span class="math-module-status {% if module.available %}math-module-live{% else %}math-module-soon{% endif %}">
+                                    {% if module.available %}Live{% else %}Future{% endif %}
+                                </span>
+                                <h3 class="math-card-title" style="margin-top: 0.75rem;">{{ module.title }}</h3>
+                                <p>{{ module.description }}</p>
+                            </a>
+                        {% endfor %}
+                    </div>
+
+                    <div>
+                        <p class="math-kicker">{% if selected_section == 'watchlist_signals' %}Signal Anchors{% else %}Bayesian Anchors{% endif %}</p>
+                        <div class="math-anchor-stack">
+                            {% if selected_section == 'watchlist_signals' %}
+                                <a class="math-anchor-link" href="#watchlist-signals">Overview</a>
+                                <a class="math-anchor-link" href="#golden-cross-composite">Composite Score</a>
+                                <a class="math-anchor-link" href="#golden-cross-weighted">Weighted Backtest Rank</a>
+                                <a class="math-anchor-link" href="#signal-comparison">Signal Comparison</a>
+                            {% else %}
+                                <a class="math-anchor-link" href="#run-context">Run Context</a>
+                                <a class="math-anchor-link" href="#prior-construction">Prior Derivation</a>
+                                <a class="math-anchor-link" href="#evidence-ladder">Evidence Ladder</a>
+                                <a class="math-anchor-link" href="#posterior-update">Posterior Update</a>
+                                <a class="math-anchor-link" href="#glossary">Glossary</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </aside>
+
+                <main class="math-main-shell">
+                    {% if selected_section == 'watchlist_signals' and math_watchlist_context %}
+                        <section id="watchlist-signals" class="math-panel">
+                            <div class="math-section-header">
+                                <div>
+                                    <p class="math-section-kicker">Live Watchlist Math</p>
+                                    <h2 class="math-section-title">Watchlist Signals</h2>
+                                    <p class="math-subcopy">This module exposes both Golden Cross ranking systems: the live composite score and the weighted 10-year Golden Cross backtest rank.</p>
+                                </div>
+                            </div>
+
+                            <div class="math-summary-grid">
+                                <div class="math-summary-card">
+                                    <span>Selected Ticker</span>
+                                    <strong>{{ math_watchlist_context.selected_ticker|default:"Unavailable" }}</strong>
+                                </div>
+                                <div class="math-summary-card">
+                                    <span>Live Composite</span>
+                                    <strong>{{ math_watchlist_context.comparison.live_score|floatformat:2 }}</strong>
+                                </div>
+                                <div class="math-summary-card">
+                                    <span>10Y Quality</span>
+                                    <strong>{{ math_watchlist_context.comparison.weighted_score|floatformat:2 }}</strong>
+                                </div>
+                                <div class="math-summary-card">
+                                    <span>Consensus</span>
+                                    <strong>{{ math_watchlist_context.comparison.consensus_label }}</strong>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="golden-cross-composite" class="math-panel">
+                            <div class="math-section-header">
+                                <div>
+                                    <p class="math-section-kicker">Signal Formula</p>
+                                    <h3 class="math-card-title">Golden Cross Composite Score</h3>
+                                    <p class="math-subcopy">This is the live crossover score currently used in Watchlist. It measures how strong the active 50/200 structure looks right now.</p>
+                                </div>
+                            </div>
+                            {% if math_watchlist_context.composite %}
+                                <div class="math-formula-block">
+                                    <code>{{ math_watchlist_context.composite.formula.formula }}</code>
+                                </div>
+                                <div class="math-input-grid" style="margin-top: 1rem;">
+                                    {% for item in math_watchlist_context.composite.inputs %}
+                                        <div class="math-input-item">
+                                            <span>{{ item.label }}</span>
+                                            <strong>{{ item.display }}</strong>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="math-table-wrap" style="margin-top: 1rem;">
+                                    <table class="math-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Component</th>
+                                                <th>Formula</th>
+                                                <th>Weight</th>
+                                                <th>Normalizer</th>
+                                                <th>Score</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for component in math_watchlist_context.composite.formula.components %}
+                                                <tr>
+                                                    <td>{{ component.label }}</td>
+                                                    <td>{{ component.formula }}</td>
+                                                    <td>{{ component.weight|floatformat:2 }}</td>
+                                                    <td>{{ component.normalizer }}</td>
+                                                    <td class="math-score-emphasis">
+                                                        {% for row in math_watchlist_context.composite.component_rows %}
+                                                            {% if row.label == component.label %}
+                                                                {{ row.score|floatformat:4 }}
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="math-empty-state">No composite-score context is available for the selected ticker.</div>
+                            {% endif %}
+                        </section>
+
+                        <section id="golden-cross-weighted" class="math-panel">
+                            <div class="math-section-header">
+                                <div>
+                                    <p class="math-section-kicker">Backtest Rank</p>
+                                    <h3 class="math-card-title">Golden Cross Weighted Backtest Rank</h3>
+                                    <p class="math-subcopy">This score ranks tickers by a standardized 10-year Golden Cross backtest. It is historical quality, not a live trigger score.</p>
+                                </div>
+                            </div>
+                            {% if math_watchlist_context.weighted %}
+                                <div class="math-formula-block">
+                                    <code>{{ math_watchlist_context.weighted.formula.formula }}</code>
+                                </div>
+                                <div class="math-input-grid" style="margin-top: 1rem;">
+                                    <div class="math-input-item">
+                                        <span>Backtest Window</span>
+                                        <strong>{{ math_watchlist_context.weighted.window.start_date }} to {{ math_watchlist_context.weighted.window.end_date }}</strong>
+                                    </div>
+                                    {% for item in math_watchlist_context.weighted.metrics %}
+                                        <div class="math-input-item">
+                                            <span>{{ item.label }}</span>
+                                            <strong>{{ item.display }}</strong>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="math-table-wrap" style="margin-top: 1rem;">
+                                    <table class="math-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Component</th>
+                                                <th>Formula</th>
+                                                <th>Weight</th>
+                                                <th>Normalizer</th>
+                                                <th>Score</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for component in math_watchlist_context.weighted.formula.components %}
+                                                <tr>
+                                                    <td>{{ component.label }}</td>
+                                                    <td>{{ component.formula }}</td>
+                                                    <td>{{ component.weight|floatformat:2 }}</td>
+                                                    <td>{{ component.normalizer }}</td>
+                                                    <td class="math-score-emphasis">
+                                                        {% for row in math_watchlist_context.weighted.component_rows %}
+                                                            {% if row.label == component.label %}
+                                                                {{ row.score|floatformat:4 }}
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="math-table-wrap" style="margin-top: 1rem;">
+                                    <table class="math-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Rank</th>
+                                                <th>Ticker</th>
+                                                <th>10Y Quality</th>
+                                                <th>Live Composite</th>
+                                                <th>Consensus</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for row in math_watchlist_context.leaderboards.weighted.results %}
+                                                <tr>
+                                                    <td>{{ forloop.counter }}</td>
+                                                    <td><a class="math-link-btn math-link-btn-secondary" style="padding: 0.45rem 0.85rem;" href="{{ row.math_url }}">{{ row.symbol }}</a></td>
+                                                    <td class="math-score-emphasis">{{ row.quality_score|floatformat:2 }}</td>
+                                                    <td>{{ row.live_composite_score|floatformat:2 }}</td>
+                                                    <td>{{ row.consensus_label }}</td>
+                                                </tr>
+                                            {% empty %}
+                                                <tr><td colspan="5">No weighted leaderboard data is available right now.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="math-empty-state">No weighted Golden Cross context is available for the selected ticker.</div>
+                            {% endif %}
+                        </section>
+
+                        <section id="signal-comparison" class="math-panel">
+                            <div class="math-section-header">
+                                <div>
+                                    <p class="math-section-kicker">Signal Comparison</p>
+                                    <h3 class="math-card-title">Live structure vs 10Y history</h3>
+                                    <p class="math-subcopy">{{ math_watchlist_context.comparison.interpretation }}</p>
+                                </div>
+                            </div>
+                            <div class="math-step-grid">
+                                <div class="math-summary-card">
+                                    <span>Live Composite Score</span>
+                                    <strong>{{ math_watchlist_context.comparison.live_score|floatformat:2 }}</strong>
+                                </div>
+                                <div class="math-summary-card">
+                                    <span>Weighted Quality Score</span>
+                                    <strong>{{ math_watchlist_context.comparison.weighted_score|floatformat:2 }}</strong>
+                                </div>
+                                <div class="math-summary-card">
+                                    <span>Consensus Label</span>
+                                    <strong>{{ math_watchlist_context.comparison.consensus_label }}</strong>
+                                </div>
+                            </div>
+                        </section>
+                    {% else %}
+                    <section id="bayesian" class="math-panel">
+                        <div class="math-section-header">
+                            <div>
+                                <p class="math-section-kicker">Live Run Math</p>
+                                <h2 class="math-section-title">Bayesian Math</h2>
+                                <p class="math-subcopy">This section shows exactly how Trading Pro reached the prior, likelihood ratio, weighted log-LR, and posterior values for the selected run.</p>
+                            </div>
+                        </div>
+
+                        {% if math_run %}
+                            <div class="math-summary-grid">
+                                <div class="math-summary-card">
+                                    <span>Prior Probability</span>
+                                    <strong>{{ math_run.math.final.prior_probability_pct|floatformat:2 }}%</strong>
+                                </div>
+                                <div class="math-summary-card">
+                                    <span>Posterior Probability</span>
+                                    <strong>{{ math_run.math.final.posterior_probability_pct|floatformat:2 }}%</strong>
+                                </div>
+                                <div class="math-summary-card">
+                                    <span>Bayesian Lift</span>
+                                    <strong>{% if math_run.math.final.bayesian_lift_pct >= 0 %}+{% endif %}{{ math_run.math.final.bayesian_lift_pct|floatformat:2 }}%</strong>
+                                </div>
+                                <div class="math-summary-card">
+                                    <span>Confidence</span>
+                                    <strong>{{ math_run.math.final.confidence_label }}</strong>
+                                </div>
+                            </div>
+
+                            <section id="run-context" class="math-panel">
+                                <div class="math-section-header">
+                                    <div>
+                                        <p class="math-section-kicker">Run Context</p>
+                                        <h3 class="math-card-title">The exact run that generated this math</h3>
+                                    </div>
+                                </div>
+                                <div class="math-run-grid">
+                                    <div class="math-run-item">
+                                        <span>Ticker</span>
+                                        <strong>{{ math_run.ticker }}</strong>
+                                    </div>
+                                    <div class="math-run-item">
+                                        <span>Date Window</span>
+                                        <strong>{{ math_run.start_date }} to {{ math_run.end_date }}</strong>
+                                    </div>
+                                    <div class="math-run-item">
+                                        <span>Mode</span>
+                                        <strong>{% if math_run.analysis_mode == 'multi' %}Multi-Strategy Analysis{% else %}Single Strategy Analysis{% endif %}</strong>
+                                    </div>
+                                    <div class="math-run-item">
+                                        <span>Prior Source</span>
+                                        <strong>{% if math_run.prior_mode == 'golden_cross' %}Golden Cross Prior{% else %}Universe Prior{% endif %}</strong>
+                                    </div>
+                                    <div class="math-run-item">
+                                        <span>Benchmark</span>
+                                        <strong>{{ math_run.benchmark }}</strong>
+                                    </div>
+                                    <div class="math-run-item">
+                                        <span>Horizon</span>
+                                        <strong>{{ math_run.horizon_days }} trading days</strong>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section id="prior-construction" class="math-panel">
+                                <div class="math-section-header">
+                                    <div>
+                                        <p class="math-section-kicker">Prior Derivation</p>
+                                        <h3 class="math-card-title">How the starting belief was built</h3>
+                                        <p class="math-subcopy">{{ math_run.math.prior.condition_text }}</p>
+                                    </div>
+                                </div>
+                                <div class="math-formula-block">
+                                    <code>{{ math_run.math.prior.formula }}</code>
+                                </div>
+                                <div class="math-input-grid" style="margin-top: 1rem;">
+                                    {% for row in math_run.math.prior.display_rows %}
+                                        <div class="math-input-item">
+                                            <span>{{ row.label }}</span>
+                                            <strong>{{ row.value }}</strong>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="math-derivation-block" style="margin-top: 1rem;">
+                                    <code>
+({{ math_run.math.prior.support.successes }} + {{ math_run.math.prior.alpha|floatformat:0 }}) / ({{ math_run.math.prior.support.total }} + 2 × {{ math_run.math.prior.alpha|floatformat:0 }})
+= {{ math_run.math.prior.probability|floatformat:4 }}
+= {{ math_run.math.prior.probability_pct|floatformat:2 }}%
+                                    </code>
+                                </div>
+                            </section>
+
+                            <section id="evidence-ladder" class="math-panel">
+                                <div class="math-section-header">
+                                    <div>
+                                        <p class="math-section-kicker">Evidence Ladder</p>
+                                        <h3 class="math-card-title">Step-by-step strategy contribution</h3>
+                                        <p class="math-subcopy">Each evidence card is now a compact computation deck instead of one long generic stack.</p>
+                                    </div>
+                                </div>
+                                {% for step in math_run.math.steps %}
+                                    <article class="math-step-card">
+                                        <div class="math-step-header">
+                                            <div>
+                                                <p class="math-section-kicker">Evidence Step {{ step.sequence_index }}</p>
+                                                <h4 class="math-card-title">{{ step.name }}</h4>
+                                                <p class="math-step-note">
+                                                    {% if step.used_as_prior %}
+                                                        This strategy defined the prior state, so its LR contribution was intentionally not applied a second time.
+                                                    {% else %}
+                                                        This strategy produced one Bayesian update using its observed event, likelihood ratio, and correlation-adjusted weight.
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                            <span class="math-step-badge">{% if step.signal_active %}Signal Active{% else %}Signal Inactive{% endif %}</span>
+                                        </div>
+                                        <div class="math-step-grid">
+                                            <div class="math-panel">
+                                                <h5 class="math-card-title">Signal Strength</h5>
+                                                <div class="math-formula-block" style="margin-top: 0.9rem;">
+                                                    <code>{{ step.signal_math.signal_formula }}</code>
+                                                </div>
+                                                <div class="math-formula-block" style="margin-top: 0.9rem;">
+                                                    <code>{{ step.signal_math.strength_formula }}</code>
+                                                </div>
+                                                <div class="math-input-grid" style="margin-top: 0.9rem;">
+                                                    {% for row in step.signal_math.display_rows %}
+                                                        <div class="math-input-item">
+                                                            <span>{{ row.label }}</span>
+                                                            <strong>{{ row.display }}</strong>
+                                                        </div>
+                                                    {% endfor %}
+                                                    <div class="math-input-item">
+                                                        <span>Final strength</span>
+                                                        <strong>{{ step.strength|floatformat:4 }} = {{ step.strength_pct|floatformat:2 }}%</strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="math-panel">
+                                                <h5 class="math-card-title">Likelihood Ratio</h5>
+                                                <div class="math-derivation-block" style="margin-top: 0.9rem;">
+                                                    <code>
+P(E|Y=1) = ({{ step.support.success_event }} + {{ step.likelihood_alpha|floatformat:0 }}) / ({{ step.support.success_total }} + 2 × {{ step.likelihood_alpha|floatformat:0 }})
+= {{ step.probability_given_success|floatformat:4 }} = {{ step.probability_given_success_pct|floatformat:2 }}%
+
+P(E|Y=0) = ({{ step.support.failure_event }} + {{ step.likelihood_alpha|floatformat:0 }}) / ({{ step.support.failure_total }} + 2 × {{ step.likelihood_alpha|floatformat:0 }})
+= {{ step.probability_given_failure|floatformat:4 }} = {{ step.probability_given_failure_pct|floatformat:2 }}%
+
+LR = P(E|Y=1) / P(E|Y=0)
+= {{ step.likelihood_ratio|floatformat:4 }}
+                                                    </code>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </article>
+                                {% endfor %}
+                            </section>
+
+                            <section id="posterior-update" class="math-panel">
+                                <div class="math-section-header">
+                                    <div>
+                                        <p class="math-section-kicker">Posterior Update</p>
+                                        <h3 class="math-card-title">How prior became posterior</h3>
+                                    </div>
+                                </div>
+                                <div class="math-step-grid">
+                                    {% for step in math_run.math.steps %}
+                                        <div class="math-step-card">
+                                            <div class="math-step-header">
+                                                <div>
+                                                    <p class="math-section-kicker">Step {{ step.sequence_index }}</p>
+                                                    <h4 class="math-card-title">{{ step.name }}</h4>
+                                                </div>
+                                                <span class="math-step-badge">Posterior {{ step.posterior_after_pct|floatformat:2 }}%</span>
+                                            </div>
+                                            <div class="math-derivation-block">
+                                                <code>
+prior = {{ step.prior_before|floatformat:4 }} = {{ step.prior_before_pct|floatformat:2 }}%
+log_odds(prior) = ln(prior / (1 - prior))
+= {{ step.prior_log_odds|floatformat:4 }}
+
+log(LR) = {{ step.log_likelihood_ratio|floatformat:4 }}
+weight = {{ step.weight|floatformat:4 }}
+weighted_log_lr = log(LR) × weight
+= {{ step.weighted_log_lr|floatformat:4 }}
+
+posterior = logistic(log_odds(prior) + weighted_log_lr)
+= {{ step.posterior_after|floatformat:4 }} = {{ step.posterior_after_pct|floatformat:2 }}%
+                                                </code>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </section>
+
+                            <section id="glossary" class="math-panel">
+                                <div class="math-section-header">
+                                    <div>
+                                        <p class="math-section-kicker">Glossary</p>
+                                        <h3 class="math-card-title">Core Bayesian terms</h3>
+                                    </div>
+                                </div>
+                                <div class="math-glossary-grid">
+                                    {% for term in math_run.math.glossary %}
+                                        <div class="math-glossary-card">
+                                            <h4 class="math-card-title">{{ term.term }}</h4>
+                                            <p class="math-glossary-copy">{{ term.definition }}</p>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </section>
+                        {% else %}
+                            <div class="math-empty-state">
+                                Open a Bayesian result from the Backtest page to populate this workspace with live prior, LR, weighted log-LR, and posterior calculations. The structure is ready, but the live math only appears when the page is opened with a valid <code>run_id</code>.
+                            </div>
+                        {% endif %}
+                    </section>
+                    {% endif %}
+                </main>
+            </div>
+        </div>
+    </div>
+{% endblock %}

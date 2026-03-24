@@ -1,49 +1,50 @@
-<!-- templates/partials/strategies/pro-scan_golden_cross_form.html -->
-<div id="golden-cross-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-white rounded-lg p-6 w-96">
-      <h2 class="text-xl font-bold mb-4">Configure Golden Cross</h2>
-      <form id="golden-cross-form" class="space-y-4">
-        <!-- Start Date -->
-        <div>
-          <label for="strategy-start-date" class="block text-sm font-medium text-gray-700">Start Date</label>
-          <input type="date" id="strategy-start-date" name="strategy_start_date" class="mt-1 block w-full border-gray-300 rounded-md">
+<div id="proscan-gc-modal" class="proscan-modal hidden" aria-hidden="true">
+    <div class="proscan-modal-card">
+        <div class="proscan-modal-header">
+            <h3>Configure Golden Cross</h3>
+            <p>Set the date range and execution inputs for the group backtest.</p>
         </div>
-        <!-- End Date -->
-        <div>
-          <label for="strategy-end-date" class="block text-sm font-medium text-gray-700">End Date</label>
-          <input type="date" id="strategy-end-date" name="strategy_end_date" class="mt-1 block w-full border-gray-300 rounded-md">
-        </div>
-        <!-- Fast SMA -->
-        <div>
-          <label for="fast-sma" class="block text-sm font-medium text-gray-700">Fast SMA (e.g., 50)</label>
-          <input type="number" id="fast-sma" name="fast_sma" value="50" class="mt-1 block w-full border-gray-300 rounded-md">
-        </div>
-        <!-- Slow SMA -->
-        <div>
-          <label for="slow-sma" class="block text-sm font-medium text-gray-700">Slow SMA (e.g., 200)</label>
-          <input type="number" id="slow-sma" name="slow_sma" value="200" class="mt-1 block w-full border-gray-300 rounded-md">
-        </div>
-        <!-- Order Percentage -->
-        <div>
-          <label for="order-percentage" class="block text-sm font-medium text-gray-700">Order Percentage (%)</label>
-          <input type="number" id="order-percentage" name="order_percentage" value="100" class="mt-1 block w-full border-gray-300 rounded-md">
-        </div>
-        <!-- Starting Cash -->
-        <div>
-          <label for="starting-cash" class="block text-sm font-medium text-gray-700">Starting Cash ($)</label>
-          <input type="number" id="starting-cash" name="starting_cash" value="100000" class="mt-1 block w-full border-gray-300 rounded-md">
-        </div>
-        <!-- Override Shares -->
-        <div>
-          <label for="override-shares" class="block text-sm font-medium text-gray-700">Override Shares (Optional)</label>
-          <input type="number" id="override-shares" name="override_shares" placeholder="Optional" class="mt-1 block w-full border-gray-300 rounded-md">
-        </div>
-        <!-- Action Buttons -->
-        <div class="flex justify-end space-x-2">
-          <button type="button" id="gc-cancel" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
-          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Apply</button>
-        </div>
-      </form>
+
+        <form id="proscan-gc-form" class="proscan-form-grid">
+            <label class="proscan-field">
+                <span>Start Date</span>
+                <input type="date" id="ps-gc-start-date" class="proscan-input" required>
+            </label>
+
+            <label class="proscan-field">
+                <span>End Date</span>
+                <input type="date" id="ps-gc-end-date" class="proscan-input" required>
+            </label>
+
+            <label class="proscan-field">
+                <span>Fast SMA</span>
+                <input type="number" id="ps-gc-fast-sma" value="50" min="1" class="proscan-input" required>
+            </label>
+
+            <label class="proscan-field">
+                <span>Slow SMA</span>
+                <input type="number" id="ps-gc-slow-sma" value="200" min="1" class="proscan-input" required>
+            </label>
+
+            <label class="proscan-field">
+                <span>Order Percentage (%)</span>
+                <input type="number" id="ps-gc-order-percentage" value="100" min="1" max="100" step="0.01" class="proscan-input" required>
+            </label>
+
+            <label class="proscan-field">
+                <span>Starting Cash ($)</span>
+                <input type="number" id="ps-gc-starting-cash" value="100000" min="1" step="0.01" class="proscan-input" required>
+            </label>
+
+            <label class="proscan-field proscan-field-full">
+                <span>Override Shares (optional)</span>
+                <input type="number" id="ps-gc-override-shares" min="1" step="1" class="proscan-input" placeholder="Leave blank to size automatically">
+            </label>
+
+            <div class="proscan-modal-actions proscan-field-full">
+                <button type="button" id="ps-gc-cancel" class="proscan-btn proscan-btn-ghost">Cancel</button>
+                <button type="submit" class="proscan-btn proscan-btn-primary">Create Strategy Card</button>
+            </div>
+        </form>
     </div>
-  </div>
-  
+</div>

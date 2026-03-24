@@ -2,495 +2,642 @@
 {% load static %}
 
 {% block head %}
-<style>
-    .clickable {
-        all: unset; /* Removes button's default styling */
-        display: block;
-        width: 100%;
-        text-align: center;
-        background-color: transparent;
-        cursor: pointer;
-    }
-    .clickable:hover {
-        background-color: skyblue; /* Change to sky blue on hover */
-        color: white;
-    }
-    .active {
-        background-color: #187ed9;
-        color: white;
-    }
-</style>
+    {{ block.super }}
+    <script src="{% static 'js/indicator/indicator.js' %}"></script>
+    <script src="{% static 'js/strategy/golden_cross_sim.js' %}"></script>
+    <script src="{% static 'js/strategy/momentum_sim.js' %}"></script>
+    <script src="{% static 'js/strategy/helpers.js' %}"></script>
+    <script src="{% static 'js/pro_scan_page.js' %}"></script>
+    <style>
+        .proscan-page {
+            min-height: calc(100vh - 60px);
+            background:
+                radial-gradient(circle at top left, rgba(37, 99, 235, 0.10), transparent 34%),
+                linear-gradient(180deg, #eef4fb 0%, #f8fbff 100%);
+            padding: 1.5rem;
+        }
 
-{{ block.super }}
-<link rel="stylesheet" href="{% static 'css/custom.css' %}">
+        .proscan-shell {
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr) 280px;
+            gap: 1.25rem;
+            min-height: calc(100vh - 108px);
+        }
 
-<script src="{% static 'js/indicator/indicator.js' %}"></script>
-<script src="{% static 'js/strategy/golden_cross_sim.js' %}"></script>
+        .proscan-sidebar,
+        .proscan-main,
+        .proscan-aside {
+            border: 1px solid #dbe4f0;
+            border-radius: 26px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 20px 48px rgba(15, 23, 42, 0.08);
+        }
 
+        .proscan-sidebar,
+        .proscan-aside {
+            padding: 1.25rem;
+            overflow-y: auto;
+        }
+
+        .proscan-main {
+            padding: 1.4rem;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .proscan-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.25rem 0.25rem 0;
+        }
+
+        .proscan-header h1,
+        .proscan-section-title {
+            margin: 0;
+            color: #0f172a;
+            font-weight: 800;
+        }
+
+        .proscan-header p,
+        .proscan-muted {
+            margin: 0.45rem 0 0;
+            color: #475569;
+            line-height: 1.55;
+        }
+
+        .proscan-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .proscan-option-group {
+            margin-bottom: 1.35rem;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            background: #fff;
+        }
+
+        .proscan-option-group h3 {
+            margin: 0 0 0.85rem;
+            font-size: 0.9rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #475569;
+        }
+
+        .proscan-option-list {
+            display: grid;
+            gap: 0.6rem;
+        }
+
+        .btn-option {
+            width: 100%;
+            border: 1px solid #dbe4f0;
+            border-radius: 16px;
+            background: #f8fbff;
+            color: #0f172a;
+            padding: 0.85rem 1rem;
+            font: inherit;
+            font-weight: 700;
+            text-align: left;
+            cursor: pointer;
+            transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+        }
+
+        .btn-option:hover {
+            transform: translateY(-1px);
+            border-color: #93c5fd;
+            background: #eff6ff;
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12);
+        }
+
+        .btn-option.active {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            border-color: #2563eb;
+            color: #fff;
+            box-shadow: 0 14px 30px rgba(37, 99, 235, 0.24);
+        }
+
+        .proscan-board,
+        .proscan-table-card,
+        .proscan-status-card {
+            border: 1px solid #dbe4f0;
+            border-radius: 22px;
+            background: #fff;
+            box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+        }
+
+        .proscan-board,
+        .proscan-status-card {
+            padding: 1rem;
+        }
+
+        .proscan-card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            align-items: stretch;
+        }
+
+        .proscan-strategy-card {
+            border: 1px solid #dbe4f0;
+            border-radius: 20px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            padding: 1rem;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .proscan-strategy-card h4 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .proscan-strategy-card p {
+            margin: 0.55rem 0 0;
+            color: #475569;
+            line-height: 1.55;
+        }
+
+        .proscan-card-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            margin-top: 1rem;
+            margin-top: auto;
+        }
+
+        .proscan-btn {
+            border: 0;
+            border-radius: 999px;
+            padding: 0.7rem 1rem;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+        }
+
+        .proscan-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .proscan-btn-primary {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #fff;
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
+        }
+
+        .proscan-btn-secondary {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #fff;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.2);
+        }
+
+        .proscan-btn-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #fff;
+            box-shadow: 0 12px 24px rgba(217, 119, 6, 0.2);
+        }
+
+        .proscan-btn-danger {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+
+        .proscan-btn-ghost {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+        }
+
+        .proscan-table-card {
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .proscan-table-header {
+            padding: 1rem 1rem 0.8rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .proscan-table-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 0.95rem;
+        }
+
+        .proscan-toolbar-field {
+            min-width: 180px;
+            flex: 1 1 200px;
+        }
+
+        .proscan-toolbar-field.proscan-toolbar-field-sm {
+            flex: 0 0 150px;
+            min-width: 150px;
+        }
+
+        .proscan-results-meta {
+            margin-top: 0.8rem;
+            color: #64748b;
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+
+        .proscan-table-wrapper {
+            overflow: auto;
+        }
+
+        .proscan-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 920px;
+        }
+
+        .proscan-table thead {
+            background: #0f172a;
+            color: #fff;
+        }
+
+        .proscan-table th,
+        .proscan-table td {
+            padding: 0.9rem 0.8rem;
+            text-align: center;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        .proscan-table th[data-sort-key] {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .proscan-table th[data-sort-key]::after {
+            content: attr(data-sort-indicator);
+            display: inline-block;
+            min-width: 1.2rem;
+            margin-left: 0.35rem;
+            color: #93c5fd;
+        }
+
+        .proscan-ticker-link {
+            color: #1d4ed8;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .proscan-ticker-link:hover {
+            text-decoration: underline;
+        }
+
+        .proscan-table tbody tr:nth-child(even) {
+            background: #f8fbff;
+        }
+
+        .proscan-table tbody tr:hover {
+            background: #eff6ff;
+        }
+
+        .proscan-table tbody tr.scan-positive {
+            background: #ecfdf5;
+        }
+
+        .proscan-table tbody tr.scan-negative {
+            background: #fff7ed;
+        }
+
+        .proscan-status-card h3 {
+            margin: 0 0 0.6rem;
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #475569;
+        }
+
+        .proscan-status-list {
+            display: grid;
+            gap: 0.85rem;
+        }
+
+        .proscan-status-item {
+            padding: 0.9rem 1rem;
+            border-radius: 16px;
+            background: #f8fbff;
+            border: 1px solid #e2e8f0;
+        }
+
+        .proscan-status-item strong {
+            display: block;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #64748b;
+            margin-bottom: 0.3rem;
+        }
+
+        .proscan-status-item span {
+            color: #0f172a;
+            font-weight: 700;
+        }
+
+        .proscan-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.62);
+            padding: 1.25rem;
+        }
+
+        .proscan-modal.hidden {
+            display: none;
+        }
+
+        .proscan-modal-card {
+            width: min(760px, 100%);
+            border-radius: 26px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            border: 1px solid #dbe4f0;
+            box-shadow: 0 30px 70px rgba(15, 23, 42, 0.24);
+            padding: 1.5rem;
+        }
+
+        .proscan-modal-header {
+            margin-bottom: 1rem;
+        }
+
+        .proscan-modal-header h3 {
+            margin: 0 0 0.35rem;
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .proscan-modal-header p {
+            margin: 0;
+            color: #475569;
+        }
+
+        .proscan-form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 1rem;
+        }
+
+        .proscan-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+        }
+
+        .proscan-field span {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        .proscan-field-full {
+            grid-column: 1 / -1;
+        }
+
+        .proscan-input {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            background: #fff;
+            padding: 0.8rem 0.9rem;
+            font: inherit;
+            color: #0f172a;
+        }
+
+        .proscan-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        @media (max-width: 1200px) {
+            .proscan-shell {
+                grid-template-columns: 260px minmax(0, 1fr);
+            }
+
+            .proscan-aside {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .proscan-page {
+                padding: 1rem;
+            }
+
+            .proscan-shell {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 {% endblock %}
 
-{% block title %}Pro scan | Trading Pro{% endblock %}
+{% block title %}Pro Scan | Trading Pro{% endblock %}
 
 {% block content %}
-    <main class="pt-[30px] w-full h-full fixed bg-[#e5e5e5]">    
-        <div class="h-full w-full flex flex-row bg-[#f9f9f9] overflow-hidden">  
-           <!-- LEFT PANEL: Options -->
-            <aside class="w-1/5 h-screen flex flex-col items-center pt-12 bg-gray-300 border-r border-black overflow-y-auto">
-                <div id="option-panel-container" class="flex flex-col items-center space-y-8 w-full">
-                    
-                    <!-- Ticker Group Panel -->
-                    <div class="w-[158px] pb-16">
-                        <h3 class="text-sm font-bold text-center mb-2">Ticker Group</h3>
-                        <table id="ticker-group" class="w-full border-collapse bg-white">
-                            <tr>
-                                <td>
-                                    <button type="button" class="btn-option" onclick="setTickerGroupAndRedirect('{% url 'stock_list' 'Dow-Jones-30' %}', 'Dow-Jones-30')">
-                                        Dow-Jones-30
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <button type="button" class="btn-option" onclick="setTickerGroupAndRedirect('{% url 'stock_list' 'Nasdaq-100' %}', 'Nasdaq-100')">
-                                        Nasdaq-100
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <button type="button" class="btn-option" onclick="setTickerGroupAndRedirect('{% url 'stock_list' 'S&P-500' %}', 'S&P-500')">
-                                        S&P-500
-                                    </button>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-            
-                    <!-- Strategy Panel -->
-                    <div class="w-[158px] pb-16">
-                        <h3 class="text-sm font-bold text-center mb-2">Strategy</h3>
-                        <table class="w-full border-collapse bg-white">
-                            <tr>
-                                <td>
-                                    <!-- Golden Cross: assign id to trigger modal -->
-                                    <button id="golden-cross-btn" type="button" class="btn-option" data-option="strategy">
-                                        Golden Cross
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <button type="button" class="btn-option" data-option="strategy">
-                                        Fibonacci Retracement
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <button type="button" class="btn-option" data-option="strategy">
-                                        Supply and Demand
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <button type="button" class="btn-option" data-option="strategy">
-                                        *Technical*
-                                    </button>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <!-- Position Panel -->
-                    <div class="w-[158px] pb-16">
-                        <h3 class="text-sm font-bold text-center mb-2">Position</h3>
-                        <table class="w-full border-collapse bg-white">
-                            <tr>
-                                <td>
-                                    <button type="button" class="btn-option" data-option="Long">
-                                        Long
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <button type="button" class="btn-option" data-option="Short">
-                                        Short
-                                    </button>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <!-- Earnings Handling Panel -->
-                    <div class="w-[158px] pb-16">
-                        <h3 class="text-sm font-bold text-center mb-2">Earnings Handling</h3>
-                        <table class="w-full border-collapse bg-white">
-                            <tr>
-                                <td>
-                                    <button type="button" class="btn-option" data-option="Nothing Special">
-                                        Nothing Special
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <button type="button" class="btn-option" data-option="Never Trade Earnings">
-                                        Never Trade Earnings
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <button type="button" class="btn-option" data-option="Only Trade Earnings">
-                                        Only Trade Earnings
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <button type="button" class="btn-option" data-option="Custom Earnings">
-                                        Custom Earnings
-                                    </button>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <!-- Open Trade When Panel -->
-                    <div class="w-[158px] pb-16">
-                        <h3 class="text-sm font-bold text-center mb-2">Open Trade When</h3>
-                        <table class="w-full border-collapse bg-white">
-                            <tr>
-                                <td>
-                                    <button type="button" class="btn-option" data-option="*Technical Open*">
-                                        *Technical Open*
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <button type="button" class="btn-option" data-option="Bull Squeeze">
-                                        Bull Squeeze
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <button type="button" class="btn-option" data-option="Bear Squeeze">
-                                        Bear Squeeze
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <button type="button" class="btn-option" data-option="Pullback">
-                                        Pullback
-                                    </button>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
+<main class="proscan-page" data-pro-scan-page>
+    <div class="proscan-shell">
+        <aside class="proscan-sidebar">
+            <div class="proscan-option-group" data-option-group="ticker-group">
+                <h3>Ticker Group</h3>
+                <div class="proscan-option-list">
+                    <button
+                        type="button"
+                        class="btn-option"
+                        data-group-url="{% url 'stock_list' 'Dow-Jones-30' %}"
+                        data-group-name="Dow-Jones-30">
+                        Dow-Jones-30
+                    </button>
+                    <button
+                        type="button"
+                        class="btn-option"
+                        data-group-url="{% url 'stock_list' 'Nasdaq-100' %}"
+                        data-group-name="Nasdaq-100">
+                        Nasdaq-100
+                    </button>
+                    <button
+                        type="button"
+                        class="btn-option"
+                        data-group-url="{% url 'stock_list' 'S&P-500' %}"
+                        data-group-name="S&P-500">
+                        S&amp;P-500
+                    </button>
                 </div>
-            </aside>
-  
-            
-            <!-- CENTER PANEL: Data Table & Strategy Panels -->
-            <section class="w-3/5 h-[calc(100vh-100px)] p-5 bg-white border border-gray-300 overflow-y-auto">
-                <!-- Strategy panels (for configuration) will be rendered here -->
-                <div id="strategy-panel-container" class="mb-6"></div>
-                
-                <!-- Data Table for Stocks -->
-                <table class="w-full border-collapse mt-5 border border-gray-300">
-                    <thead>
-                    <tr class="bg-[#2E3B4E] text-white font-bold">
-                        <th class="p-2.5 text-center">Name</th>
-                        <th class="p-2.5 text-center">Ticker</th>
-                        <th class="p-2.5 text-center"># Wins</th>
-                        <th class="p-2.5 text-center"># Losses</th>
-                        <th class="p-2.5 text-center">Win Rate</th>
-                        <th class="p-2.5 text-center">Avg Trade Return</th>
-                        <th class="p-2.5 text-center">Total Backtest Return</th>
-                        <th class="p-2.5 text-center">Backtest Length</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for stock in stocks %}
-                        <tr data-ticker="{{ stock.symbol }}" class="even:bg-[#e6eef8] odd:bg-white">
-                        <td class="p-2.5 text-center">{{ stock.name|default:"-" }}</td>
-                        <td class="p-2.5 text-center">{{ stock.symbol|default:"-" }}</td>
-                        <td class="p-2.5 text-center">{{ stock.win_count|default:"-" }}</td>
-                        <td class="p-2.5 text-center">{{ stock.loss_count|default:"-" }}</td>
-                        <td class="p-2.5 text-center">{{ stock.win_rate|default:"-" }}</td>
-                        <td class="p-2.5 text-center">{{ stock.avg_trade_return|default:"-" }}</td>
-                        <td class="p-2.5 text-center total-backtest-return">{{ stock.backtest_return|default:"-" }}</td>
-                        <td class="p-2.5 text-center">{{ stock.backtest_length|default:"-" }}</td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>                
-                </table>    
+            </div>
+
+            <div class="proscan-option-group" data-option-group="strategy">
+                <h3>Strategy</h3>
+                <div class="proscan-option-list">
+                    <button id="golden-cross-btn" type="button" class="btn-option">Golden Cross</button>
+                    <button id="momentum-btn" type="button" class="btn-option">Momentum</button>
+                    <button type="button" class="btn-option">Value Investing</button>
+                    <button type="button" class="btn-option">Supply and Demand</button>
+                    <button type="button" class="btn-option">Technical</button>
+                </div>
+            </div>
+
+            <div class="proscan-option-group" data-option-group="position">
+                <h3>Position</h3>
+                <div class="proscan-option-list">
+                    <button type="button" class="btn-option">Long</button>
+                    <button type="button" class="btn-option">Short</button>
+                </div>
+            </div>
+
+            <div class="proscan-option-group" data-option-group="earnings">
+                <h3>Earnings Handling</h3>
+                <div class="proscan-option-list">
+                    <button type="button" class="btn-option">Nothing Special</button>
+                    <button type="button" class="btn-option">Never Trade Earnings</button>
+                    <button type="button" class="btn-option">Only Trade Earnings</button>
+                    <button type="button" class="btn-option">Custom Earnings</button>
+                </div>
+            </div>
+
+            <div class="proscan-option-group" data-option-group="entries">
+                <h3>Open Trade When</h3>
+                <div class="proscan-option-list">
+                    <button type="button" class="btn-option">Technical Open</button>
+                    <button type="button" class="btn-option">Bull Squeeze</button>
+                    <button type="button" class="btn-option">Bear Squeeze</button>
+                    <button type="button" class="btn-option">Pullback</button>
+                </div>
+            </div>
+        </aside>
+
+        <section class="proscan-main">
+            <div class="proscan-header">
+                <div>
+                    <span class="proscan-badge">Pro Scan</span>
+                    <h1>Run strategy scans across saved ticker groups</h1>
+                    <p>Choose a group, configure a strategy card, and push the results directly into the stock table.</p>
+                </div>
+            </div>
+
+            <section class="proscan-board">
+                <h2 class="proscan-section-title">Active Strategy Cards</h2>
+                <p class="proscan-muted">Each card stores its own scan settings. Edit, rerun, or remove them at any time.</p>
+                <div id="strategy-panel-container" class="proscan-card-grid" style="margin-top: 1rem;"></div>
             </section>
-            
-            <!-- RIGHT PANEL: Additional Content (Empty For Now) -->
-            <aside class="w-1/5 h-screen pt-12 pb-5 bg-gray-300 border-l border-black flex flex-col items-center">
-                <!-- Additional content can be added here -->
-            </aside>
-        </div>
-    </main>
 
-<!-- Include the Golden Cross Modal Partial (make sure the partial uses Tailwind CSS) -->
-{% include "partials/strategies/pro-scan_golden_cross_form.html" %}
-
-
-
-<!-- Inline Scripts -->
-<script>
-    // Global variable to track the selected ticker group.
-    let currentTickerGroup = null;
-  
-    document.addEventListener('DOMContentLoaded', () => {
-        // Restore from sessionStorage
-        currentTickerGroup = sessionStorage.getItem("tickerGroup");
-    
-        if (!currentTickerGroup) {
-            console.warn("No ticker group selected or stored.");
-        } else {
-            console.log("Loaded ticker group from sessionStorage:", currentTickerGroup);
-            // Find the matching ticker group button by comparing its text content
-            const tickerButtons = document.querySelectorAll('#ticker-group .btn-option');
-            tickerButtons.forEach(btn => {
-                // Compare trimmed text content with the currentTickerGroup value
-                if (btn.textContent.trim() === currentTickerGroup) {
-                    btn.classList.add('active');  // Apply active styling
-                }
-            });
-        }
-    
-        // Activation logic for non-ticker buttons (strategy, position, etc)
-        const optionButtons = document.querySelectorAll('#option-panel-container .btn-option');
-        optionButtons.forEach(btn => {
-            // Skip ticker buttons – those now use onclick with setTickerGroupAndRedirect()
-            if (!btn.hasAttribute('onclick')) {
-                btn.addEventListener('click', function () {
-                    const parentTable = this.closest('table');
-                    if (parentTable) {
-                        parentTable.querySelectorAll('.btn-option').forEach(b => b.classList.remove('active'));
-                    }
-                    this.classList.add('active');
-                });
-            }
-        });
-    });
-    
-    function setTickerGroupAndRedirect(url, groupName) {
-        sessionStorage.setItem("tickerGroup", groupName);
-        window.location.href = url;
-    }
-</script>
-  
-
-<!-- Golden Cross Modal and Strategy Panel Script -->
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Golden Cross button (in Strategy Panel) to trigger modal.
-        const goldenCrossBtn = document.getElementById('golden-cross-btn');
-        const goldenCrossModal = document.getElementById('golden-cross-modal');
-        const gcCancel = document.getElementById('gc-cancel');
-        const gcForm = document.getElementById('golden-cross-form');
-        const strategyPanels = document.getElementById('strategy-panel-container');
-
-        // Debug: Check required elements.
-        if (!goldenCrossBtn) console.error("Golden Cross button not found.");
-        if (!goldenCrossModal) console.error("Golden Cross modal not found (id='golden-cross-modal').");
-        if (!gcCancel) console.error("Golden Cross modal cancel button not found (id='gc-cancel').");
-        if (!gcForm) console.error("Golden Cross modal form not found (id='golden-cross-form').");
-        
-        // Open modal when Golden Cross button is clicked.
-        goldenCrossBtn.addEventListener('click', function () {
-            goldenCrossModal.classList.remove('hidden');
-        });
-        
-        // Close modal when cancel is clicked.
-        gcCancel.addEventListener('click', function () {
-            goldenCrossModal.classList.add('hidden');
-        });
-
-        gcForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            console.log("🚨 Golden Cross form submitted.");
-        
-            // Extract form values
-            const startDate = document.getElementById('strategy-start-date')?.value;
-            const endDate = document.getElementById('strategy-end-date')?.value;
-            const fastSMAVal = parseInt(document.getElementById('fast-sma')?.value, 10);
-            const slowSMAVal = parseInt(document.getElementById('slow-sma')?.value, 10);
-            const orderPercentage = parseFloat(document.getElementById('order-percentage')?.value);
-            const startingCash = parseFloat(document.getElementById('starting-cash')?.value);
-            const overrideShares = document.getElementById('override-shares')?.value;
-        
-            console.log({ startDate, endDate, fastSMAVal, slowSMAVal, orderPercentage, startingCash, overrideShares });
-        
-            if (!startDate || !endDate) {
-                console.warn("❌ Start or end date missing.");
-                alert("Please enter both start and end dates.");
-                return;
-            }
-
-
-        
-            // Hide modal
-            goldenCrossModal.classList.add('hidden');
-            console.log("✅ Modal closed");
-        
-            if (!currentTickerGroup) {
-                alert("Please select a ticker group before applying the strategy.");
-                return;
-            }
-            
-            // Create panel block
-            const panel = document.createElement('div');
-            panel.className = "p-4 mb-4 bg-white rounded-lg shadow border border-gray-300";
-
-            const configId = Date.now();  
-
-            panel.dataset.fastSMA = fastSMAVal;
-            panel.dataset.slowSMA = slowSMAVal;
-            panel.dataset.orderPercentage = orderPercentage;
-            panel.dataset.startingCash = startingCash;
-            panel.dataset.overrideShares = overrideShares;
-            panel.dataset.startDate = startDate;
-            panel.dataset.endDate = endDate;
-
-
-
-            panel.innerHTML = `
-                <h4 class="font-semibold mb-2">Golden Cross Strategy</h4>
-                <p class="text-sm mb-1">Group: <strong>${currentTickerGroup}</strong></p>
-                <p class="text-sm mb-1">Fast SMA: ${fastSMAVal}, Slow SMA: ${slowSMAVal}</p>
-                <p class="text-sm mb-1">Cash: $${startingCash} | Order %: ${orderPercentage}%</p>
-                <div class="flex space-x-3 mt-3">
-                    <button class="run-btn bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">▶️ Run</button>
-                    <button class="edit-btn bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm">✏️ Edit</button>
-                    <button class="delete-btn bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">❌ Delete</button>
+            <section class="proscan-table-card">
+                <div class="proscan-table-header">
+                    <h2 class="proscan-section-title">Scan Results</h2>
+                    <p class="proscan-muted">Metrics update row by row when a strategy card is run against the selected ticker group.</p>
+                    <div class="proscan-table-toolbar">
+                        <label class="proscan-field proscan-toolbar-field">
+                            <span>Search ticker or company</span>
+                            <input id="proscan-filter-query" type="text" class="proscan-input" placeholder="AAPL, Apple, NVDA...">
+                        </label>
+                        <label class="proscan-field proscan-toolbar-field-sm">
+                            <span>Performance</span>
+                            <select id="proscan-filter-performance" class="proscan-input">
+                                <option value="all">All rows</option>
+                                <option value="positive">Positive return</option>
+                                <option value="negative">Negative return</option>
+                                <option value="with-data">Only scanned rows</option>
+                            </select>
+                        </label>
+                        <label class="proscan-field proscan-toolbar-field-sm">
+                            <span>Min trades</span>
+                            <input id="proscan-filter-min-trades" type="number" min="0" step="1" class="proscan-input" placeholder="0">
+                        </label>
+                        <div class="proscan-field proscan-toolbar-field-sm" style="justify-content: flex-end;">
+                            <span>&nbsp;</span>
+                            <button id="proscan-clear-filters" type="button" class="proscan-btn proscan-btn-ghost">Clear Filters</button>
+                        </div>
+                    </div>
+                    <div id="proscan-results-meta" class="proscan-results-meta">Showing all results</div>
                 </div>
-            `;
 
-            const strategyPanels = document.getElementById('strategy-panel-container')
-            strategyPanels.appendChild(panel);
-            
-            // Attach event listeners
-            const runBtn = panel.querySelector('.run-btn');
-            const editBtn = panel.querySelector('.edit-btn');
-            const deleteBtn = panel.querySelector('.delete-btn');
+                <div class="proscan-table-wrapper">
+                    <table id="proscan-table" class="proscan-table">
+                        <thead>
+                            <tr>
+                                <th data-sort-key="name" data-sort-type="text" data-sort-indicator="">Name</th>
+                                <th data-sort-key="ticker" data-sort-type="text" data-sort-indicator="">Ticker</th>
+                                <th data-sort-key="wins" data-sort-type="number" data-sort-indicator=""># Wins</th>
+                                <th data-sort-key="losses" data-sort-type="number" data-sort-indicator=""># Losses</th>
+                                <th data-sort-key="winRate" data-sort-type="number" data-sort-indicator="">Win Rate</th>
+                                <th data-sort-key="avgTradeReturn" data-sort-type="number" data-sort-indicator="">Avg Trade Return</th>
+                                <th data-sort-key="totalReturn" data-sort-type="number" data-sort-indicator="">Total Backtest Return</th>
+                                <th data-sort-key="trades" data-sort-type="number" data-sort-indicator="">Trades</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stock in stocks %}
+                                <tr data-ticker="{{ stock.symbol }}" data-name="{{ stock.name|default:'-' }}">
+                                    <td>{{ stock.name|default:"-" }}</td>
+                                    <td>{{ stock.symbol|default:"-" }}</td>
+                                    <td>{{ stock.win_count|default:"-" }}</td>
+                                    <td>{{ stock.loss_count|default:"-" }}</td>
+                                    <td>{{ stock.win_rate|default:"-" }}</td>
+                                    <td>{{ stock.avg_trade_return|default:"-" }}</td>
+                                    <td>{{ stock.backtest_return|default:"-" }}</td>
+                                    <td>{{ stock.backtest_length|default:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </section>
 
-            runBtn.addEventListener('click', function () {
-                console.log(`▶️ Running strategy for group: ${currentTickerGroup}`);
-                
-                
-                // Create and show a loading overlay
-                const loadingOverlay = document.createElement('div');
-                loadingOverlay.id = 'strategy-loading-overlay';
-                // Tailwind: fixed inset-0, high z-index, flex center, white background with opacity.
-                loadingOverlay.className = "fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-75";
-                loadingOverlay.innerHTML = `<div class="text-xl font-semibold">Please wait, processing strategy...</div>`;
-                document.body.appendChild(loadingOverlay);
+        <aside class="proscan-aside">
+            <section class="proscan-status-card">
+                <h3>Current Context</h3>
+                <div class="proscan-status-list">
+                    <div class="proscan-status-item">
+                        <strong>Selected Group</strong>
+                        <span id="current-group-value">None selected</span>
+                    </div>
+                    <div class="proscan-status-item">
+                        <strong>Last Strategy</strong>
+                        <span id="current-strategy-value">No strategy card created yet</span>
+                    </div>
+                    <div class="proscan-status-item">
+                        <strong>Scan Status</strong>
+                        <span id="scan-status-value">Idle</span>
+                    </div>
+                </div>
+            </section>
+        </aside>
+    </div>
+</main>
 
-
-
-                console.log("📦 Fetching stock data for:", currentTickerGroup);
-                fetch(`/fetch_group_data/?ticker_group=${encodeURIComponent(currentTickerGroup)}&start_date=${startDate}&end_date=${endDate}`)
-                .then(res => {
-                    console.log("🌐 Fetch complete. Status:", res.status);
-                    return res.json();
-                })
-                .then(data => {
-                    if (!data.valid) {
-                        alert("Error loading stock data: " + data.error);
-                        console.error("❌ Data invalid:", data);
-                        loadingOverlay.remove();
-                        return;
-                    }
-        
-                    console.log("✅ Data received:", data);
-                    console.log("📊 Sample chartData:", data.data?.[0]?.chartData?.slice(0, 3));
-
-                    const stocks = data.data;
-                    
-
-                    // Remove the overlay shortly before we start updating the table.
-                    setTimeout(() => {
-                        const overlay = document.getElementById('strategy-loading-overlay');
-                        if (overlay) {
-                            overlay.remove();
-                            console.log("✅ Loading overlay removed");
-                        }
-                    }, 25); // Adjust this value if desired (25ms delay)
-    
-                    stocks.forEach((stock, index) => {
-                        // Use setTimeout to schedule each iteration after an increasing delay (e.g., 50ms per stock)
-                        setTimeout(() => {
-                            const row = document.querySelector(`tr[data-ticker="${stock.symbol}"]`);
-                            console.log(`➡️ Processing ${stock.symbol}`, row ? "(row found)" : "(row not found)");
-            
-                            if (!stock.chartData || !Array.isArray(stock.chartData) || stock.chartData.length === 0) {
-                                console.warn(`⚠️ No valid chart data for ${stock.symbol}`);
-                                if (row) {
-                                    row.style.backgroundColor = "#fbeaea";
-                                    row.cells[6].textContent = "No data";
-                                }
-                                return;
-                            }
-        
-                            const simResult = runGoldenCrossStrategySim(
-                                stock.chartData,
-                                fastSMAVal,
-                                slowSMAVal,
-                                orderPercentage,
-                                startingCash,
-                                overrideShares
-                            );
-        
-                            if (row) {
-                                row.cells[6].textContent = "$" + simResult.finalCash.toFixed(2);
-                                row.style.backgroundColor = "#e8fbe8";  // Optional: success highlight
-                            } else {
-                                console.warn(`🛑 Row not found for ${stock.symbol}`);
-                            }
-                        }, index * 50 + 25);
-                    });
-                })
-                .catch(err => {
-                    console.error("❌ Fetch failed:", err);
-                    const overlay = document.getElementById('strategy-loading-overlay');
-                    if (overlay) overlay.remove();
-                });
-            });
-
-            editBtn.addEventListener('click', function () {
-                console.log("✏️ Editing strategy...");
-            
-                document.getElementById('fast-sma').value = panel.dataset.fastSMA;
-                document.getElementById('slow-sma').value = panel.dataset.slowSMA;
-                document.getElementById('order-percentage').value = panel.dataset.orderPercentage;
-                document.getElementById('starting-cash').value = panel.dataset.startingCash;
-                document.getElementById('override-shares').value = panel.dataset.overrideShares || "";
-            
-                // Re-open the modal
-                goldenCrossModal.classList.remove('hidden');
-            
-                // Remove the old panel so it can be re-added fresh on resubmit
-                panel.remove();
-            });
-        
-            deleteBtn.addEventListener('click', function () {
-                panel.remove();
-            });
-        });
-        
-   
-    });
-</script>
-
-          
+{% include "partials/strategies/pro-scan_golden_cross_form.html" %}
+{% include "partials/strategies/pro-scan_momentum_form.html" %}
 {% endblock %}

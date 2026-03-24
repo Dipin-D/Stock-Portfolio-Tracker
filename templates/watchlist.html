@@ -1,239 +1,607 @@
 {% extends 'base.html' %}
 
 {% block head %}
+    {{ block.super }}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-    /* General Styling */
-    body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        margin: 30px;
-        padding: 20px;
-    }
-    
-    /* Title */
-    .title {
-        margin: 20px 0;
-        font-size: 28px;
-        color: #333;
-    }
+        .watchlist-page {
+            --watchlist-display-font: 'Cormorant Garamond', Georgia, serif;
+            --watchlist-body-font: 'Manrope', 'Inter', sans-serif;
+            --watchlist-text: #132238;
+            --watchlist-muted: #607287;
+            --watchlist-border: #d8e3ef;
+            --watchlist-soft: #f4f8fd;
+            min-height: calc(100vh - 60px);
+            background:
+                radial-gradient(circle at top left, rgba(14, 165, 233, 0.10), transparent 28%),
+                linear-gradient(180deg, #eef4fb 0%, #f8fbff 100%);
+            padding: 1.4rem;
+            color: var(--watchlist-text);
+            font-family: var(--watchlist-body-font);
+        }
 
-    /* Container for tables */
-    .grid-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-        gap: 20px;
-        justify-content: center;
-        padding: 20px;
-    }
+        .watchlist-shell {
+            max-width: 1320px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.35rem;
+        }
 
-    /* Individual Table Box */
-    .container {
-        text-align: center;
-        width: 400px;
-    }
-    
-    /* Table Styling */
-    .box {
-        width: 100%;
-        margin-top: 3px;
-        border-collapse: collapse;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
+        .watchlist-hero,
+        .watchlist-section {
+            border: 1px solid var(--watchlist-border);
+            border-radius: 28px;
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 18px 42px rgba(15, 23, 42, 0.07);
+        }
 
-    thead {
-        background-color: #0a192f;
-        color: white; /* Change to white for better contrast */
-        font-weight: bold;
-    }
+        .watchlist-hero,
+        .watchlist-section {
+            padding: 1.55rem;
+        }
 
-    .box th, .box td {
-        height: 19px;
-        padding: 10px;
-        text-align: center;
-    }
+        .watchlist-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+            gap: 1.2rem;
+            align-items: stretch;
+        }
 
-    .box tr:nth-child(even) {
-        background-color: #e6eef8;
-    }
+        .watchlist-kicker,
+        .watchlist-section-kicker {
+            margin: 0 0 0.3rem;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #4a6b93;
+        }
 
+        .watchlist-title,
+        .watchlist-section-title,
+        .watchlist-card-title {
+            font-family: var(--watchlist-display-font);
+            color: #10213b;
+        }
 
+        .watchlist-title {
+            margin: 0;
+            font-size: 2.45rem;
+            line-height: 0.98;
+            font-weight: 700;
+        }
+
+        .watchlist-copy,
+        .watchlist-subcopy {
+            margin: 0.75rem 0 0;
+            max-width: 74ch;
+            line-height: 1.75;
+            color: var(--watchlist-muted);
+        }
+
+        .watchlist-status-grid {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .watchlist-status-card {
+            border: 1px solid #e2ebf5;
+            border-radius: 22px;
+            background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+            padding: 1rem 1.1rem;
+        }
+
+        .watchlist-status-card span {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--watchlist-muted);
+        }
+
+        .watchlist-status-card strong {
+            display: block;
+            margin-top: 0.3rem;
+            font-size: 1.45rem;
+            color: #10213b;
+        }
+
+        .watchlist-momentum-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .watchlist-section-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .watchlist-section-title,
+        .watchlist-card-title {
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .watchlist-section-title {
+            font-size: 1.85rem;
+        }
+
+        .watchlist-card-title {
+            font-size: 1.3rem;
+        }
+
+        .watchlist-refresh-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.42rem 0.8rem;
+            border-radius: 999px;
+            background: #e0f2fe;
+            color: #0c4a6e;
+            font-size: 0.8rem;
+            font-weight: 800;
+        }
+
+        .watchlist-table-wrap {
+            overflow: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            background: #fff;
+        }
+
+        .watchlist-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            color: #10213b;
+        }
+
+        .watchlist-table thead {
+            background: #edf3fb;
+        }
+
+        .watchlist-table th,
+        .watchlist-table td {
+            padding: 0.95rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #edf3fb;
+            white-space: nowrap;
+        }
+
+        .watchlist-table th {
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #4b5d73;
+        }
+
+        .watchlist-table tbody tr:nth-child(even) {
+            background: #fafcff;
+        }
+
+        .watchlist-score {
+            font-weight: 800;
+            color: #0369a1;
+        }
+
+        .watchlist-score-muted {
+            color: #0f172a;
+            font-weight: 700;
+        }
+
+        .watchlist-link {
+            color: #1d4ed8;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .watchlist-link:hover {
+            text-decoration: underline;
+        }
+
+        .watchlist-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.38rem 0.72rem;
+            border-radius: 999px;
+            font-size: 0.76rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .watchlist-badge-strong {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .watchlist-badge-mixed {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .watchlist-badge-weak {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .watchlist-math-link {
+            color: #0f766e;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .watchlist-math-link:hover {
+            text-decoration: underline;
+        }
+
+        .watchlist-empty {
+            margin: 0;
+            padding: 1.2rem;
+            text-align: center;
+            color: var(--watchlist-muted);
+            line-height: 1.7;
+        }
+
+        @media (max-width: 1040px) {
+            .watchlist-hero,
+            .watchlist-momentum-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .watchlist-page {
+                padding: 1rem;
+            }
+
+            .watchlist-title {
+                font-size: 2rem;
+            }
+        }
     </style>
 {% endblock %}
 
+{% block title %}
+    Watchlist | Trading Pro
+{% endblock %}
+
 {% block content %}
-    <h1 class="title">Trading Pro® Active Triggers</h1>
+    <div class="watchlist-page" data-watchlist-page>
+        <div class="watchlist-shell">
+            <section class="watchlist-hero">
+                <div>
+                    <p class="watchlist-kicker">Active Triggers</p>
+                    <h1 class="watchlist-title">Watchlist</h1>
+                    <p class="watchlist-copy">
+                        This page surfaces the strongest current Golden Cross setups and the top momentum names from the same working universe. Every ticker is clickable and opens a deeper research page before you hand the setup into Backtest.
+                    </p>
+                </div>
+                <div class="watchlist-status-grid">
+                    <div class="watchlist-status-card">
+                        <span>Golden Cross refresh</span>
+                        <strong id="gc-refresh">Loading…</strong>
+                    </div>
+                    <div class="watchlist-status-card">
+                        <span>Momentum refresh</span>
+                        <strong id="mom-refresh">Loading…</strong>
+                    </div>
+                    <div class="watchlist-status-card">
+                        <span>Weighted refresh</span>
+                        <strong id="weighted-refresh">Loading…</strong>
+                    </div>
+                    <div class="watchlist-status-card">
+                        <span>Cadence</span>
+                        <strong>Every 5 minutes</strong>
+                    </div>
+                </div>
+            </section>
 
-    <div class="grid-container">
-        <!-- MACD Momentum -->
-        <div class="container">
-            <h2>MACD Momentum</h2>
-            <table class="box"> 
-                <thead>
-                    <tr>
-                        <th>Ticker</th>
-                        <th>Return</th>
-                        <th>Wins</th>
-                        <th>Losses</th>
-                        <th>Triggered</th>
-                    </tr>
-                </thead>
-                <tbody>    
-                    <tr>
-                        <td>SPY</td>
-                        <td>73.9%</td>
-                        <td>5</td>
-                        <td>1</td>
-                        <td>Today</td>
-                    </tr>
-                    {% for _ in range_list %}
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>  
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+            <section class="watchlist-section">
+                <div class="watchlist-section-header">
+                    <div>
+                        <p class="watchlist-section-kicker">Golden Cross</p>
+                        <h2 class="watchlist-section-title">Top 5 strongest active crossovers</h2>
+                        <p class="watchlist-subcopy">Composite score combines crossover recency, 50/200 spread, slope confirmation, price confirmation, and volume confirmation.</p>
+                    </div>
+                    <span class="watchlist-refresh-pill" id="gc-pill">Refreshing…</span>
+                </div>
+                <div class="watchlist-table-wrap">
+                    <table class="watchlist-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Ticker</th>
+                                <th>Live Composite</th>
+                                <th>10Y Quality</th>
+                                <th>Consensus</th>
+                                <th>Days Since Cross</th>
+                                <th>Spread</th>
+                                <th>Volume Ratio</th>
+                                <th>Math</th>
+                            </tr>
+                        </thead>
+                        <tbody id="golden-cross-body">
+                            <tr><td colspan="9" class="watchlist-empty">Loading strong Golden Cross signals…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
-        <!-- Buy the Dip -->
-        <div class="container">
-            <h2>Buy the Dip</h2>
-            <table class="box">
-                <thead>
-                    <tr>
-                        <th>Ticker</th>
-                        <th>Return</th>
-                        <th>Wins</th>
-                        <th>Losses</th>
-                        <th>Triggered</th>
-                    </tr>
-                </thead>
-                <tbody>    
-                    <tr>
-                        <td>AAPL</td>
-                        <td>120.5%</td>
-                        <td>8</td>
-                        <td>2</td>
-                        <td>Friday</td>
-                    </tr>
-                    {% for _ in range_list %}
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>  
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+            <section class="watchlist-section">
+                <div class="watchlist-section-header">
+                    <div>
+                        <p class="watchlist-section-kicker">Momentum</p>
+                        <h2 class="watchlist-section-title">Relative strength leaders</h2>
+                        <p class="watchlist-subcopy">Momentum now sits on its own full-width row, using the same research clickthrough so you can move from rank table to ticker context without guessing.</p>
+                    </div>
+                    <span class="watchlist-refresh-pill">{{ 5 }}-minute refresh</span>
+                </div>
+                <div class="watchlist-momentum-grid">
+                    <div>
+                        <h3 class="watchlist-card-title">Top 5 · 60-day</h3>
+                        <div class="watchlist-table-wrap" style="margin-top: 0.8rem;">
+                            <table class="watchlist-table">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Ticker</th>
+                                        <th>Momentum</th>
+                                        <th>As Of</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mom-60">
+                                    <tr><td colspan="4" class="watchlist-empty">Loading…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="watchlist-card-title">Top 5 · 120-day</h3>
+                        <div class="watchlist-table-wrap" style="margin-top: 0.8rem;">
+                            <table class="watchlist-table">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Ticker</th>
+                                        <th>Momentum</th>
+                                        <th>As Of</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mom-120">
+                                    <tr><td colspan="4" class="watchlist-empty">Loading…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-        <!-- Golden Cross Strategy -->
-        <div class="container">
-            <h2>Golden Crossover</h2>
-            <table class="box">
-                <thead>
-                    <tr>
-                        <th>Ticker</th>
-                        <th>Return</th>
-                        <th>Wins</th>
-                        <th>Losses</th>
-                        <th>Triggered</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>AMD</td>
-                        <td>85.3%</td>
-                        <td>6</td>
-                        <td>2</td>
-                        <td>Monday</td>
-                    </tr>
-                    {% for _ in range_list %}
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>  
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Bullish Burst -->
-        <div class="container">
-            <h2>Bullish Burst</h2>
-            <table class="box">
-                <thead>
-                    <tr>
-                        <th>Ticker</th>
-                        <th>Return</th>
-                        <th>Wins</th>
-                        <th>Losses</th>
-                        <th>Triggered</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>TSLA</td>
-                        <td>95.7%</td>
-                        <td>7</td>
-                        <td>3</td>
-                        <td>Yesterday</td>
-                    </tr>
-                    {% for _ in range_list %}
-                    <tr>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>  
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Fade the Gap -->
-        <div class="container">
-            <h2>Fade the Gap</h2>
-            <table class="box">
-                <thead>
-                    <tr>
-                        <th>Ticker</th>
-                        <th>Return</th>
-                        <th>Wins</th>
-                        <th>Losses</th>
-                        <th>Triggered</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>NVDA</td>
-                        <td>102.3%</td>
-                        <td>9</td>
-                        <td>1</td>
-                        <td>Tuesday</td>
-                        {% for _ in range_list %}
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>  
-                        </tr>
-                        {% endfor %}
-                    </tr>
-                </tbody>
-            </table>
+            <section class="watchlist-section">
+                <div class="watchlist-section-header">
+                    <div>
+                        <p class="watchlist-section-kicker">Golden Cross Weighted</p>
+                        <h2 class="watchlist-section-title">Top 5 · 10Y weighted backtest quality</h2>
+                        <p class="watchlist-subcopy">This row ranks the same watchlist universe by a backtest-only 10-year Golden Cross quality score. It keeps the live composite beside the historical quality score so you can see consensus or divergence immediately.</p>
+                    </div>
+                    <span class="watchlist-refresh-pill" id="weighted-pill">Refreshing…</span>
+                </div>
+                <div class="watchlist-table-wrap">
+                    <table class="watchlist-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Ticker</th>
+                                <th>10Y Quality</th>
+                                <th>Live Composite</th>
+                                <th>Consensus</th>
+                                <th>Win Rate</th>
+                                <th>Avg Trade Return</th>
+                                <th>Total Return</th>
+                                <th>Max Drawdown</th>
+                                <th>Trades</th>
+                                <th>Math</th>
+                            </tr>
+                        </thead>
+                        <tbody id="golden-cross-weighted-body">
+                            <tr><td colspan="11" class="watchlist-empty">Loading weighted Golden Cross signals…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const gcBody = document.getElementById('golden-cross-body');
+            const weightedBody = document.getElementById('golden-cross-weighted-body');
+            const gcRefresh = document.getElementById('gc-refresh');
+            const gcPill = document.getElementById('gc-pill');
+            const momRefresh = document.getElementById('mom-refresh');
+            const weightedRefresh = document.getElementById('weighted-refresh');
+            const weightedPill = document.getElementById('weighted-pill');
+            const momentumTargets = ['mom-60', 'mom-120'];
+            const state = {
+                goldenCross: null,
+                momentum: null,
+                weighted: null,
+            };
+
+            function tickerLink(symbol, url) {
+                return `<a class="watchlist-link" href="${url || `/research/${symbol}/`}">${symbol}</a>`;
+            }
+
+            function mathLink(url) {
+                return url ? `<a class="watchlist-math-link" href="${url}">Open Math</a>` : '—';
+            }
+
+            function consensusBadge(label) {
+                const normalized = String(label || '').toLowerCase();
+                let className = 'watchlist-badge-mixed';
+                if (normalized.includes('strong now + strong history')) {
+                    className = 'watchlist-badge-strong';
+                } else if (normalized.includes('weak now + weak history')) {
+                    className = 'watchlist-badge-weak';
+                }
+                return `<span class="watchlist-badge ${className}">${label || 'Unavailable'}</span>`;
+            }
+
+            function renderGoldenCross(payload) {
+                const rows = payload?.results || [];
+                gcRefresh.textContent = payload?.as_of || 'Unavailable';
+                gcPill.textContent = payload?.as_of ? `Updated ${payload.as_of}` : 'Refresh unavailable';
+
+                if (!rows.length) {
+                    gcBody.innerHTML = '<tr><td colspan="9" class="watchlist-empty">No active Golden Cross candidates are available right now.</td></tr>';
+                    return;
+                }
+
+                gcBody.innerHTML = rows.map((row, index) => `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${tickerLink(row.symbol, row.research_url)}</td>
+                        <td class="watchlist-score">${Number(row.composite_score).toFixed(2)}</td>
+                        <td class="watchlist-score-muted">${Number(row.weighted_quality_score || 0).toFixed(2)}</td>
+                        <td>${consensusBadge(row.consensus_label)}</td>
+                        <td>${row.days_since_cross ?? '—'}</td>
+                        <td>${Number(row.spread_pct).toFixed(2)}%</td>
+                        <td>${Number(row.volume_ratio).toFixed(2)}x</td>
+                        <td>${mathLink(row.math_url)}</td>
+                    </tr>
+                `).join('');
+            }
+
+            function renderWeighted(payload) {
+                const rows = payload?.results || [];
+                weightedRefresh.textContent = payload?.as_of || 'Unavailable';
+                weightedPill.textContent = payload?.as_of ? `Updated ${payload.as_of}` : 'Refresh unavailable';
+
+                if (!rows.length) {
+                    weightedBody.innerHTML = '<tr><td colspan="11" class="watchlist-empty">No weighted Golden Cross candidates are available right now.</td></tr>';
+                    return;
+                }
+
+                weightedBody.innerHTML = rows.map((row, index) => `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${tickerLink(row.symbol, row.research_url)}</td>
+                        <td class="watchlist-score">${Number(row.quality_score).toFixed(2)}</td>
+                        <td class="watchlist-score-muted">${Number(row.live_composite_score || 0).toFixed(2)}</td>
+                        <td>${consensusBadge(row.consensus_label)}</td>
+                        <td>${(Number(row.win_rate || 0) * 100).toFixed(2)}%</td>
+                        <td>${(Number(row.avg_trade_return || 0) * 100).toFixed(2)}%</td>
+                        <td>${(Number(row.total_return_pct || 0) * 100).toFixed(2)}%</td>
+                        <td>${(Number(row.max_drawdown || 0) * 100).toFixed(2)}%</td>
+                        <td>${row.trade_count ?? 0}</td>
+                        <td>${mathLink(row.math_url)}</td>
+                    </tr>
+                `).join('');
+            }
+
+            function renderMomentum(payload) {
+                momRefresh.textContent = payload?.as_of || 'Unavailable';
+                const sets = payload?.results || {};
+
+                momentumTargets.forEach((targetId) => {
+                    const target = document.getElementById(targetId);
+                    const rows = sets[targetId] || [];
+                    if (!target) {
+                        return;
+                    }
+
+                    if (!rows.length) {
+                        target.innerHTML = '<tr><td colspan="4" class="watchlist-empty">No data</td></tr>';
+                        return;
+                    }
+
+                    target.innerHTML = rows.map((row, index) => `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${tickerLink(row.symbol, row.research_url)}</td>
+                            <td>${Number(row.momentum_pct).toFixed(2)}%</td>
+                            <td>${payload.as_of}</td>
+                        </tr>
+                    `).join('');
+                });
+            }
+
+            async function refreshGoldenCross() {
+                try {
+                    const response = await fetch('/api/watchlist/golden-cross/');
+                    const payload = await response.json();
+                    if (!response.ok || !payload.valid) {
+                        throw new Error(payload.error || 'Golden Cross refresh failed.');
+                    }
+                    state.goldenCross = payload;
+                    renderGoldenCross(payload);
+                } catch (error) {
+                    if (state.goldenCross) {
+                        renderGoldenCross(state.goldenCross);
+                    } else {
+                        gcBody.innerHTML = '<tr><td colspan="8" class="watchlist-empty">Unable to load Golden Cross watchlist right now.</td></tr>';
+                        gcPill.textContent = 'Retrying automatically';
+                    }
+                }
+            }
+
+            async function refreshWeightedGoldenCross() {
+                try {
+                    const response = await fetch('/api/watchlist/golden-cross-weighted/');
+                    const payload = await response.json();
+                    if (!response.ok || !payload.valid) {
+                        throw new Error(payload.error || 'Weighted Golden Cross refresh failed.');
+                    }
+                    state.weighted = payload;
+                    renderWeighted(payload);
+                } catch (error) {
+                    if (state.weighted) {
+                        renderWeighted(state.weighted);
+                    } else {
+                        weightedBody.innerHTML = '<tr><td colspan="11" class="watchlist-empty">Unable to load weighted Golden Cross watchlist right now.</td></tr>';
+                        weightedPill.textContent = 'Retrying automatically';
+                    }
+                }
+            }
+
+            async function refreshMomentum() {
+                try {
+                    const response = await fetch('/api/watchlist/momentum/');
+                    const payload = await response.json();
+                    if (!response.ok || !payload.valid) {
+                        throw new Error(payload.error || 'Momentum refresh failed.');
+                    }
+                    state.momentum = payload;
+                    renderMomentum(payload);
+                } catch (error) {
+                    if (state.momentum) {
+                        renderMomentum(state.momentum);
+                    } else {
+                        momentumTargets.forEach((targetId) => {
+                            const target = document.getElementById(targetId);
+                            if (target) {
+                                target.innerHTML = '<tr><td colspan="4" class="watchlist-empty">Unable to load momentum watchlist right now.</td></tr>';
+                            }
+                        });
+                    }
+                }
+            }
+
+            refreshGoldenCross();
+            refreshMomentum();
+            refreshWeightedGoldenCross();
+            window.setInterval(refreshGoldenCross, 300000);
+            window.setInterval(refreshMomentum, 300000);
+            window.setInterval(refreshWeightedGoldenCross, 300000);
+        });
+    </script>
 {% endblock %}

@@ -1,15 +1,29 @@
 {
-  "devDependencies": {
-    "autoprefixer": "^10.4.21",
-    "postcss": "^8.5.3",
-    "tailwindcss": "^4.0.15"
-  },
-  "dependencies": {
-    "apexcharts": "^4.5.0",
-    "lightweight-charts": "^5.0.3"
-  },
+  "name": "ai-trader",
+  "version": "1.0.0",
+  "description": "This project uses [Django Tailwind](https://django-tailwind.readthedocs.io/) for styling. Before running the server you need to install Node and Python dependencies used by Tailwind.",
+  "main": "index.js",
   "scripts": {
-    "dev": "npx tailwindcss -i ./static/css/styles.css -o ./static/css/output.css --watch",
-    "build": "npx tailwindcss -i ./static/css/styles.css -o ./static/css/output.css --minify"
+    "build:css": "postcss assets/css/styles.css -o theme/static/css/styles.css",
+    "watch:css": "npm run build:css -- -w"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dipin-D/Stock-Portfolio-Tracker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Dipin-D/Stock-Portfolio-Tracker/issues"
+  },
+  "homepage": "https://github.com/Dipin-D/Stock-Portfolio-Tracker#readme",
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.10",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "postcss-cli": "^11.0.1",
+    "tailwindcss": "^4.1.10"
   }
 }

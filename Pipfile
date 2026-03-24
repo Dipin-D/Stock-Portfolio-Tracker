@@ -5,16 +5,13 @@ name = "pypi"
 
 [packages]
 django = "*"
-django-tailwind = "*"
 pandas = "*"
 backtrader = "*"
 lxml = "*"
-matplotlib = "*"
-yfinance = "*"
+yfinance = "==0.2.65"
 
 [dev-packages]
-ipykernel = "*"
-ipython = "*"
 
 [requires]
 python_version = "3.13"
+python_full_version = "3.13.5"

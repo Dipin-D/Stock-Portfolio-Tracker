@@ -1,29 +1,83 @@
-<!-- partials/portfolio_form_partial.html -->
-
-<div class="portfolio-form grid grid-cols-1 p-6 border shadow-lg w-[450px] flex-shrink-0 relative">
-    <!-- COMMENT: action buttons with proper classes -->
-    <div class="absolute top-0 left-0 z-20">
-        <button class="clone-btn bg-[#0a192f] text-white shadow-md p-1">clone</button>
-        <button class="remove-btn bg-[#0a192f] text-white shadow-md p-1">remove</button>
+<div
+    class="portfolio-form portfolio-panel-card portfolio-form-card"
+    data-portfolio-id="{{ portfolio.id|default_if_none:'' }}"
+>
+    <div class="portfolio-card-toolbar">
+        <div class="portfolio-card-actions">
+            <button type="button" class="portfolio-icon-btn clone-btn" title="Clone portfolio">Copy</button>
+            <button type="submit" form="portfolio-form-{{ portfolio.id|default:'new' }}" class="portfolio-icon-btn portfolio-icon-btn-save" title="Save portfolio">Save</button>
+        </div>
+        <div class="portfolio-card-actions">
+            <button type="button" class="portfolio-icon-btn portfolio-icon-btn-danger remove-btn" title="Remove portfolio">Delete</button>
+        </div>
     </div>
 
-    <form method="POST" class="space-y-4 border relative z-10">
+    <form method="POST" id="portfolio-form-{{ portfolio.id|default:'new' }}" class="portfolio-form-body">
         {% csrf_token %}
-        <input type="hidden" name="portfolio_id" value="{{ portfolio.id }}">
-        
-        {{ form.as_p }}
+        <input type="hidden" name="portfolio_id" value="{{ portfolio.id|default_if_none:'' }}">
+        <input
+            type="hidden"
+            name="ticker"
+            value="{{ portfolio.ticker|default_if_none:'' }}"
+            class="portfolio-hidden-tickers"
+        >
+        <input
+            type="hidden"
+            name="allocation"
+            value="{{ portfolio.allocation|default_if_none:'' }}"
+            class="portfolio-hidden-allocations"
+        >
 
-        <!-- COMMENT: consistent custom checkbox outside of form, named correctly for backend -->
-        <div class="flex absolute top-0 right-0 items-center space-x-3 p-1 bg-[#0a192f] border z-20">
-            <label class="text-white">Set as Default:</label>
-            <input 
-                type="checkbox" 
-                name="is_default" 
-                {% if portfolio.is_default %}checked{% endif %} 
-                class="border p-1"
-            >
+        <div class="portfolio-builder-field portfolio-builder-field-name">
+            <label for="{{ form.name.id_for_label }}">Portfolio Name</label>
+            {{ form.name }}
         </div>
-        
-        <button type="submit" class="absolute bottom-0 right-0 bg-[#0a192f] text-white shadow-md p-1">save</button>
+
+        <div class="portfolio-builder-meta-grid">
+            <div class="portfolio-builder-field">
+                <label for="{{ form.rebalance_frequency.id_for_label }}">Rebalance</label>
+                {{ form.rebalance_frequency }}
+            </div>
+            <div class="portfolio-builder-field portfolio-builder-field-small">
+                <label for="{{ form.drag_percentage.id_for_label }}">Drag %</label>
+                {{ form.drag_percentage }}
+            </div>
+        </div>
+
+        <div class="portfolio-builder-toggle-row">
+            <label class="portfolio-inline-toggle">{{ form.total_return }} <span>Total return</span></label>
+            <label class="portfolio-inline-toggle">{{ form.rebalance_bands }} <span>Rebalance bands</span></label>
+            <label class="portfolio-inline-toggle portfolio-inline-toggle-default">
+                <input
+                    id="is-default-{{ portfolio.id|default:'new' }}"
+                    type="checkbox"
+                    name="is_default"
+                    {% if portfolio.is_default %}checked{% endif %}
+                >
+                <span>Set as default</span>
+            </label>
+        </div>
+
+        <div class="portfolio-holdings-shell">
+            <div class="portfolio-holdings-header">
+                <div>
+                    <p class="portfolio-eyebrow">Holdings</p>
+                    <h4 class="portfolio-builder-section-title">Ticker sleeves</h4>
+                </div>
+                <div class="portfolio-holdings-actions">
+                    <span class="portfolio-sleeve-counter">0 / 0 sleeves used</span>
+                    <button type="button" class="portfolio-card-btn add-holding-btn">Add Ticker</button>
+                </div>
+            </div>
+            <div class="portfolio-holding-list"></div>
+            <div class="portfolio-holdings-footer">
+                <span class="portfolio-holdings-total-label">Allocation total</span>
+                <strong class="portfolio-holdings-total-value">0.00%</strong>
+            </div>
+        </div>
+
+        <div class="portfolio-form-submit-row">
+            <button type="submit" class="portfolio-btn portfolio-btn-secondary portfolio-save-btn">Save Portfolio</button>
+        </div>
     </form>
 </div>

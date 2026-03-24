@@ -1,0 +1,467 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    {{ block.super }}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .research-page {
+            --research-display-font: 'Cormorant Garamond', Georgia, serif;
+            --research-body-font: 'Manrope', 'Inter', sans-serif;
+            --research-text: #132238;
+            --research-muted: #5b6b7d;
+            --research-border: #d7e2ef;
+            --research-soft: #f4f8fd;
+            --research-accent: #2563eb;
+            min-height: calc(100vh - 60px);
+            background:
+                radial-gradient(circle at top left, rgba(14, 165, 233, 0.10), transparent 30%),
+                linear-gradient(180deg, #eef4fb 0%, #f8fbff 100%);
+            padding: 1.5rem;
+            color: var(--research-text);
+            font-family: var(--research-body-font);
+        }
+
+        .research-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 1.35rem;
+            max-width: 1320px;
+            margin: 0 auto;
+        }
+
+        .research-hero,
+        .research-section,
+        .research-cta,
+        .research-error {
+            border: 1px solid var(--research-border);
+            border-radius: 28px;
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 18px 42px rgba(15, 23, 42, 0.07);
+        }
+
+        .research-hero,
+        .research-section,
+        .research-cta {
+            padding: 1.55rem;
+        }
+
+        .research-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+            gap: 1.25rem;
+            align-items: stretch;
+        }
+
+        .research-kicker,
+        .research-section-kicker {
+            margin: 0 0 0.3rem;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #4a6b93;
+        }
+
+        .research-title,
+        .research-section-title,
+        .research-card-title {
+            font-family: var(--research-display-font);
+            color: #10213b;
+        }
+
+        .research-title {
+            margin: 0;
+            font-size: 2.4rem;
+            line-height: 0.98;
+            font-weight: 700;
+        }
+
+        .research-copy,
+        .research-subcopy {
+            margin: 0.75rem 0 0;
+            max-width: 74ch;
+            line-height: 1.75;
+            color: var(--research-muted);
+        }
+
+        .research-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            margin-top: 1rem;
+        }
+
+        .research-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.42rem 0.8rem;
+            border-radius: 999px;
+            border: 1px solid #dbe7f6;
+            background: #f8fbff;
+            color: #355277;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .research-hero-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+
+        .research-stat-card {
+            border: 1px solid #e2ebf5;
+            border-radius: 22px;
+            background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+            padding: 1rem 1.1rem;
+        }
+
+        .research-stat-card span {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--research-muted);
+        }
+
+        .research-stat-card strong {
+            display: block;
+            margin-top: 0.3rem;
+            font-size: 1.7rem;
+            color: #10213b;
+        }
+
+        .research-state-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.38rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .research-state-pill.is-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .research-state-pill.is-inactive {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .research-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1.25rem;
+        }
+
+        .research-section-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .research-section-title,
+        .research-card-title {
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .research-section-title {
+            font-size: 1.85rem;
+        }
+
+        .research-card-title {
+            font-size: 1.3rem;
+        }
+
+        .research-metric-grid,
+        .research-component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 0.9rem;
+        }
+
+        .research-metric-card,
+        .research-component-card {
+            border: 1px solid #e2ebf5;
+            border-radius: 20px;
+            background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .research-metric-card span,
+        .research-component-card span {
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--research-muted);
+        }
+
+        .research-metric-card strong,
+        .research-component-card strong {
+            font-size: 1.15rem;
+            color: #10213b;
+        }
+
+        .research-signal-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+            gap: 1rem;
+        }
+
+        .research-cta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.25rem;
+        }
+
+        .research-cta-actions {
+            display: flex;
+            gap: 0.85rem;
+            flex-wrap: wrap;
+        }
+
+        .research-link-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            padding: 0.9rem 1.15rem;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .research-link-btn-primary {
+            background: linear-gradient(135deg, #0ea5e9, #2563eb);
+            color: #eff6ff;
+            box-shadow: 0 16px 30px rgba(37, 99, 235, 0.22);
+        }
+
+        .research-link-btn-secondary {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+        }
+
+        .research-error {
+            padding: 1.1rem 1.2rem;
+            color: #b91c1c;
+            line-height: 1.7;
+            background: #fff1f2;
+            border-color: #fecaca;
+        }
+
+        @media (max-width: 980px) {
+            .research-hero,
+            .research-grid,
+            .research-signal-grid,
+            .research-cta {
+                grid-template-columns: 1fr;
+                display: grid;
+            }
+
+            .research-cta {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .research-page {
+                padding: 1rem;
+            }
+
+            .research-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block title %}
+    {% if research_payload %}{{ research_payload.ticker }} Research{% else %}Ticker Research{% endif %} | Trading Pro
+{% endblock %}
+
+{% block content %}
+    <div class="research-page">
+        <div class="research-shell">
+            {% if research_error %}
+                <div class="research-error">{{ research_error }}</div>
+            {% endif %}
+
+            {% if research_payload %}
+                <section class="research-hero">
+                    <div>
+                        <p class="research-kicker">Ticker Research</p>
+                        <h1 class="research-title">{{ research_payload.company_name }}</h1>
+                        <p class="research-copy">
+                            {% if research_payload.company_summary %}
+                                {{ research_payload.company_summary|truncatewords:52 }}
+                            {% else %}
+                                A fundamentals-first research surface for {{ research_payload.ticker }} with live signal context before you hand the setup into Backtest.
+                            {% endif %}
+                        </p>
+                        <div class="research-chip-row">
+                            <span class="research-chip">{{ research_payload.ticker }}</span>
+                            <span class="research-chip">{{ research_payload.golden_cross.as_of }}</span>
+                            <span class="research-chip">{{ research_payload.golden_cross.state_label }} Golden Cross</span>
+                        </div>
+                    </div>
+                    <div class="research-hero-stats">
+                        <div class="research-stat-card">
+                            <span>Golden Cross Score</span>
+                            <strong>{{ research_payload.golden_cross.composite_score|floatformat:2 }}</strong>
+                        </div>
+                        <div class="research-stat-card">
+                            <span>Signal State</span>
+                            <strong>
+                                <span class="research-state-pill {{ research_payload.golden_cross.state_class }}">{{ research_payload.golden_cross.state_label }}</span>
+                            </strong>
+                        </div>
+                        <div class="research-stat-card">
+                            <span>Backtest Handoff</span>
+                            <strong>Single + Universe + GC</strong>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="research-grid">
+                    <article class="research-section">
+                        <div class="research-section-header">
+                            <div>
+                                <p class="research-section-kicker">Market Snapshot</p>
+                                <h2 class="research-section-title">Price and context</h2>
+                            </div>
+                        </div>
+                        <div class="research-metric-grid">
+                            {% for item in research_payload.market_snapshot_items %}
+                                <div class="research-metric-card">
+                                    <span>{{ item.label }}</span>
+                                    <strong>{{ item.display }}</strong>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </article>
+
+                    <article class="research-section">
+                        <div class="research-section-header">
+                            <div>
+                                <p class="research-section-kicker">Golden Cross Signal</p>
+                                <h2 class="research-section-title">Trend confirmation</h2>
+                                <p class="research-subcopy">This is the same strong crossover score driving the watchlist ranking, broken into its working parts.</p>
+                            </div>
+                            <span class="research-state-pill {{ research_payload.golden_cross.state_class }}">{{ research_payload.golden_cross.state_label }}</span>
+                        </div>
+                        <div class="research-signal-grid">
+                            <div class="research-metric-grid">
+                                {% for item in research_payload.golden_cross.signal_breakdown %}
+                                    <div class="research-metric-card">
+                                        <span>{{ item.label }}</span>
+                                        <strong>{{ item.display }}</strong>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="research-component-grid">
+                                <div class="research-component-card">
+                                    <span>Fast SMA</span>
+                                    <strong>{{ research_payload.golden_cross.fast_sma|default:"Unavailable" }}</strong>
+                                </div>
+                                <div class="research-component-card">
+                                    <span>Slow SMA</span>
+                                    <strong>{{ research_payload.golden_cross.slow_sma|default:"Unavailable" }}</strong>
+                                </div>
+                                <div class="research-component-card">
+                                    <span>Last Price</span>
+                                    <strong>{{ research_payload.golden_cross.price|default:"Unavailable" }}</strong>
+                                </div>
+                                {% for item in research_payload.golden_cross.component_cards %}
+                                    <div class="research-component-card">
+                                        <span>{{ item.label }}</span>
+                                        <strong>{{ item.display }}</strong>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="research-grid">
+                    <article class="research-section">
+                        <div class="research-section-header">
+                            <div>
+                                <p class="research-section-kicker">Fundamentals</p>
+                                <h2 class="research-section-title">Valuation profile</h2>
+                            </div>
+                        </div>
+                        <div class="research-metric-grid">
+                            {% for item in research_payload.fundamentals_items %}
+                                <div class="research-metric-card">
+                                    <span>{{ item.label }}</span>
+                                    <strong>{{ item.display }}</strong>
+                                </div>
+                            {% empty %}
+                                <div class="research-metric-card">
+                                    <span>Data status</span>
+                                    <strong>Fundamental fields unavailable</strong>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </article>
+
+                    <article class="research-section">
+                        <div class="research-section-header">
+                            <div>
+                                <p class="research-section-kicker">Growth &amp; Profitability</p>
+                                <h2 class="research-section-title">Operational strength</h2>
+                            </div>
+                        </div>
+                        <div class="research-metric-grid">
+                            {% for item in research_payload.growth_items %}
+                                <div class="research-metric-card">
+                                    <span>{{ item.label }}</span>
+                                    <strong>{{ item.display }}</strong>
+                                </div>
+                            {% empty %}
+                                <div class="research-metric-card">
+                                    <span>Data status</span>
+                                    <strong>Growth fields unavailable</strong>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </article>
+                </section>
+
+                <section class="research-cta">
+                    <div>
+                        <p class="research-section-kicker">Next Step</p>
+                        <h2 class="research-section-title">Run this setup through Backtest</h2>
+                        <p class="research-subcopy">
+                            Move into the existing Backtest shell with {{ research_payload.ticker }} preloaded, the chart ready to render, and Golden Cross prepared as the first strategy step.
+                        </p>
+                    </div>
+                    <div class="research-cta-actions">
+                        <a class="research-link-btn research-link-btn-primary" href="{{ research_payload.backtest_url }}">Run on Backtest</a>
+                        <a class="research-link-btn research-link-btn-secondary" href="{% url 'watchlist' %}">Back to Watchlist</a>
+                    </div>
+                </section>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
