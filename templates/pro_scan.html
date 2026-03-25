@@ -837,63 +837,71 @@
             .proscan-status-card {
                 width: 100%;
                 box-sizing: border-box;
-                padding: 0.38rem 0.42rem;
-                border-radius: 14px;
+                padding: 0.56rem 0.58rem;
+                border-radius: 18px;
                 display: block;
-                overflow: hidden;
+                overflow: visible;
                 border: 1px solid #dbe4f0;
                 background: linear-gradient(135deg, #ffffff 0%, #f4f8ff 100%);
                 box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
             }
 
             .proscan-status-card h3 {
-                display: none;
+                display: block;
+                margin: 0 0 0.4rem;
+                font-size: 0.56rem;
+                font-weight: 800;
+                letter-spacing: 0.11em;
+                color: #64748b;
+                text-transform: uppercase;
             }
 
             .proscan-status-list {
-                display: flex;
-                align-items: center;
-                gap: 0.32rem;
-                overflow-x: auto;
-                overflow-y: hidden;
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 0.36rem;
                 width: 100%;
                 max-width: 100%;
                 min-width: 0;
-                scrollbar-width: none;
-                padding-bottom: 0;
-            }
-
-            .proscan-status-list::-webkit-scrollbar {
-                display: none;
+                overflow: visible;
+                padding-bottom: 0.08rem;
             }
 
             .proscan-status-item {
-                flex: 0 0 auto;
-                display: inline-flex;
-                align-items: center;
-                gap: 0.24rem;
-                padding: 0.22rem 0.44rem;
-                border-radius: 999px;
+                width: 100%;
+                min-width: 0;
+                box-sizing: border-box;
+                display: flex;
+                flex-wrap: wrap;
+                align-items: baseline;
+                column-gap: 0.3rem;
+                row-gap: 0.12rem;
+                padding: 0.34rem 0.5rem;
+                border-radius: 12px;
                 border: 1px solid #dbe4f0;
                 background: #f8fbff;
-                white-space: nowrap;
-                max-width: 84vw;
             }
 
             .proscan-status-item strong {
                 margin: 0;
-                font-size: 0.52rem;
+                font-size: 0.53rem;
                 font-weight: 800;
                 letter-spacing: 0.07em;
-                line-height: 1;
+                line-height: 1.08;
+                white-space: normal;
+                overflow-wrap: anywhere;
             }
 
             .proscan-status-item span {
-                font-size: 0.66rem;
-                line-height: 1.05;
-                max-width: 38vw;
-                overflow: hidden;
-                text-overflow: ellipsis;
+                display: block;
+                flex-basis: 100%;
+                font-size: 0.72rem;
+                line-height: 1.2;
+                max-width: 100%;
+                min-width: 0;
+                white-space: normal;
+                overflow-wrap: anywhere;
+                word-break: break-word;
             }
         }
     </style>
