@@ -15,22 +15,20 @@
 
         .proscan-shell {
             display: grid;
-            grid-template-columns: 280px minmax(0, 1fr) 280px;
+            grid-template-columns: 280px minmax(0, 1fr);
             gap: 1.25rem;
             min-height: calc(100vh - 108px);
         }
 
         .proscan-sidebar,
-        .proscan-main,
-        .proscan-aside {
+        .proscan-main {
             border: 1px solid #dbe4f0;
             border-radius: 26px;
             background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
             box-shadow: 0 20px 48px rgba(15, 23, 42, 0.08);
         }
 
-        .proscan-sidebar,
-        .proscan-aside {
+        .proscan-sidebar {
             padding: 1.25rem;
             overflow-y: auto;
         }
@@ -609,38 +607,52 @@
         }
 
         .proscan-status-card h3 {
-            margin: 0 0 0.6rem;
-            font-size: 0.95rem;
+            margin: 0 0 0.5rem;
+            font-size: 0.72rem;
             font-weight: 800;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
             color: #475569;
         }
 
         .proscan-status-list {
-            display: grid;
-            gap: 0.85rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.42rem 0.8rem;
+            align-items: baseline;
         }
 
         .proscan-status-item {
-            padding: 0.9rem 1rem;
-            border-radius: 16px;
-            background: #f8fbff;
-            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.22rem;
+            min-width: 0;
+            padding: 0;
         }
 
         .proscan-status-item strong {
-            display: block;
-            font-size: 0.82rem;
+            display: inline;
+            margin: 0;
+            font-size: 0.64rem;
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: #64748b;
-            margin-bottom: 0.3rem;
+            white-space: nowrap;
+        }
+
+        .proscan-status-item strong::after {
+            content: ':';
+            letter-spacing: 0;
         }
 
         .proscan-status-item span {
+            display: inline;
             color: #0f172a;
             font-weight: 700;
+            min-width: 0;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         .proscan-modal {
@@ -725,7 +737,7 @@
 
         @media (max-width: 1440px) {
             .proscan-shell {
-                grid-template-columns: minmax(0, 1fr) 280px;
+                grid-template-columns: minmax(0, 1fr);
                 align-items: start;
             }
 
@@ -768,14 +780,6 @@
                 display: block;
             }
 
-            .proscan-aside {
-                order: 2;
-                position: sticky;
-                top: 92px;
-                align-self: start;
-                overflow: visible !important;
-            }
-
             .proscan-card-grid {
                 grid-template-columns: 1fr;
             }
@@ -784,11 +788,6 @@
         @media (max-width: 1100px) {
             .proscan-shell {
                 grid-template-columns: 1fr;
-            }
-
-            .proscan-aside {
-                position: static;
-                top: auto;
             }
         }
 
@@ -823,54 +822,45 @@
                 gap: 0.75rem !important;
             }
 
-            .proscan-aside {
-                order: -1;
-                width: 100%;
-                max-width: 100%;
-                min-width: 0;
-                margin: 0;
-                align-self: stretch;
-                padding: 0 !important;
-                border: 0 !important;
-                background: transparent !important;
-                box-shadow: none !important;
-            }
-
             .proscan-main {
                 width: 100%;
                 max-width: 100%;
                 align-self: stretch;
-                padding: 1.1rem;
+                padding: 1.05rem;
             }
 
-            .proscan-status-card {
+            .proscan-header {
+                gap: 0.8rem;
+            }
+
+            .proscan-status-inline {
                 width: 100%;
                 box-sizing: border-box;
-                margin: 0;
-                padding: 0.58rem 0.72rem 0.62rem;
-                border-radius: 22px;
+                margin: 0.15rem 0 0;
+                padding: 0.5rem 0.62rem 0.54rem;
+                border-radius: 18px;
                 display: block;
                 overflow: hidden;
                 border: 1px solid #dbe4f0;
                 background: linear-gradient(135deg, #ffffff 0%, #f4f8ff 100%);
-                box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
+                box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
             }
 
-            .proscan-status-card h3 {
+            .proscan-status-inline h3 {
                 display: block;
-                margin: 0 0 0.34rem;
-                font-size: 0.52rem;
+                margin: 0 0 0.24rem;
+                font-size: 0.5rem;
                 font-weight: 800;
-                letter-spacing: 0.14em;
+                letter-spacing: 0.12em;
                 color: #64748b;
                 text-transform: uppercase;
             }
 
-            .proscan-status-list {
+            .proscan-status-inline .proscan-status-list {
                 display: grid;
                 grid-template-columns: repeat(2, minmax(0, 1fr));
-                column-gap: 0.55rem;
-                row-gap: 0.28rem;
+                column-gap: 0.5rem;
+                row-gap: 0.24rem;
                 width: 100%;
                 max-width: 100%;
                 min-width: 0;
@@ -878,23 +868,17 @@
                 padding-bottom: 0;
             }
 
-            .proscan-status-item {
+            .proscan-status-inline .proscan-status-item {
                 width: 100%;
                 min-width: 0;
                 box-sizing: border-box;
-                display: flex;
-                flex-wrap: wrap;
-                align-items: baseline;
-                column-gap: 0.22rem;
-                row-gap: 0.08rem;
-                padding: 0.08rem 0;
-                border: 0;
-                background: transparent;
+                gap: 0.18rem;
+                padding: 0.02rem 0;
             }
 
-            .proscan-status-item strong {
+            .proscan-status-inline .proscan-status-item strong {
                 margin: 0;
-                font-size: 0.48rem;
+                font-size: 0.47rem;
                 font-weight: 800;
                 letter-spacing: 0.08em;
                 line-height: 1.05;
@@ -902,15 +886,10 @@
                 color: #64748b;
             }
 
-            .proscan-status-item strong::after {
-                content: ':';
-                letter-spacing: 0;
-            }
-
-            .proscan-status-item span {
+            .proscan-status-inline .proscan-status-item span {
                 display: inline;
-                font-size: 0.73rem;
-                line-height: 1.15;
+                font-size: 0.72rem;
+                line-height: 1.14;
                 max-width: 100%;
                 min-width: 0;
                 white-space: normal;
@@ -918,8 +897,12 @@
                 word-break: break-word;
             }
 
-            .proscan-status-item:nth-child(4),
-            .proscan-status-item:nth-child(5) {
+            .proscan-status-inline .proscan-status-item:nth-child(3) {
+                display: none;
+            }
+
+            .proscan-status-inline .proscan-status-item:nth-child(4),
+            .proscan-status-inline .proscan-status-item:nth-child(5) {
                 grid-column: 1 / -1;
             }
         }
@@ -1026,6 +1009,31 @@
                     <span class="proscan-badge">Pro Scan</span>
                     <h1>Run strategy scans across saved ticker groups</h1>
                     <p>Choose a group, configure a strategy card, and push the results directly into the stock table.</p>
+                    <section class="proscan-status-card proscan-status-inline">
+                        <h3>Current Context</h3>
+                        <div class="proscan-status-list">
+                            <div class="proscan-status-item">
+                                <strong>Scan Mode</strong>
+                                <span id="current-scan-mode">{% if initial_group_name %}Ticker group{% else %}None{% endif %}</span>
+                            </div>
+                            <div class="proscan-status-item">
+                                <strong>Active Selection</strong>
+                                <span id="current-scope-value">{% if initial_group_name %}{{ initial_group_label }}{% else %}None selected{% endif %}</span>
+                            </div>
+                            <div class="proscan-status-item">
+                                <strong>Selection Type</strong>
+                                <span id="current-group-value">{% if initial_group_name %}Ticker group{% else %}None selected{% endif %}</span>
+                            </div>
+                            <div class="proscan-status-item">
+                                <strong>Last Strategy</strong>
+                                <span id="current-strategy-value">No strategy card created yet</span>
+                            </div>
+                            <div class="proscan-status-item">
+                                <strong>Scan Status</strong>
+                                <span id="scan-status-value">Idle</span>
+                            </div>
+                        </div>
+                    </section>
                 </div>
                 <div class="proscan-header-actions">
                     <button
@@ -1119,34 +1127,6 @@
                 </div>
             </section>
         </section>
-
-        <aside id="proscan-context-panel" class="proscan-aside">
-            <section class="proscan-status-card">
-                <h3>Current Context</h3>
-                    <div class="proscan-status-list">
-                    <div class="proscan-status-item">
-                        <strong>Scan Mode</strong>
-                        <span id="current-scan-mode">{% if initial_group_name %}Ticker group{% else %}None{% endif %}</span>
-                    </div>
-                    <div class="proscan-status-item">
-                        <strong>Active Selection</strong>
-                        <span id="current-scope-value">{% if initial_group_name %}{{ initial_group_label }}{% else %}None selected{% endif %}</span>
-                    </div>
-                    <div class="proscan-status-item">
-                        <strong>Selection Type</strong>
-                        <span id="current-group-value">{% if initial_group_name %}Ticker group{% else %}None selected{% endif %}</span>
-                    </div>
-                    <div class="proscan-status-item">
-                        <strong>Last Strategy</strong>
-                        <span id="current-strategy-value">No strategy card created yet</span>
-                    </div>
-                    <div class="proscan-status-item">
-                        <strong>Scan Status</strong>
-                        <span id="scan-status-value">Idle</span>
-                    </div>
-                </div>
-            </section>
-        </aside>
     </div>
 </main>
 
