@@ -14,6 +14,19 @@ from my_app.utils import PriceDataError, download_n_clean_data
 
 RESEARCH_INFO_CACHE_SECONDS = 1800
 RESEARCH_PRICE_CACHE_SECONDS = 1800
+SOURCE_SIGNAL_LABELS = {
+    "golden_cross_composite": "Golden Cross Live Composite",
+    "golden_cross_weighted": "Golden Cross 10Y Weighted Backtest",
+    "momentum_60": "Momentum 60-Day Leaders",
+    "momentum_120": "Momentum 120-Day Leaders",
+    "momentum_12m": "Momentum 12M",
+}
+MOMENTUM_SOURCE_SIGNALS = {"momentum_60", "momentum_120", "momentum_12m"}
+MOMENTUM_SCORE_LABELS = {
+    "momentum_60": "60-Day Momentum Score",
+    "momentum_120": "120-Day Momentum Score",
+    "momentum_12m": "12-Month Momentum Score",
+}
 
 
 def _format_percent(value: float | None, digits: int = 2) -> str | None:
@@ -54,6 +67,42 @@ def _compact_currency(value: float | int | None) -> str | None:
         if abs(numeric) >= threshold:
             return f"${numeric / threshold:,.2f}{suffix}"
     return _format_currency(numeric)
+
+
+def _parse_float(value) -> float | None:
+    try:
+        if value in (None, ""):
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _parse_int(value) -> int | None:
+    try:
+        if value in (None, ""):
+            return None
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _clean_source_context(source_context: dict | None) -> dict:
+    if not source_context:
+        return {}
+
+    normalized = {}
+    for key in ("source_list", "source_rank", "source_score", "source_signal"):
+        raw_value = source_context.get(key)
+        if raw_value in (None, ""):
+            continue
+        normalized[key] = str(raw_value).strip()
+
+    return {key: value for key, value in normalized.items() if value}
+
+
+def _is_momentum_source_signal(source_signal: str) -> bool:
+    return str(source_signal or "").strip().lower() in MOMENTUM_SOURCE_SIGNALS
 
 
 def _cached_info(symbol: str) -> dict:
@@ -102,6 +151,9 @@ def _latest_return(frame: pd.DataFrame, bars_back: int) -> float | None:
 
 
 def build_research_backtest_url(symbol: str, source_context: dict | None = None) -> str:
+    cleaned_source_context = _clean_source_context(source_context)
+    source_signal = cleaned_source_context.get("source_signal", "").lower()
+    prefill_strategy = "momentum_12m" if _is_momentum_source_signal(source_signal) else "golden_cross"
     today = timezone.localdate().isoformat()
     params = {
         "ticker": symbol.upper(),
@@ -110,13 +162,9 @@ def build_research_backtest_url(symbol: str, source_context: dict | None = None)
         "autoload": "1",
         "analysis_mode": "single",
         "prior_mode": "universe",
-        "prefill_strategy": "golden_cross",
+        "prefill_strategy": prefill_strategy,
     }
-    if source_context:
-        for key in ("source_list", "source_rank", "source_score", "source_signal"):
-            value = source_context.get(key)
-            if value not in (None, ""):
-                params[key] = value
+    params.update(cleaned_source_context)
     query = urlencode(params)
     return f"/backtest/?{query}"
 
@@ -200,7 +248,30 @@ def build_research_payload(symbol: str, source_context: dict | None = None) -> d
         {"label": "EPS", "display": _format_number(info.get("trailingEps"), 2)},
     ])
 
-    signal_breakdown = _non_empty_items([
+    cleaned_source_context = _clean_source_context(source_context)
+    source_signal = cleaned_source_context.get("source_signal", "").lower()
+    source_signal_label = SOURCE_SIGNAL_LABELS.get(source_signal, cleaned_source_context.get("source_signal", ""))
+    source_rank = _parse_int(cleaned_source_context.get("source_rank"))
+    source_score = _parse_float(cleaned_source_context.get("source_score"))
+    is_momentum_source = _is_momentum_source_signal(source_signal)
+
+    momentum_returns = {
+        "momentum_60": _latest_return(normalized_frame, 60),
+        "momentum_120": _latest_return(normalized_frame, 120),
+        "momentum_12m": _latest_return(normalized_frame, 252),
+    }
+    active_momentum_signal = source_signal if source_signal in MOMENTUM_SOURCE_SIGNALS else "momentum_60"
+    active_momentum_value = momentum_returns.get(active_momentum_signal)
+    momentum_state_positive = active_momentum_value is not None and active_momentum_value > 0
+    momentum_state_label = "Positive" if momentum_state_positive else "Negative / Flat"
+    momentum_state_class = "is-active" if momentum_state_positive else "is-inactive"
+    momentum_score_display = (
+        f"{source_score:.2f}%"
+        if source_score is not None
+        else (_format_percent(active_momentum_value) or "Unavailable")
+    )
+
+    golden_cross_signal_breakdown = _non_empty_items([
         {"label": "Composite Score", "display": f"{golden_cross['composite_score']:.2f} / 100"},
         {"label": "50/200 Spread", "display": _format_percent((golden_cross.get("spread_pct") or 0) / 100.0)},
         {"label": "Price vs 200D", "display": _format_percent((golden_cross.get("price_above_sma200_pct") or 0) / 100.0)},
@@ -209,13 +280,72 @@ def build_research_payload(symbol: str, source_context: dict | None = None) -> d
         {"label": "Last Cross Date", "display": golden_cross.get("last_cross_date")},
     ])
 
-    signal_component_cards = _non_empty_items([
+    golden_cross_component_cards = _non_empty_items([
+        {"label": "Fast SMA", "display": _format_currency(golden_cross.get("sma_50"))},
+        {"label": "Slow SMA", "display": _format_currency(golden_cross.get("sma_200"))},
+        {"label": "Last Price", "display": _format_currency(golden_cross.get("latest_close"))},
         {"label": "Recency", "display": _format_percent(golden_cross.get("component_scores", {}).get("recency_score"))},
         {"label": "Spread", "display": _format_percent(golden_cross.get("component_scores", {}).get("spread_score"))},
         {"label": "Slope", "display": _format_percent(golden_cross.get("component_scores", {}).get("slope_score"))},
         {"label": "Price Confirmation", "display": _format_percent(golden_cross.get("component_scores", {}).get("price_confirmation"))},
         {"label": "Volume Confirmation", "display": _format_percent(golden_cross.get("component_scores", {}).get("volume_confirmation"))},
     ])
+
+    signal_section_kicker = "Golden Cross Signal"
+    signal_section_title = "Trend confirmation"
+    signal_section_subcopy = "This is the same crossover score driving the watchlist ranking, broken into its working parts."
+    signal_state_heading = "Signal State"
+    signal_state_label = "Active" if golden_cross["is_active"] else "Inactive"
+    signal_state_class = "is-active" if golden_cross["is_active"] else "is-inactive"
+    signal_breakdown_items = golden_cross_signal_breakdown
+    signal_component_cards = golden_cross_component_cards
+    hero_primary_label = "Golden Cross Score"
+    hero_primary_value = f"{golden_cross['composite_score']:.2f}"
+    backtest_handoff_label = "Single + Universe + GC"
+    backtest_cta_copy = (
+        f"Move into the existing Backtest shell with {normalized_symbol} preloaded, the chart ready to render, "
+        "and Golden Cross prepared as the first strategy step."
+    )
+
+    if is_momentum_source:
+        signal_section_kicker = "Momentum Signal"
+        signal_section_title = "Relative strength context"
+        signal_section_subcopy = (
+            "This ticker arrived through the momentum leaderboard. Use this return profile first, then compare it "
+            "against trend confirmation before running Backtest."
+        )
+        signal_state_heading = "Momentum State"
+        signal_state_label = momentum_state_label
+        signal_state_class = momentum_state_class
+        signal_breakdown_items = _non_empty_items([
+            {
+                "label": MOMENTUM_SCORE_LABELS.get(active_momentum_signal, "Momentum Score"),
+                "display": momentum_score_display,
+            },
+            {"label": "60-Day Momentum", "display": _format_percent(momentum_returns["momentum_60"])},
+            {"label": "120-Day Momentum", "display": _format_percent(momentum_returns["momentum_120"])},
+            {"label": "12-Month Momentum", "display": _format_percent(momentum_returns["momentum_12m"])},
+            {"label": "Leaderboard Rank", "display": f"#{source_rank}" if source_rank else None},
+            {"label": "As Of", "display": golden_cross.get("as_of_date")},
+        ])
+        signal_component_cards = _non_empty_items([
+            {"label": "Daily Move", "display": _format_percent(daily_change)},
+            {"label": "1 Month Return", "display": _format_percent(_latest_return(normalized_frame, 21))},
+            {"label": "6 Month Return", "display": _format_percent(_latest_return(normalized_frame, 126))},
+            {"label": "1 Year Return", "display": _format_percent(_latest_return(normalized_frame, 252))},
+            {"label": "Last Price", "display": _format_currency(last_close)},
+            {"label": "Average Volume", "display": _format_int(info.get("averageVolume") or info.get("averageDailyVolume10Day"))},
+        ])
+        hero_primary_label = MOMENTUM_SCORE_LABELS.get(active_momentum_signal, "Momentum Score")
+        hero_primary_value = momentum_score_display
+        backtest_handoff_label = "Single + Universe + Momentum"
+        backtest_cta_copy = (
+            f"Move into the existing Backtest shell with {normalized_symbol} preloaded, the chart ready to render, "
+            "and Momentum prepared as the first strategy step."
+        )
+
+    golden_cross_state_label = "Active" if golden_cross["is_active"] else "Inactive"
+    golden_cross_state_class = "is-active" if golden_cross["is_active"] else "is-inactive"
 
     return {
         "ticker": normalized_symbol,
@@ -224,16 +354,31 @@ def build_research_payload(symbol: str, source_context: dict | None = None) -> d
         "market_snapshot_items": market_snapshot_items,
         "fundamentals_items": fundamentals_items,
         "growth_items": growth_items,
+        "source_context": cleaned_source_context or None,
+        "source_signal_label": source_signal_label,
+        "is_momentum_source": is_momentum_source,
+        "hero_primary_label": hero_primary_label,
+        "hero_primary_value": hero_primary_value,
+        "signal_state_heading": signal_state_heading,
+        "signal_state_label": signal_state_label,
+        "signal_state_class": signal_state_class,
+        "signal_section_kicker": signal_section_kicker,
+        "signal_section_title": signal_section_title,
+        "signal_section_subcopy": signal_section_subcopy,
+        "signal_breakdown_items": signal_breakdown_items,
+        "signal_component_cards": signal_component_cards,
+        "backtest_handoff_label": backtest_handoff_label,
+        "backtest_cta_copy": backtest_cta_copy,
         "golden_cross": {
-            "state_label": "Active" if golden_cross["is_active"] else "Inactive",
-            "state_class": "is-active" if golden_cross["is_active"] else "is-inactive",
+            "state_label": golden_cross_state_label,
+            "state_class": golden_cross_state_class,
             "composite_score": golden_cross["composite_score"],
-            "signal_breakdown": signal_breakdown,
-            "component_cards": signal_component_cards,
+            "signal_breakdown": golden_cross_signal_breakdown,
+            "component_cards": golden_cross_component_cards,
             "as_of": golden_cross["as_of_date"],
             "fast_sma": _format_currency(golden_cross.get("sma_50")),
             "slow_sma": _format_currency(golden_cross.get("sma_200")),
             "price": _format_currency(golden_cross.get("latest_close")),
         },
-        "backtest_url": build_research_backtest_url(normalized_symbol, source_context=source_context),
+        "backtest_url": build_research_backtest_url(normalized_symbol, source_context=cleaned_source_context),
     }

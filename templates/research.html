@@ -321,23 +321,27 @@
                         <div class="research-chip-row">
                             <span class="research-chip">{{ research_payload.ticker }}</span>
                             <span class="research-chip">{{ research_payload.golden_cross.as_of }}</span>
-                            <span class="research-chip">{{ research_payload.golden_cross.state_label }} Golden Cross</span>
+                            {% if research_payload.source_signal_label %}
+                                <span class="research-chip">{{ research_payload.source_signal_label }}</span>
+                            {% else %}
+                                <span class="research-chip">{{ research_payload.golden_cross.state_label }} Golden Cross</span>
+                            {% endif %}
                         </div>
                     </div>
                     <div class="research-hero-stats">
                         <div class="research-stat-card">
-                            <span>Golden Cross Score</span>
-                            <strong>{{ research_payload.golden_cross.composite_score|floatformat:2 }}</strong>
+                            <span>{{ research_payload.hero_primary_label }}</span>
+                            <strong>{{ research_payload.hero_primary_value }}</strong>
                         </div>
                         <div class="research-stat-card">
-                            <span>Signal State</span>
+                            <span>{{ research_payload.signal_state_heading }}</span>
                             <strong>
-                                <span class="research-state-pill {{ research_payload.golden_cross.state_class }}">{{ research_payload.golden_cross.state_label }}</span>
+                                <span class="research-state-pill {{ research_payload.signal_state_class }}">{{ research_payload.signal_state_label }}</span>
                             </strong>
                         </div>
                         <div class="research-stat-card">
                             <span>Backtest Handoff</span>
-                            <strong>Single + Universe + GC</strong>
+                            <strong>{{ research_payload.backtest_handoff_label }}</strong>
                         </div>
                     </div>
                 </section>
@@ -363,15 +367,15 @@
                     <article class="research-section">
                         <div class="research-section-header">
                             <div>
-                                <p class="research-section-kicker">Golden Cross Signal</p>
-                                <h2 class="research-section-title">Trend confirmation</h2>
-                                <p class="research-subcopy">This is the same strong crossover score driving the watchlist ranking, broken into its working parts.</p>
+                                <p class="research-section-kicker">{{ research_payload.signal_section_kicker }}</p>
+                                <h2 class="research-section-title">{{ research_payload.signal_section_title }}</h2>
+                                <p class="research-subcopy">{{ research_payload.signal_section_subcopy }}</p>
                             </div>
-                            <span class="research-state-pill {{ research_payload.golden_cross.state_class }}">{{ research_payload.golden_cross.state_label }}</span>
+                            <span class="research-state-pill {{ research_payload.signal_state_class }}">{{ research_payload.signal_state_label }}</span>
                         </div>
                         <div class="research-signal-grid">
                             <div class="research-metric-grid">
-                                {% for item in research_payload.golden_cross.signal_breakdown %}
+                                {% for item in research_payload.signal_breakdown_items %}
                                     <div class="research-metric-card">
                                         <span>{{ item.label }}</span>
                                         <strong>{{ item.display }}</strong>
@@ -379,19 +383,7 @@
                                 {% endfor %}
                             </div>
                             <div class="research-component-grid">
-                                <div class="research-component-card">
-                                    <span>Fast SMA</span>
-                                    <strong>{{ research_payload.golden_cross.fast_sma|default:"Unavailable" }}</strong>
-                                </div>
-                                <div class="research-component-card">
-                                    <span>Slow SMA</span>
-                                    <strong>{{ research_payload.golden_cross.slow_sma|default:"Unavailable" }}</strong>
-                                </div>
-                                <div class="research-component-card">
-                                    <span>Last Price</span>
-                                    <strong>{{ research_payload.golden_cross.price|default:"Unavailable" }}</strong>
-                                </div>
-                                {% for item in research_payload.golden_cross.component_cards %}
+                                {% for item in research_payload.signal_component_cards %}
                                     <div class="research-component-card">
                                         <span>{{ item.label }}</span>
                                         <strong>{{ item.display }}</strong>
@@ -452,9 +444,7 @@
                     <div>
                         <p class="research-section-kicker">Next Step</p>
                         <h2 class="research-section-title">Run this setup through Backtest</h2>
-                        <p class="research-subcopy">
-                            Move into the existing Backtest shell with {{ research_payload.ticker }} preloaded, the chart ready to render, and Golden Cross prepared as the first strategy step.
-                        </p>
+                        <p class="research-subcopy">{{ research_payload.backtest_cta_copy }}</p>
                     </div>
                     <div class="research-cta-actions">
                         <a class="research-link-btn research-link-btn-primary" href="{{ research_payload.backtest_url }}">Run on Backtest</a>

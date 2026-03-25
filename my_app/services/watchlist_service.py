@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
 import numpy as np
@@ -109,10 +110,6 @@ def _format_as_of() -> str:
     return _now_est().strftime("%Y-%m-%d %H:%M")
 
 
-def _research_url(symbol: str) -> str:
-    return f"/research/{symbol.upper()}/"
-
-
 def _research_url_with_source(
     symbol: str,
     source_list: str,
@@ -120,13 +117,13 @@ def _research_url_with_source(
     source_score: float,
     source_signal: str,
 ) -> str:
-    return (
-        f"/research/{symbol.upper()}/"
-        f"?source_list={source_list.replace(' ', '%20')}"
-        f"&source_rank={source_rank}"
-        f"&source_score={source_score:.2f}"
-        f"&source_signal={source_signal}"
-    )
+    query = urlencode({
+        "source_list": source_list,
+        "source_rank": source_rank,
+        "source_score": f"{float(source_score):.2f}",
+        "source_signal": source_signal,
+    })
+    return f"/research/{symbol.upper()}/?{query}"
 
 
 def _math_url(signal: str, symbol: str) -> str:
@@ -261,13 +258,23 @@ def get_momentum_watchlist() -> dict:
                 rows.append({
                     "symbol": symbol,
                     "momentum_pct": float(momentum * 100.0),
-                    "research_url": _research_url(symbol),
                 })
             except Exception:
                 continue
 
         rows.sort(key=lambda row: row["momentum_pct"], reverse=True)
-        payload[key] = rows[:5]
+        trimmed = rows[:5]
+        source_list = f"Momentum {lookback}-Day Leaders"
+        source_signal = f"momentum_{lookback}"
+        for index, row in enumerate(trimmed, start=1):
+            row["research_url"] = _research_url_with_source(
+                row["symbol"],
+                source_list,
+                index,
+                float(row["momentum_pct"]),
+                source_signal,
+            )
+        payload[key] = trimmed
 
     response = {
         "valid": True,

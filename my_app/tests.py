@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 import json
+from urllib.parse import parse_qs, urlparse
 from unittest.mock import patch
 
 import numpy as np
@@ -15,6 +16,8 @@ from .bayes.posterior import apply_evidence, estimate_signal_weight
 from .bayes.priors import estimate_universe_prior
 from .models import AppSettings, BacktestRun, EvidenceSnapshot, Portfolio, Stock, Stock_Group, StrategyRun, TradeLog
 from .services.backtest_service import ensure_strategy_definitions
+from .services.research_service import build_research_backtest_url
+from .services.watchlist_service import get_momentum_watchlist
 from .utils import PriceDataError, _cache_set, _make_cache_key, download_n_clean_data
 
 
@@ -204,6 +207,23 @@ class BacktestChartTests(TestCase):
         self.assertContains(response, 'Watchlist source context')
         self.assertContains(response, 'Golden Cross 10Y Weighted Backtest')
 
+    def test_backtest_shell_labels_momentum_watchlist_source_context(self):
+        response = self.client.get(reverse('backtest'), {
+            'ticker': 'AAPL',
+            'analysis_mode': 'single',
+            'prior_mode': 'universe',
+            'prefill_strategy': 'momentum_12m',
+            'source_list': 'Momentum 60-Day Leaders',
+            'source_rank': '1',
+            'source_score': '18.34',
+            'source_signal': 'momentum_60',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['initial_source_context']['source_signal'], 'momentum_60')
+        self.assertEqual(response.context['initial_source_context']['source_signal_label'], 'Momentum 60-Day Leaders')
+        self.assertContains(response, 'Momentum 60-Day Leaders')
+
 
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
 class DeploymentHealthTests(TestCase):
@@ -323,6 +343,69 @@ class WatchlistAndResearchTests(TestCase):
         self.assertEqual(payload['results'][0]['quality_score'], 78.2)
         self.assertEqual(payload['results'][0]['consensus_label'], 'Strong Now + Strong History')
         self.assertIn('math_url', payload['results'][0])
+
+    @patch('my_app.services.watchlist_service._one_day_momentum')
+    @patch('my_app.services.watchlist_service.download_n_clean_data')
+    @patch('my_app.services.watchlist_service.get_watchlist_universe')
+    def test_momentum_watchlist_research_urls_include_source_context(
+        self,
+        mock_universe,
+        mock_download,
+        mock_one_day_momentum,
+    ):
+        cache.clear()
+        mock_universe.return_value = ['AAPL', 'MSFT']
+
+        def _download_side_effect(symbol, start, end, compute_sma=False):
+            frame = pd.DataFrame([{
+                'Date': pd.Timestamp('2025-01-02').timestamp(),
+                'Close': 100.0,
+                'Volume': 1_000_000,
+            }])
+            frame.attrs['symbol'] = symbol
+            return frame
+
+        mock_download.side_effect = _download_side_effect
+
+        def _momentum_side_effect(frame, lookback, ref_date):
+            base = {'AAPL': 0.22, 'MSFT': 0.12}[frame.attrs['symbol']]
+            if lookback == 120:
+                base -= 0.03
+            return base
+
+        mock_one_day_momentum.side_effect = _momentum_side_effect
+
+        payload = get_momentum_watchlist()
+        first_60 = payload['results']['mom-60'][0]
+        first_120 = payload['results']['mom-120'][0]
+
+        self.assertIn('source_signal=momentum_60', first_60['research_url'])
+        self.assertIn('source_list=Momentum+60-Day+Leaders', first_60['research_url'])
+        self.assertIn('source_signal=momentum_120', first_120['research_url'])
+        self.assertIn('source_list=Momentum+120-Day+Leaders', first_120['research_url'])
+
+    def test_research_backtest_url_prefills_momentum_when_source_signal_is_momentum(self):
+        url = build_research_backtest_url('AAPL', source_context={
+            'source_list': 'Momentum 60-Day Leaders',
+            'source_rank': '1',
+            'source_score': '18.34',
+            'source_signal': 'momentum_60',
+        })
+
+        params = parse_qs(urlparse(url).query)
+        self.assertEqual(params.get('prefill_strategy'), ['momentum_12m'])
+        self.assertEqual(params.get('source_signal'), ['momentum_60'])
+        self.assertEqual(params.get('source_list'), ['Momentum 60-Day Leaders'])
+
+    def test_research_backtest_url_defaults_to_golden_cross_without_source_signal(self):
+        url = build_research_backtest_url('AAPL', source_context={
+            'source_list': 'Watchlist',
+            'source_rank': '1',
+            'source_score': '82.11',
+        })
+
+        params = parse_qs(urlparse(url).query)
+        self.assertEqual(params.get('prefill_strategy'), ['golden_cross'])
 
     @patch('my_app.views.build_research_payload')
     def test_research_page_renders_fundamentals_and_backtest_cta(self, mock_research_payload):

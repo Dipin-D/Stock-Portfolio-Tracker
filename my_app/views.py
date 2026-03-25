@@ -613,6 +613,9 @@ def _build_backtest_shell_state(request):
     source_context['source_signal_label'] = {
         'golden_cross_composite': 'Golden Cross Live Composite',
         'golden_cross_weighted': 'Golden Cross 10Y Weighted Backtest',
+        'momentum_60': 'Momentum 60-Day Leaders',
+        'momentum_120': 'Momentum 120-Day Leaders',
+        'momentum_12m': 'Momentum 12M',
     }.get(source_signal, source_context['source_signal'] or '')
     has_source_context = any(source_context.values())
 
