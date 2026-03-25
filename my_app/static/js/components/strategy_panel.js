@@ -31,6 +31,15 @@
             ];
         }
 
+        if (slug === 'golden_cross_bollinger_squeeze' || slug === 'golden_cross_bollinger_breakout_confirm') {
+            return [
+                `Fast/Slow ${params.fast_sma}/${params.slow_sma}`,
+                `Bands ${params.bb_period} · ${Number(params.bb_std_dev || 0).toFixed(1)}σ`,
+                `Squeeze q ${Number(params.squeeze_quantile || 0).toFixed(2)}`,
+                `Cash $${Number(params.starting_cash || 0).toLocaleString()}`,
+            ];
+        }
+
         return Object.entries(params || {}).map(([key, value]) => `${key}: ${value}`);
     }
 

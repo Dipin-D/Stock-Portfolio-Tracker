@@ -9,14 +9,19 @@
     
     <style>
       /* Navbar Container */
+      .site-body {
+        background: #f8fbff;
+      }
+
       .navbar-container {
         width: 100%;
-        height: 60px;
+        min-height: 60px;
         position: fixed;
         top: 0;
         z-index: 1000;
         display: flex;
         align-items: center;
+        justify-content: center;
       }
       .navbar {
           background: #0a192f;
@@ -96,42 +101,15 @@
           padding: 0 1rem;
           width: 20%;
       }
-  
-      /* Mobile Responsiveness */
-      @media (max-width: 768px) {
-          .navbar {
-              flex-direction: column;
-              padding: 1rem;
-              min-height: auto;
-          }
-          
-          .nav-links-container {
-              margin-left: 0;
-              width: 100%;
-              overflow-x: auto;
-          }
-          
-          .nav-links {
-              min-width: max-content;
-          }
-          
-          .navbar a {
-              padding: 12px 18px;
-              font-size: 0.9rem;
-          }
-          
-          .navbar-brand {
-              margin-bottom: 1rem;
-          }
-      }
     </style>
     
     {% block head %}
     {% endblock %}
     <title>{% block title %}Custom Website{% endblock %}</title>
     <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+    <link href="{% static 'css/responsive.css' %}" rel="stylesheet">
   </head>
-  <body class="pt-[60px]">
+  <body class="site-body">
     <div class="navbar-container">
       <div class="navbar">
         <a href="{% url 'home' %}" class="navbar-brand">
@@ -143,13 +121,25 @@
           Trading Pro®
         </a>
 
-        <div class="nav-links-container">
+        <button
+          type="button"
+          class="nav-toggle"
+          data-collapsible-trigger
+          data-default-state="closed"
+          aria-expanded="false"
+          aria-controls="site-nav-links"
+        >
+          Menu
+        </button>
+
+        <div id="site-nav-links" class="nav-links-container" data-collapsible-panel>
           <div class="nav-links">
             <a href="{% url 'home' %}" class="{% if request.path == '/' %}active{% endif %}">Home</a>
             <a href="{% url 'watchlist' %}" class="{% if request.path == '/watchlist/' %}active{% endif %}">Watchlist</a>
             <a href="{% url 'portfolio' %}" class="{% if request.path == '/portfolio/' %}active{% endif %}">Portfolio</a>
             <a href="{% url 'backtest' %}" class="{% if request.path == '/backtest/' %}active{% endif %}">Backtest</a>
             <a href="{% url 'pro_scan' %}" class="{% if request.path == '/pro_scan/' %}active{% endif %}">Pro Scan</a>
+            <a href="{% url 'indicators' %}" class="{% if request.path == '/indicators/' %}active{% endif %}">Indicators</a>
             <a href="{% url 'theMath' %}" class="{% if request.path == '/theMath/' %}active{% endif %}">The Math</a>
             <a href="{% url 'settings' %}" class="{% if request.path == '/settings/' %}active{% endif %}">Settings</a>
             <a href="{% url 'help' %}" class="{% if request.path == '/help/' %}active{% endif %}">Help</a>
@@ -158,5 +148,6 @@
       </div>
     </div>
     {% block content %}{% endblock %}
+    <script src="{% static 'js/responsive.js' %}"></script>
   </body>
 </html>

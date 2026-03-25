@@ -1,0 +1,41 @@
+<div id="golden-cross-bollinger-squeeze-modal" class="indicator-modal" style="display:none" aria-hidden="true">
+  <div class="indicator-modal-card" style="width:min(560px,100%)">
+    <div class="indicator-modal-header">
+      <h3>Configure Golden Cross + Bollinger Squeeze</h3>
+      <p>Use a Golden Cross trend filter with a Bollinger squeeze expansion that breaks above the middle band.</p>
+    </div>
+    <form id="golden-cross-bollinger-squeeze-form">
+      <label class="block text-sm font-medium text-gray-700 mb-1">Fast SMA</label>
+      <input id="gcbs-fast-sma" type="number" value="50" min="1" class="mt-1 block w-full border border-gray-300 rounded-md p-2" required>
+
+      <label class="block text-sm font-medium text-gray-700 mt-4 mb-1">Slow SMA</label>
+      <input id="gcbs-slow-sma" type="number" value="200" min="1" class="mt-1 block w-full border border-gray-300 rounded-md p-2" required>
+
+      <label class="block text-sm font-medium text-gray-700 mt-4 mb-1">Bollinger Period</label>
+      <input id="gcbs-bb-period" type="number" value="20" min="2" class="mt-1 block w-full border border-gray-300 rounded-md p-2" required>
+
+      <label class="block text-sm font-medium text-gray-700 mt-4 mb-1">Bollinger Std Dev</label>
+      <input id="gcbs-bb-std-dev" type="number" value="2" min="0.5" step="0.1" class="mt-1 block w-full border border-gray-300 rounded-md p-2" required>
+
+      <label class="block text-sm font-medium text-gray-700 mt-4 mb-1">Squeeze Lookback</label>
+      <input id="gcbs-squeeze-lookback" type="number" value="20" min="5" class="mt-1 block w-full border border-gray-300 rounded-md p-2" required>
+
+      <label class="block text-sm font-medium text-gray-700 mt-4 mb-1">Squeeze Quantile</label>
+      <input id="gcbs-squeeze-quantile" type="number" value="0.35" min="0.05" max="0.95" step="0.01" class="mt-1 block w-full border border-gray-300 rounded-md p-2" required>
+
+      <label class="block text-sm font-medium text-gray-700 mt-4 mb-1">Order Percentage (%)</label>
+      <input id="gcbs-order-percentage" type="number" value="100" min="1" max="100" class="mt-1 block w-full border border-gray-300 rounded-md p-2" required>
+
+      <label class="block text-sm font-medium text-gray-700 mt-4 mb-1">Starting Cash ($)</label>
+      <input id="gcbs-starting-cash" type="number" value="100000" min="1" class="mt-1 block w-full border border-gray-300 rounded-md p-2" required>
+
+      <label class="block text-sm font-medium text-gray-700 mt-4 mb-1">Override Shares (Optional)</label>
+      <input id="gcbs-override-shares" type="number" placeholder="Leave blank to compute" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+
+      <div class="indicator-modal-actions">
+        <button type="button" id="gcbs-cancel" class="indicator-card-btn">Cancel</button>
+        <button type="submit" class="indicator-card-btn indicator-card-btn-primary">Save Strategy</button>
+      </div>
+    </form>
+  </div>
+</div>

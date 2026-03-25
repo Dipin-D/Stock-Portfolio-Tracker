@@ -423,6 +423,10 @@
             gap: 0.55rem;
         }
 
+        .indicator-card-actions {
+            align-items: center;
+        }
+
         .indicator-card-btn {
             border: 1px solid #cbd5e1;
             border-radius: 999px;
@@ -446,6 +450,88 @@
 
         .indicator-card-btn-danger {
             color: #b91c1c;
+        }
+
+        .indicator-card-btn-info {
+            width: 2.45rem;
+            height: 2.45rem;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 800;
+            color: #1d4ed8;
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+
+        .indicator-info-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .indicator-info-preview {
+            position: absolute;
+            top: calc(100% + 0.75rem);
+            right: 0;
+            width: min(28rem, calc(100vw - 3rem));
+            display: none;
+            z-index: 40;
+        }
+
+        .indicator-info-preview.is-visible {
+            display: block;
+        }
+
+        .indicator-info-preview-card {
+            border: 1px solid #dbe4f0;
+            border-radius: 22px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 20px 48px rgba(15, 23, 42, 0.16);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .indicator-info-preview-card strong {
+            color: #10213b;
+            font-size: 1.05rem;
+        }
+
+        .indicator-info-preview-card p {
+            margin: 0;
+            color: #526277;
+            line-height: 1.65;
+        }
+
+        .indicator-info-preview-external {
+            border: 1px solid #dbe4f0;
+            border-radius: 16px;
+            background: #f8fbff;
+            padding: 0.75rem 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .indicator-info-preview-external strong {
+            font-size: 0.9rem;
+        }
+
+        .indicator-info-preview-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: #1d4ed8;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .indicator-info-preview-link:hover {
+            text-decoration: underline;
         }
 
         .strategy-step-badge,
@@ -1033,17 +1119,367 @@
         }
 
         #indicator-options {
+            position: absolute;
+            right: 1.5rem;
+            top: 88px;
+            z-index: 20;
+            width: min(22rem, calc(100vw - 3rem));
             border: 1px solid #dbe4f0 !important;
-            background: #fff !important;
-            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.10) !important;
+            border-radius: 22px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.14) !important;
+            overflow: hidden;
+        }
+
+        .indicator-options-header {
+            padding: 1rem 1rem 0.7rem;
+            border-bottom: 1px solid #e4edf7;
+            background: linear-gradient(180deg, rgba(239, 246, 255, 0.85) 0%, rgba(255, 255, 255, 0.92) 100%);
+        }
+
+        .indicator-options-header p {
+            margin: 0 0 0.2rem;
+            color: #4b6b93;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .indicator-options-header h4 {
+            margin: 0;
+            color: #10213b;
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-family: var(--backtest-display-font);
+        }
+
+        .indicator-options-list {
+            padding: 0.7rem;
+            display: grid;
+            gap: 0.45rem;
         }
 
         #indicator-options button {
+            display: block;
+            width: 100%;
+            border: 1px solid #dbe4f0;
+            border-radius: 14px;
+            background: #fff;
             color: #0f172a;
+            padding: 0.8rem 0.95rem;
+            font-weight: 700;
+            text-align: left;
+            transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
         }
 
         #indicator-options button:hover {
             background: #eff6ff;
+            border-color: #93c5fd;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12);
+        }
+
+        .backtest-select,
+        .indicator-select-input {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='10' viewBox='0 0 14 10'%3E%3Cpath fill='none' stroke='%23132238' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.8' d='M1 1.5 7 8.5l6-7'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 0.9rem;
+            padding-right: 2.7rem;
+        }
+
+        .bayes-evidence-desktop {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .bayes-evidence-row {
+            cursor: pointer;
+            transition: background-color 160ms ease, box-shadow 160ms ease;
+        }
+
+        .bayes-evidence-row.is-active,
+        .bayes-evidence-row:hover {
+            background: rgba(37, 99, 235, 0.06);
+        }
+
+        .bayes-evidence-detail {
+            border: 1px solid #dbe4f0;
+            border-radius: 18px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            padding: 1rem 1.05rem;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+        }
+
+        .bayes-evidence-detail-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .bayes-evidence-detail-title {
+            display: flex;
+            flex-direction: column;
+            gap: 0.32rem;
+        }
+
+        .bayes-evidence-detail-title strong {
+            color: #10213b;
+            font-size: 1.15rem;
+            font-family: var(--backtest-display-font);
+        }
+
+        .bayes-evidence-detail-meta {
+            color: var(--backtest-muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .bayes-evidence-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.8rem;
+        }
+
+        .bayes-evidence-detail-metric {
+            border: 1px solid #e2eaf4;
+            border-radius: 16px;
+            background: #fff;
+            padding: 0.85rem 0.9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .bayes-evidence-detail-metric span {
+            color: #64748b;
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .bayes-evidence-detail-metric strong {
+            color: #10213b;
+            font-size: 1rem;
+        }
+
+        .bayes-evidence-mobile-list {
+            display: none;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .bayes-evidence-mobile-card {
+            border: 1px solid #dbe4f0;
+            border-radius: 20px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .bayes-evidence-mobile-summary {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.8rem;
+        }
+
+        .bayes-evidence-mobile-step {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2.45rem;
+            min-height: 2.45rem;
+            padding: 0.35rem 0.65rem;
+            border-radius: 999px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-size: 0.9rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .bayes-evidence-mobile-core {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.65rem;
+        }
+
+        .bayes-evidence-mobile-core-item,
+        .bayes-evidence-mobile-detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.16rem;
+        }
+
+        .bayes-evidence-mobile-core-item span,
+        .bayes-evidence-mobile-detail-item span {
+            color: #64748b;
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .bayes-evidence-mobile-core-item strong,
+        .bayes-evidence-mobile-detail-item strong {
+            color: #10213b;
+            font-size: 0.98rem;
+        }
+
+        .bayes-evidence-mobile-toggle {
+            align-self: flex-start;
+        }
+
+        .bayes-evidence-mobile-detail {
+            display: none;
+            border-top: 1px solid #e2eaf4;
+            padding-top: 0.8rem;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.7rem;
+        }
+
+        .bayes-evidence-mobile-card.is-open .bayes-evidence-mobile-detail {
+            display: grid;
+        }
+
+        .backtest-guide-banner {
+            display: none;
+        }
+
+        .backtest-guide-banner.is-visible {
+            display: block;
+        }
+
+        .backtest-guide-card {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .backtest-guide-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+        }
+
+        .backtest-tour {
+            position: fixed;
+            inset: 0;
+            z-index: 1200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem;
+            background: rgba(15, 23, 42, 0.68);
+        }
+
+        .backtest-tour.hidden {
+            display: none;
+        }
+
+        .backtest-tour-card {
+            width: min(720px, 100%);
+            border-radius: 28px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            border: 1px solid #dbe4f0;
+            box-shadow: 0 28px 70px rgba(15, 23, 42, 0.24);
+            padding: 1.45rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .backtest-tour-card strong {
+            color: #10213b;
+        }
+
+        .backtest-tour-progress {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.85rem;
+        }
+
+        .backtest-tour-step {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.42rem 0.8rem;
+            border-radius: 999px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .backtest-tour-card h3 {
+            margin: 0;
+            color: #10213b;
+            font-size: 1.55rem;
+            font-weight: 700;
+            font-family: var(--backtest-display-font);
+        }
+
+        .backtest-tour-card p,
+        .backtest-tour-card li {
+            color: var(--backtest-muted);
+            line-height: 1.7;
+        }
+
+        .backtest-tour-card ul {
+            margin: 0;
+            padding-left: 1.25rem;
+        }
+
+        .backtest-tour-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .backtest-tour-hint {
+            margin: 0;
+            padding: 0.85rem 1rem;
+            border-radius: 18px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-size: 0.95rem;
+            font-weight: 700;
+            line-height: 1.6;
+        }
+
+        .backtest-page.is-guide-active .backtest-sidebar,
+        .backtest-page.is-guide-active .backtest-main {
+            pointer-events: none;
+        }
+
+        .backtest-guide-target-active {
+            position: relative;
+            z-index: 1250;
+            pointer-events: auto !important;
+            box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.18), 0 0 0 9999px rgba(15, 23, 42, 0.42);
+            border-radius: 22px;
+        }
+
+        .backtest-guide-target-active.indicator-card-btn,
+        .backtest-guide-target-active.backtest-primary-btn,
+        .backtest-guide-target-active.backtest-secondary-btn,
+        .backtest-guide-target-active.btn-clickable,
+        .backtest-guide-target-active input,
+        .backtest-guide-target-active select {
+            border-radius: 18px;
         }
 
         #chart-section {
@@ -1137,6 +1573,47 @@
             .bayes-workflow-header {
                 gap: 0.85rem;
             }
+
+            #indicator-options {
+                position: fixed;
+                inset: auto 1rem 1rem 1rem;
+                top: auto;
+                width: auto;
+                max-height: min(68vh, 32rem);
+                overflow: auto;
+                border-radius: 24px;
+                box-shadow: 0 28px 60px rgba(15, 23, 42, 0.22) !important;
+            }
+
+            .bayes-evidence-desktop {
+                display: none;
+            }
+
+            .bayes-evidence-mobile-list {
+                display: flex;
+            }
+
+            .bayes-evidence-mobile-core,
+            .bayes-evidence-mobile-detail,
+            .bayes-evidence-detail-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .indicator-info-preview {
+                position: fixed;
+                inset: auto 1rem 1rem 1rem;
+                width: auto;
+                max-width: none;
+            }
+
+            .backtest-guide-actions > * {
+                width: 100%;
+            }
+
+            .backtest-tour-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
         }
     </style>
 {% endblock %}
@@ -1162,12 +1639,25 @@
         data-initial-source-signal="{{ initial_source_context.source_signal|default:'' }}"
     >
         <div class="backtest-shell">
-            <aside class="backtest-sidebar space-y-6">
+            <button
+                type="button"
+                class="responsive-panel-toggle"
+                data-collapsible-trigger
+                data-default-state="closed"
+                aria-expanded="false"
+                aria-controls="backtest-sidebar-controls"
+            >
+                Backtest controls
+            </button>
+
+            <aside id="backtest-sidebar-controls" class="backtest-sidebar space-y-6" data-collapsible-panel>
                 <section class="backtest-filter-group space-y-3">
                     <h3>Strategy</h3>
                     <div class="space-y-2">
-                        <button class="btn-clickable" data-strategy-slug="golden_cross" data-strategy-button="1">Golden Cross</button>
-                        <button class="btn-clickable" data-strategy-slug="momentum_12m" data-strategy-button="1">Momentum</button>
+                        <button id="strategy-btn-golden-cross" class="btn-clickable" data-strategy-slug="golden_cross" data-strategy-button="1">Golden Cross</button>
+                        <button id="strategy-btn-golden-cross-bollinger-squeeze" class="btn-clickable" data-strategy-slug="golden_cross_bollinger_squeeze" data-strategy-button="1">Golden Cross + Bollinger Squeeze</button>
+                        <button id="strategy-btn-golden-cross-bollinger-breakout-confirm" class="btn-clickable" data-strategy-slug="golden_cross_bollinger_breakout_confirm" data-strategy-button="1">Golden Cross + Bollinger Breakout Confirm</button>
+                        <button id="strategy-btn-momentum-12m" class="btn-clickable" data-strategy-slug="momentum_12m" data-strategy-button="1">Momentum</button>
                         <button class="btn-clickable" data-coming-soon="1" data-strategy-button="1">Value Investing (High VE)</button>
                         <button class="btn-clickable" data-coming-soon="1" data-strategy-button="1">Low Volatility Anomaly</button>
                         <button class="btn-clickable" data-coming-soon="1" data-strategy-button="1">*Technical*</button>
@@ -1264,11 +1754,14 @@
                         </div>
 
                         <div class="backtest-toolbar-actions">
+                            <button id="backtest-tour-replay" class="backtest-secondary-btn" type="button">Replay Guide</button>
                             <button id="render-graph-button" class="backtest-secondary-btn" type="button">Load Chart</button>
                             <button id="run-bayes-button" class="backtest-primary-btn" type="button">Run Bayesian Analysis</button>
                         </div>
                     </div>
                 </section>
+
+                <section id="backtest-result-guide" class="backtest-section-card backtest-guide-banner" aria-live="polite"></section>
 
                 <section class="backtest-section-card bayes-workflow-card">
                     <div class="bayes-workflow-header">
@@ -1294,30 +1787,6 @@
                     </div>
                 </section>
 
-                <section class="backtest-section-card relative">
-                    <div class="bayes-panel-header">
-                        <div>
-                            <p class="backtest-section-kicker">Chart Tools</p>
-                            <h3 class="backtest-section-title">Indicators</h3>
-                            <p class="backtest-section-subcopy">Use overlays and studies without crowding the Bayesian workflow area.</p>
-                        </div>
-                        <button id="indicator-toggle" class="indicator-card-btn" type="button">Indicators</button>
-                    </div>
-
-                    <div id="indicator-options" class="hidden absolute right-6 z-20 mt-2 w-64 rounded-md border shadow-lg" style="top: 88px;">
-                        <button data-indicator="ma" class="block w-full text-left px-4 py-2">Moving Average (MA)</button>
-                        <button data-indicator="rsi" class="block w-full text-left px-4 py-2">Relative Strength Index (RSI)</button>
-                        <button data-indicator="bbands" class="block w-full text-left px-4 py-2">Bollinger Bands</button>
-                        <button data-indicator="stoch" class="block w-full text-left px-4 py-2">Stochastic Oscillator</button>
-                        <button data-indicator="adx" class="block w-full text-left px-4 py-2">Average Directional Index (ADX)</button>
-                        <button data-indicator="ichimoku" class="block w-full text-left px-4 py-2">Ichimoku Cloud</button>
-                        <button data-indicator="psar" class="block w-full text-left px-4 py-2">Parabolic SAR</button>
-                        <button data-indicator="obv" class="block w-full text-left px-4 py-2">On-Balance Volume (OBV)</button>
-                    </div>
-
-                    <div id="indicator-panels" class="backtest-card-grid mt-6"></div>
-                </section>
-
                 <section class="backtest-section-card">
                     <div class="bayes-panel-header">
                         <div>
@@ -1329,6 +1798,36 @@
                     <div id="strategy-panels" class="backtest-card-grid mt-6">
                         <p class="backtest-empty-state">Configure Golden Cross or Momentum to create the Bayesian strategy chain.</p>
                     </div>
+                </section>
+
+                <section class="backtest-section-card relative">
+                    <div class="bayes-panel-header">
+                        <div>
+                            <p class="backtest-section-kicker">Chart Tools</p>
+                            <h3 class="backtest-section-title">Indicators</h3>
+                            <p class="backtest-section-subcopy">Use overlays and studies without crowding the Bayesian workflow area.</p>
+                        </div>
+                        <button id="indicator-toggle" class="indicator-card-btn" type="button" aria-expanded="false" aria-controls="indicator-options">Indicators</button>
+                    </div>
+
+                    <div id="indicator-options" class="hidden" aria-hidden="true">
+                        <div class="indicator-options-header">
+                            <p>Indicator library</p>
+                            <h4>Choose a chart study</h4>
+                        </div>
+                        <div class="indicator-options-list">
+                            <button data-indicator="ma" type="button">Moving Average (MA)</button>
+                            <button data-indicator="rsi" type="button">Relative Strength Index (RSI)</button>
+                            <button data-indicator="bbands" type="button">Bollinger Bands</button>
+                            <button data-indicator="stoch" type="button">Stochastic Oscillator</button>
+                            <button data-indicator="adx" type="button">Average Directional Index (ADX)</button>
+                            <button data-indicator="ichimoku" type="button">Ichimoku Cloud</button>
+                            <button data-indicator="psar" type="button">Parabolic SAR</button>
+                            <button data-indicator="obv" type="button">On-Balance Volume (OBV)</button>
+                        </div>
+                    </div>
+
+                    <div id="indicator-panels" class="backtest-card-grid mt-6"></div>
                 </section>
 
                 <section class="backtest-chart-card">
@@ -1391,9 +1890,12 @@
     </div>
 
     {% include "partials/strategies/backtest_golden_cross_form.html" %}
+    {% include "partials/strategies/backtest_golden_cross_bollinger_squeeze_form.html" %}
+    {% include "partials/strategies/backtest_golden_cross_bollinger_breakout_confirm_form.html" %}
     {% include "partials/strategies/backtest_momentum_form.html" %}
+    {{ indicator_library|json_script:"indicator-encyclopedia-data" }}
 
-    <div id="indicator-config-modal" class="indicator-modal hidden" aria-hidden="true">
+    <div id="indicator-config-modal" class="indicator-modal hidden" aria-hidden="true" inert>
         <div class="indicator-modal-card">
             <div class="indicator-modal-header">
                 <h3 id="indicator-modal-title">Add Indicator</h3>
@@ -1408,6 +1910,23 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div id="backtest-tour" class="backtest-tour hidden" aria-hidden="true">
+        <div class="backtest-tour-card" role="dialog" aria-modal="true" aria-labelledby="backtest-tour-title">
+            <div class="backtest-tour-progress">
+                <span id="backtest-tour-step" class="backtest-tour-step">Step 1</span>
+                <button type="button" id="backtest-tour-skip" class="indicator-card-btn">Skip guide</button>
+            </div>
+            <div>
+                <h3 id="backtest-tour-title">Backtest guide</h3>
+                <p id="backtest-tour-copy">Learn the backtest workflow.</p>
+            </div>
+            <p id="backtest-tour-hint" class="backtest-tour-hint">Tap the highlighted area to continue.</p>
+            <div class="backtest-tour-actions">
+                <span class="backtest-muted">Only the highlighted control is active while the guide is running.</span>
+            </div>
         </div>
     </div>
 

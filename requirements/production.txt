@@ -1,0 +1,7 @@
+django
+pandas
+backtrader
+lxml
+yfinance==0.2.65
+gunicorn
+psycopg[binary]

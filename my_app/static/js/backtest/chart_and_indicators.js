@@ -77,6 +77,13 @@
             summary(config) {
                 return `${config.period}-period · ${config.oversold}/${config.overbought} levels`;
             },
+            legendItems(config) {
+                return [
+                    { label: 'RSI line', color: config.color },
+                    { label: `Overbought ${config.overbought}`, color: '#ef4444' },
+                    { label: `Oversold ${config.oversold}`, color: '#10b981' },
+                ];
+            },
             createSeries(config, rawData, indicatorId) {
                 const rsi = window.computeRSI(rawData, config.period);
                 const times = rsi.map((point) => point.time);
@@ -102,6 +109,13 @@
             summary(config) {
                 return `${config.period}-period · ${config.stdDev}σ`;
             },
+            legendItems(config) {
+                return [
+                    { label: 'Upper band', color: config.upperColor },
+                    { label: 'Middle band', color: config.middleColor },
+                    { label: 'Lower band', color: config.lowerColor },
+                ];
+            },
             createSeries(config, rawData) {
                 const bands = window.computeBollingerBands(rawData, config.period, config.stdDev);
                 return [
@@ -125,6 +139,14 @@
             ],
             summary(config) {
                 return `%K ${config.kPeriod} · smooth ${config.smoothK} · %D ${config.dPeriod}`;
+            },
+            legendItems(config) {
+                return [
+                    { label: '%K line', color: config.kColor },
+                    { label: '%D line', color: config.dColor },
+                    { label: `Upper level ${config.upperLevel}`, color: '#ef4444' },
+                    { label: `Lower level ${config.lowerLevel}`, color: '#10b981' },
+                ];
             },
             createSeries(config, rawData, indicatorId) {
                 const stoch = window.computeStochasticOscillator(rawData, config.kPeriod, config.smoothK, config.dPeriod);
@@ -151,6 +173,14 @@
             ],
             summary(config) {
                 return `${config.period}-period · threshold ${config.threshold}`;
+            },
+            legendItems(config) {
+                return [
+                    { label: 'ADX line', color: config.adxColor },
+                    { label: '+DI line', color: config.plusColor },
+                    { label: '-DI line', color: config.minusColor },
+                    { label: `Trend threshold ${config.threshold}`, color: '#f59e0b' },
+                ];
             },
             createSeries(config, rawData, indicatorId) {
                 const adx = window.computeADX(rawData, config.period);
@@ -182,6 +212,15 @@
             summary(config) {
                 return `${config.conversionPeriod}/${config.basePeriod}/${config.spanBPeriod} · shift ${config.displacement}`;
             },
+            legendItems(config) {
+                return [
+                    { label: 'Conversion line', color: config.conversionColor },
+                    { label: 'Base line', color: config.baseColor },
+                    { label: 'Span A', color: config.spanAColor },
+                    { label: 'Span B', color: config.spanBColor },
+                    { label: 'Lagging span', color: config.laggingColor },
+                ];
+            },
             createSeries(config, rawData) {
                 const cloud = window.computeIchimokuCloud(
                     rawData,
@@ -211,6 +250,11 @@
             summary(config) {
                 return `step ${config.step} · max ${config.maxStep}`;
             },
+            legendItems(config) {
+                return [
+                    { label: 'SAR dots', color: config.color },
+                ];
+            },
             createSeries(config, rawData) {
                 const psar = window.computeParabolicSAR(rawData, config.step, config.maxStep);
                 return [overlayLine(psar, config.color, { lineStyle: 3, lineWidth: 1 })];
@@ -226,6 +270,12 @@
             ],
             summary(config) {
                 return `signal ${config.signalPeriod}`;
+            },
+            legendItems(config) {
+                return [
+                    { label: 'OBV line', color: config.color },
+                    { label: 'Signal line', color: config.signalColor },
+                ];
             },
             createSeries(config, rawData, indicatorId) {
                 const obv = window.computeOBV(rawData, config.signalPeriod);
@@ -293,7 +343,7 @@
             return `
                 <label class="indicator-field">
                     <span>${field.label}</span>
-                    <select name="${field.name}" class="indicator-input">
+                    <select name="${field.name}" class="indicator-input indicator-select-input">
                         ${optionsMarkup}
                     </select>
                 </label>
@@ -332,6 +382,7 @@
         const indicatorCancel = document.getElementById('indicator-cancel');
         const indicatorForm = document.getElementById('indicator-config-form');
         const indicatorSaveLabel = document.getElementById('indicator-save-label');
+        const indicatorLibraryPayload = document.getElementById('indicator-encyclopedia-data');
 
         if (!pageChart || !indicatorPanels || !indicatorModal || !indicatorForm) {
             return;
@@ -342,6 +393,7 @@
         let nextIndicatorId = 1;
         let editingIndicatorId = null;
         let activeIndicatorKey = null;
+        let indicatorModalReturnFocus = null;
         const indicatorState = new Map();
         const tickerInput = document.getElementById('ticker-input');
         const startDateInput = document.getElementById('start-date');
@@ -358,6 +410,27 @@
         window.backtestStartDate = '';
         window.backtestEndDate = '';
         let latestBayesResult = null;
+        let indicatorInfoBySlug = {};
+
+        if (indicatorLibraryPayload?.textContent) {
+            try {
+                const parsed = JSON.parse(indicatorLibraryPayload.textContent);
+                if (Array.isArray(parsed)) {
+                    indicatorInfoBySlug = parsed.reduce((accumulator, item) => {
+                        if (item?.slug) {
+                            accumulator[item.slug] = item;
+                        }
+                        return accumulator;
+                    }, {});
+                }
+            } catch (error) {
+                console.warn('Indicator encyclopedia payload could not be parsed.', error);
+            }
+        }
+
+        function isPhoneLayout() {
+            return window.matchMedia('(max-width: 768px)').matches;
+        }
 
         function formatCandles(rawData) {
             return window.normalizeCandles(rawData).map((item) => ({
@@ -436,17 +509,51 @@
             `;
         }
 
+        function buildIndicatorPreviewMarkup(indicatorKey) {
+            const info = indicatorInfoBySlug[indicatorKey];
+            if (!info) {
+                return `
+                    <a class="indicator-info-preview-card" href="/indicators/">
+                        <strong>Indicator encyclopedia</strong>
+                        <p>Open the standalone indicator reference page for the full math, history, significance, and strategy pairing notes.</p>
+                        <span class="indicator-info-preview-link">Open encyclopedia ↗</span>
+                    </a>
+                `;
+            }
+
+            const firstLink = Array.isArray(info.external_links) && info.external_links.length ? info.external_links[0] : null;
+            const externalPreview = firstLink ? `
+                <div class="indicator-info-preview-external">
+                    <strong>${escapeHtml(firstLink.title)}</strong>
+                    <p>${escapeHtml(firstLink.preview)}</p>
+                </div>
+            ` : '';
+
+            return `
+                <a class="indicator-info-preview-card" href="/indicators/#${encodeURIComponent(info.slug)}">
+                    <strong>${escapeHtml(info.name)}</strong>
+                    <p>${escapeHtml(info.preview || info.what_it_measures || '')}</p>
+                    ${externalPreview}
+                    <span class="indicator-info-preview-link">Open full indicator page ↗</span>
+                </a>
+            `;
+        }
+
         function updatePanel(indicator) {
             const definition = INDICATOR_DEFS[indicator.key];
             const status = indicator.element.querySelector('[data-role="indicator-status"]');
             const summary = indicator.element.querySelector('[data-role="indicator-summary"]');
             const legend = indicator.element.querySelector('[data-role="indicator-legend"]');
             const applyButton = indicator.element.querySelector('[data-role="indicator-apply"]');
+            const preview = indicator.element.querySelector('[data-role="indicator-preview"]');
 
             status.textContent = indicator.applied ? 'Applied to chart' : 'Ready to apply';
             summary.textContent = definition.summary(indicator.config);
             if (legend) {
                 legend.innerHTML = buildIndicatorLegendMarkup(definition, indicator.config);
+            }
+            if (preview) {
+                preview.innerHTML = buildIndicatorPreviewMarkup(indicator.key);
             }
             applyButton.textContent = indicator.applied ? 'Reapply' : 'Apply';
         }
@@ -649,6 +756,10 @@
                             <p class="indicator-card-status" data-role="indicator-status">Ready to apply</p>
                         </div>
                         <div class="indicator-card-actions">
+                            <div class="indicator-info-wrapper">
+                                <button type="button" class="indicator-card-btn indicator-card-btn-info" data-role="indicator-info" aria-expanded="false" aria-label="Indicator information">i</button>
+                                <div class="indicator-info-preview" data-role="indicator-preview"></div>
+                            </div>
                             <button type="button" class="indicator-card-btn indicator-card-btn-primary" data-role="indicator-apply">Apply</button>
                             <button type="button" class="indicator-card-btn" data-role="indicator-edit">Edit</button>
                             <button type="button" class="indicator-card-btn indicator-card-btn-danger" data-role="indicator-delete">Delete</button>
@@ -678,6 +789,52 @@
                     renderChartLegend();
                 });
 
+                const infoWrapper = panel.querySelector('.indicator-info-wrapper');
+                const infoButton = panel.querySelector('[data-role="indicator-info"]');
+                const preview = panel.querySelector('[data-role="indicator-preview"]');
+
+                function setPreviewVisible(visible) {
+                    preview.classList.toggle('is-visible', visible);
+                    infoButton.setAttribute('aria-expanded', visible ? 'true' : 'false');
+                }
+
+                if (infoWrapper && infoButton && preview) {
+                    const openPreview = function () {
+                        setPreviewVisible(true);
+                    };
+                    const closePreview = function () {
+                        setPreviewVisible(false);
+                    };
+
+                    infoWrapper.addEventListener('mouseenter', function () {
+                        if (!isPhoneLayout()) {
+                            openPreview();
+                        }
+                    });
+
+                    infoWrapper.addEventListener('mouseleave', function () {
+                        if (!isPhoneLayout()) {
+                            closePreview();
+                        }
+                    });
+
+                    infoButton.addEventListener('focus', openPreview);
+                    infoButton.addEventListener('click', function (event) {
+                        if (isPhoneLayout()) {
+                            event.preventDefault();
+                            setPreviewVisible(!preview.classList.contains('is-visible'));
+                            return;
+                        }
+                        openPreview();
+                    });
+
+                    document.addEventListener('click', function (event) {
+                        if (!infoWrapper.contains(event.target)) {
+                            closePreview();
+                        }
+                    });
+                }
+
                 indicator.element = panel;
                 indicatorPanels.appendChild(panel);
             }
@@ -694,16 +851,26 @@
         }
 
         function closeIndicatorModal() {
+            const returnFocusTarget = indicatorModal.contains(document.activeElement)
+                ? (indicatorModalReturnFocus || indicatorToggle)
+                : null;
             indicatorModal.classList.add('hidden');
             indicatorModal.setAttribute('aria-hidden', 'true');
+            indicatorModal.setAttribute('inert', '');
             editingIndicatorId = null;
             activeIndicatorKey = null;
+            if (returnFocusTarget && typeof returnFocusTarget.focus === 'function') {
+                window.requestAnimationFrame(() => returnFocusTarget.focus());
+            }
         }
 
         function openIndicatorModal(indicatorKey, existingIndicator = null) {
             const definition = INDICATOR_DEFS[indicatorKey];
             const config = existingIndicator ? existingIndicator.config : collectDefaultConfig(definition);
 
+            indicatorModalReturnFocus = document.activeElement instanceof HTMLElement
+                ? document.activeElement
+                : indicatorToggle;
             activeIndicatorKey = indicatorKey;
             editingIndicatorId = existingIndicator ? existingIndicator.id : null;
             indicatorModalTitle.textContent = existingIndicator
@@ -715,7 +882,11 @@
                 .join('');
 
             indicatorModal.classList.remove('hidden');
+            indicatorModal.removeAttribute('inert');
             indicatorModal.setAttribute('aria-hidden', 'false');
+            window.requestAnimationFrame(() => {
+                indicatorFields.querySelector('input, select')?.focus();
+            });
         }
 
         function collectConfigFromModal(indicatorKey) {
@@ -924,6 +1095,12 @@
             };
         }
 
+        function setIndicatorOptionsOpen(isOpen) {
+            indicatorOptions.classList.toggle('hidden', !isOpen);
+            indicatorOptions.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+            indicatorToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        }
+
         if (!window.LightweightCharts) {
             showError('Chart library failed to load.');
             return;
@@ -940,15 +1117,16 @@
         updatePriceScaleLayout();
         showPlaceholder('Enter ticker and date range to display chart');
         renderChartLegend();
+        setIndicatorOptionsOpen(false);
 
         indicatorToggle.addEventListener('click', function (event) {
             event.stopPropagation();
-            indicatorOptions.classList.toggle('hidden');
+            setIndicatorOptionsOpen(indicatorOptions.classList.contains('hidden'));
         });
 
         document.addEventListener('click', function (event) {
             if (!event.target.closest('#indicator-options') && !event.target.closest('#indicator-toggle')) {
-                indicatorOptions.classList.add('hidden');
+                setIndicatorOptionsOpen(false);
             }
         });
 
@@ -959,7 +1137,7 @@
                     return;
                 }
 
-                indicatorOptions.classList.add('hidden');
+                setIndicatorOptionsOpen(false);
                 openIndicatorModal(button.dataset.indicator);
             });
         });

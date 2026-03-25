@@ -1,22 +1,130 @@
 {% extends 'base.html' %}
 
+{% block head %}
+    {{ block.super }}
+    <style>
+        .home-page {
+            min-height: calc(100vh - 72px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            background:
+                radial-gradient(circle at top left, rgba(14, 165, 233, 0.12), transparent 30%),
+                linear-gradient(180deg, #eef4fb 0%, #f8fbff 100%);
+        }
+
+        .home-auth-card {
+            width: min(100%, 440px);
+            border: 1px solid #d8e3ef;
+            border-radius: 28px;
+            background: rgba(255, 255, 255, 0.97);
+            box-shadow: 0 20px 48px rgba(15, 23, 42, 0.08);
+            padding: 1.75rem;
+        }
+
+        .home-auth-card h1 {
+            margin: 0;
+            color: #10213b;
+            font-size: clamp(1.9rem, 4vw, 2.5rem);
+            line-height: 1.05;
+        }
+
+        .home-auth-card p {
+            margin: 0.75rem 0 0;
+            color: #526277;
+            line-height: 1.65;
+        }
+
+        .home-auth-form {
+            display: grid;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .home-auth-field {
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .home-auth-field label {
+            color: #334155;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .home-auth-form input {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #cbd5e1;
+            border-radius: 16px;
+            background: #fff;
+            color: #10213b;
+            padding: 0.95rem 1rem;
+            font: inherit;
+        }
+
+        .home-auth-form input:focus {
+            outline: none;
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.12);
+        }
+
+        .home-auth-submit {
+            border: 0;
+            border-radius: 18px;
+            padding: 0.95rem 1.1rem;
+            background: linear-gradient(135deg, #0ea5e9, #2563eb);
+            color: #eff6ff;
+            font: inherit;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 16px 30px rgba(37, 99, 235, 0.22);
+        }
+
+        @media (max-width: 768px) {
+            .home-page {
+                align-items: flex-start;
+                padding: 1rem;
+            }
+
+            .home-auth-card {
+                width: 100%;
+                border-radius: 24px;
+                padding: 1.35rem;
+            }
+
+            .home-auth-submit {
+                width: 100%;
+            }
+        }
+    </style>
+{% endblock %}
+
 {% block title %}
     My Website
 {% endblock %}
 
 {% block content %}
-    <h1>Welcome to the Home Page</h1>
+    <div class="home-page">
+        <section class="home-auth-card">
+            <h1>Trading Pro</h1>
+            <p>Sign in to access watchlists, Bayesian backtests, research workflows, portfolio tools, and scan dashboards.</p>
 
-    <form method="post">
-        {% csrf_token %}
-        <div>
-            {{ form.username.label_tag }}
-            {{ form.username }}
-        </div> 
-        <div>
-            {{ form.password.label_tag }}
-            {{ form.password }}
-        </div>
-        <button type="submit">Login</button>
-    </form>
+            <form method="post" class="home-auth-form">
+                {% csrf_token %}
+                <div class="home-auth-field">
+                    {{ form.username.label_tag }}
+                    {{ form.username }}
+                </div>
+                <div class="home-auth-field">
+                    {{ form.password.label_tag }}
+                    {{ form.password }}
+                </div>
+                <button type="submit" class="home-auth-submit">Login</button>
+            </form>
+        </section>
+    </div>
 {% endblock %}

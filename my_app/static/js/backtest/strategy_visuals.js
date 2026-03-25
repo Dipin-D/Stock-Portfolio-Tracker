@@ -22,6 +22,28 @@
             markerEntryLabel: 'M12 Buy',
             markerExitLabel: 'M12 Exit',
         },
+        golden_cross_bollinger_squeeze: {
+            slug: 'golden_cross_bollinger_squeeze',
+            name: 'Golden Cross + Bollinger Squeeze',
+            shortLabel: 'GC+BS',
+            color: '#2563eb',
+            borderColor: '#38bdf8',
+            softColor: 'rgba(37, 99, 235, 0.12)',
+            textColor: '#1d4ed8',
+            markerEntryLabel: 'GC+BS Buy',
+            markerExitLabel: 'GC+BS Exit',
+        },
+        golden_cross_bollinger_breakout_confirm: {
+            slug: 'golden_cross_bollinger_breakout_confirm',
+            name: 'Golden Cross + Bollinger Breakout Confirm',
+            shortLabel: 'GC+BBC',
+            color: '#7c3aed',
+            borderColor: '#a855f7',
+            softColor: 'rgba(124, 58, 237, 0.12)',
+            textColor: '#6d28d9',
+            markerEntryLabel: 'GC+BBC Buy',
+            markerExitLabel: 'GC+BBC Exit',
+        },
     };
 
     const FALLBACK_VISUAL = {

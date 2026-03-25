@@ -1,0 +1,299 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    {{ block.super }}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .indicator-library-page {
+            --indicator-display: 'Cormorant Garamond', Georgia, serif;
+            --indicator-body: 'Manrope', 'Inter', sans-serif;
+            min-height: calc(100vh - 60px);
+            background:
+                radial-gradient(circle at top left, rgba(14, 165, 233, 0.10), transparent 28%),
+                linear-gradient(180deg, #eef4fb 0%, #f8fbff 100%);
+            padding: 1.4rem;
+            color: #132238;
+            font-family: var(--indicator-body);
+        }
+
+        .indicator-library-shell {
+            max-width: 1320px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            gap: 1.35rem;
+        }
+
+        .indicator-library-sidebar,
+        .indicator-library-main,
+        .indicator-library-hero,
+        .indicator-library-section {
+            border: 1px solid #dbe4f0;
+            border-radius: 28px;
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 20px 48px rgba(15, 23, 42, 0.08);
+        }
+
+        .indicator-library-sidebar,
+        .indicator-library-hero,
+        .indicator-library-section {
+            padding: 1.4rem;
+        }
+
+        .indicator-library-main {
+            background: transparent;
+            border: 0;
+            box-shadow: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1.35rem;
+        }
+
+        .indicator-library-kicker {
+            margin: 0 0 0.28rem;
+            color: #4b6b93;
+            font-size: 0.82rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+        }
+
+        .indicator-library-title,
+        .indicator-library-section h2,
+        .indicator-library-section h3 {
+            font-family: var(--indicator-display);
+            color: #10213b;
+        }
+
+        .indicator-library-title {
+            margin: 0;
+            font-size: 2.45rem;
+            line-height: 0.98;
+            font-weight: 700;
+        }
+
+        .indicator-library-copy,
+        .indicator-library-section p,
+        .indicator-library-section li {
+            color: #526277;
+            line-height: 1.72;
+        }
+
+        .indicator-library-copy {
+            margin: 0.8rem 0 0;
+            max-width: 74ch;
+        }
+
+        .indicator-library-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.55rem;
+            margin-top: 1rem;
+        }
+
+        .indicator-library-nav a {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.9rem 1rem;
+            border: 1px solid #dbe4f0;
+            border-radius: 18px;
+            background: #f8fbff;
+            color: #132238;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .indicator-library-nav a:hover {
+            border-color: #93c5fd;
+            background: #eff6ff;
+        }
+
+        .indicator-library-section {
+            scroll-margin-top: 92px;
+        }
+
+        .indicator-library-section h2 {
+            margin: 0;
+            font-size: 1.95rem;
+            line-height: 1;
+            font-weight: 700;
+        }
+
+        .indicator-library-preview {
+            margin-top: 0.7rem;
+            font-size: 1rem;
+        }
+
+        .indicator-library-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.95rem;
+            margin-top: 1.15rem;
+        }
+
+        .indicator-library-card {
+            border: 1px solid #dbe4f0;
+            border-radius: 20px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            padding: 1rem 1.05rem;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+        }
+
+        .indicator-library-card span {
+            display: block;
+            margin-bottom: 0.28rem;
+            color: #64748b;
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .indicator-library-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+            margin: 1rem 0 0;
+            padding-left: 1.15rem;
+        }
+
+        .indicator-library-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.85rem;
+            margin-top: 1.15rem;
+        }
+
+        .indicator-library-link-card {
+            border: 1px solid #dbe4f0;
+            border-radius: 20px;
+            background: #f8fbff;
+            padding: 1rem;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .indicator-library-link-card:hover {
+            border-color: #60a5fa;
+            background: #eff6ff;
+        }
+
+        .indicator-library-link-card strong {
+            color: #1d4ed8;
+            display: block;
+            margin-bottom: 0.35rem;
+        }
+
+        @media (max-width: 980px) {
+            .indicator-library-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .indicator-library-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .indicator-library-page {
+                padding: 1rem;
+            }
+
+            .indicator-library-sidebar,
+            .indicator-library-hero,
+            .indicator-library-section {
+                padding: 1.15rem;
+                border-radius: 24px;
+            }
+
+            .indicator-library-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block title %}Indicators | Trading Pro{% endblock %}
+
+{% block content %}
+    <div class="indicator-library-page">
+        <div class="indicator-library-shell">
+            <aside class="indicator-library-sidebar">
+                <p class="indicator-library-kicker">Indicator Map</p>
+                <h2 class="indicator-library-title" style="font-size: 2rem;">Indicator Encyclopedia</h2>
+                <p class="indicator-library-copy">Use this page as the long-form reference for the chart studies that can be added on Backtest. Each entry explains the idea, the math intuition, the trading relevance, and how it can complement current strategies.</p>
+                <nav class="indicator-library-nav">
+                    {% for indicator in indicator_library %}
+                        <a href="#{{ indicator.slug }}">
+                            <span>{{ indicator.name }}</span>
+                            <strong>{{ indicator.short_name }}</strong>
+                        </a>
+                    {% endfor %}
+                </nav>
+            </aside>
+
+            <div class="indicator-library-main">
+                <section class="indicator-library-hero">
+                    <p class="indicator-library-kicker">Knowledge Layer</p>
+                    <h1 class="indicator-library-title">How each indicator thinks about the market</h1>
+                    <p class="indicator-library-copy">Backtest now lets indicators behave like first-class tools instead of anonymous chart decorations. Use the encyclopedia when you want to know what the indicator is measuring, why it matters, and what kind of strategy it naturally supports.</p>
+                </section>
+
+                {% for indicator in indicator_library %}
+                    <section id="{{ indicator.slug }}" class="indicator-library-section">
+                        <p class="indicator-library-kicker">{{ indicator.short_name }}</p>
+                        <h2>{{ indicator.name }}</h2>
+                        <p class="indicator-library-preview">{{ indicator.preview }}</p>
+
+                        <div class="indicator-library-grid">
+                            <div class="indicator-library-card">
+                                <span>What It Measures</span>
+                                <p>{{ indicator.what_it_measures }}</p>
+                            </div>
+                            <div class="indicator-library-card">
+                                <span>Math & Statistics Philosophy</span>
+                                <p>{{ indicator.math_philosophy }}</p>
+                            </div>
+                            <div class="indicator-library-card">
+                                <span>History</span>
+                                <p>{{ indicator.history }}</p>
+                            </div>
+                            <div class="indicator-library-card">
+                                <span>Significance</span>
+                                <p>{{ indicator.significance }}</p>
+                            </div>
+                        </div>
+
+                        <div class="indicator-library-grid">
+                            <div class="indicator-library-card">
+                                <span>Implementation Ideas</span>
+                                <ul class="indicator-library-list">
+                                    {% for item in indicator.implementation_ideas %}
+                                        <li>{{ item }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div class="indicator-library-card">
+                                <span>How It Supplements Existing Strategies</span>
+                                <p>{{ indicator.strategy_pairing }}</p>
+                            </div>
+                        </div>
+
+                        <div class="indicator-library-links">
+                            {% for link in indicator.external_links %}
+                                <a class="indicator-library-link-card" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">
+                                    <strong>{{ link.title }}</strong>
+                                    <span>{{ link.preview }}</span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </section>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

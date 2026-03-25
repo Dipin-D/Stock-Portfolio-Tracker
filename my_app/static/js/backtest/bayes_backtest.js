@@ -25,6 +25,38 @@
                 override_shares: null,
             },
         },
+        golden_cross_bollinger_squeeze: {
+            slug: 'golden_cross_bollinger_squeeze',
+            name: 'Golden Cross + Bollinger Squeeze',
+            category: 'Trend',
+            default_params: {
+                fast_sma: 50,
+                slow_sma: 200,
+                bb_period: 20,
+                bb_std_dev: 2,
+                squeeze_lookback: 20,
+                squeeze_quantile: 0.35,
+                order_percentage: 100,
+                starting_cash: 100000,
+                override_shares: null,
+            },
+        },
+        golden_cross_bollinger_breakout_confirm: {
+            slug: 'golden_cross_bollinger_breakout_confirm',
+            name: 'Golden Cross + Bollinger Breakout Confirm',
+            category: 'Trend',
+            default_params: {
+                fast_sma: 50,
+                slow_sma: 200,
+                bb_period: 20,
+                bb_std_dev: 2,
+                squeeze_lookback: 20,
+                squeeze_quantile: 0.35,
+                order_percentage: 100,
+                starting_cash: 100000,
+                override_shares: null,
+            },
+        },
     };
 
     function getCookie(name) {
@@ -33,6 +65,11 @@
             .map((cookie) => cookie.trim())
             .find((cookie) => cookie.startsWith(`${name}=`));
         return cookieValue ? decodeURIComponent(cookieValue.split('=').slice(1).join('=')) : '';
+    }
+
+    function setCookie(name, value, days = 365) {
+        const expires = new Date(Date.now() + (days * 24 * 60 * 60 * 1000)).toUTCString();
+        document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
     }
 
     function setModalVisibility(modal, visible) {
@@ -71,6 +108,14 @@
         const tickerInput = document.getElementById('ticker-input');
         const startDateInput = document.getElementById('start-date');
         const endDateInput = document.getElementById('end-date');
+        const replayGuideButton = document.getElementById('backtest-tour-replay');
+        const resultGuide = document.getElementById('backtest-result-guide');
+        const tourModal = document.getElementById('backtest-tour');
+        const tourTitle = document.getElementById('backtest-tour-title');
+        const tourCopy = document.getElementById('backtest-tour-copy');
+        const tourHint = document.getElementById('backtest-tour-hint');
+        const tourStepPill = document.getElementById('backtest-tour-step');
+        const tourSkip = document.getElementById('backtest-tour-skip');
 
         if (!strategyPanels || !runButton || !modeSelect || !priorModeSelect || !window.BayesBacktestUI) {
             return;
@@ -82,6 +127,12 @@
         const momentumModal = document.getElementById('momentum-modal');
         const momentumForm = document.getElementById('momentum-form');
         const momentumCancel = document.getElementById('mom-cancel');
+        const gcBollingerSqueezeModal = document.getElementById('golden-cross-bollinger-squeeze-modal');
+        const gcBollingerSqueezeForm = document.getElementById('golden-cross-bollinger-squeeze-form');
+        const gcBollingerSqueezeCancel = document.getElementById('gcbs-cancel');
+        const gcBollingerBreakoutModal = document.getElementById('golden-cross-bollinger-breakout-confirm-modal');
+        const gcBollingerBreakoutForm = document.getElementById('golden-cross-bollinger-breakout-confirm-form');
+        const gcBollingerBreakoutCancel = document.getElementById('gcbc-cancel');
 
         const targets = { posteriorPanel, evidencePanel, tradeLog, analysisPanel, chainPanel, statusPill };
         window.BayesBacktestUI.resetResults(targets);
@@ -91,6 +142,75 @@
             strategies: [],
             lastResult: null,
             editingIndex: null,
+        };
+        const TOUR_STORAGE_KEY = 'tradingpro:backtest-tour:v2';
+        const TOUR_RESULTS_STORAGE_KEY = 'tradingpro:backtest-tour-results:v2';
+        const tourState = {
+            active: false,
+            phase: 'pre',
+            stepIndex: 0,
+            currentTarget: null,
+        };
+        const tourSteps = {
+            pre: [
+                {
+                    target: '#ticker-input',
+                    title: 'Start with the market controls',
+                    copy: 'Choose the ticker, date window, mode, and prior source here before you run anything.',
+                    hint: 'Tap the ticker field to continue.',
+                },
+                {
+                    target: '#strategy-btn-golden-cross',
+                    title: 'Create the strategy chain here',
+                    copy: 'This left rail is where you open strategy forms. Golden Cross is the base strategy, and the two new Bollinger-confirmed variants live beside it.',
+                    hint: 'Tap a strategy button to continue. The guide will close the modal again so you can keep moving.',
+                    afterAdvance: () => closeModals(),
+                },
+                {
+                    target: '#indicator-toggle',
+                    title: 'Indicators are chart tools, not posterior steps',
+                    copy: 'Use indicators to read context on the chart. They help explain price behavior, but they do not directly change the Bayesian posterior.',
+                    hint: 'Tap Indicators to continue.',
+                    afterAdvance: () => {
+                        const isExpanded = indicatorToggle?.getAttribute('aria-expanded') === 'true';
+                        if (isExpanded) {
+                            indicatorToggle.click();
+                        }
+                    },
+                },
+                {
+                    target: '#run-bayes-button',
+                    title: 'Run the Bayesian analysis here',
+                    copy: 'Once your chain is configured, run it. After the first successful run, the guide will switch into result mode and walk you through the probability cards, evidence chain, chart markers, and trade log.',
+                    hint: 'Tap Run Bayesian Analysis to finish the setup guide.',
+                },
+            ],
+            post: [
+                {
+                    target: '#posterior-panel',
+                    title: 'These cards show the probability shift',
+                    copy: 'Prior, posterior, lift, and confidence summarize how the chosen evidence changed the base belief.',
+                    hint: 'Tap the probability panel to continue.',
+                },
+                {
+                    target: '#evidence-panel',
+                    title: 'The evidence chain explains why the posterior moved',
+                    copy: 'On phones this becomes expandable step cards. On larger screens you can hover each row for a deeper breakdown.',
+                    hint: 'Tap the evidence panel to continue.',
+                },
+                {
+                    target: '#chart-section',
+                    title: 'Check entries, exits, and indicator overlays on the chart',
+                    copy: 'After a run, the entry and exit markers appear directly on the graph. This is also where your configured indicators help you interpret the move visually.',
+                    hint: 'Tap the chart area to continue.',
+                },
+                {
+                    target: '#trade-log-golden-cross',
+                    title: 'The trade log is the execution ledger',
+                    copy: 'Use it to verify the exact entries, exits, returns, and strategy ownership behind the completed run.',
+                    hint: 'Tap the trade log to finish the result guide.',
+                },
+            ],
         };
 
         const initialAnalysisMode = page?.dataset.initialAnalysisMode || '';
@@ -113,6 +233,173 @@
                     reason,
                 },
             }));
+        }
+
+        function guideStorageGet(key) {
+            try {
+                return window.localStorage.getItem(key);
+            } catch (error) {
+                return getCookie(key);
+            }
+        }
+
+        function guideStorageSet(key, value) {
+            try {
+                window.localStorage.setItem(key, value);
+            } catch (error) {
+                setCookie(key, value);
+            }
+        }
+
+        function hasSeenTour(phase = 'pre') {
+            return guideStorageGet(phase === 'post' ? TOUR_RESULTS_STORAGE_KEY : TOUR_STORAGE_KEY) === 'done';
+        }
+
+        function markTourSeen(phase = 'pre') {
+            guideStorageSet(phase === 'post' ? TOUR_RESULTS_STORAGE_KEY : TOUR_STORAGE_KEY, 'done');
+        }
+
+        function clearGuideHighlight() {
+            if (tourState.currentTarget) {
+                tourState.currentTarget.classList.remove('backtest-guide-target-active');
+            }
+            tourState.currentTarget = null;
+        }
+
+        function setTourVisibility(visible) {
+            if (!tourModal || !page) {
+                return;
+            }
+            tourModal.classList.toggle('hidden', !visible);
+            tourModal.setAttribute('aria-hidden', visible ? 'false' : 'true');
+            page.classList.toggle('is-guide-active', visible);
+            if (!visible) {
+                clearGuideHighlight();
+            }
+        }
+
+        function currentGuideSteps() {
+            return tourSteps[tourState.phase] || [];
+        }
+
+        function findGuideTarget(step) {
+            if (!step?.target) {
+                return null;
+            }
+            return document.querySelector(step.target);
+        }
+
+        function applyGuideHighlight(target) {
+            clearGuideHighlight();
+            if (!target) {
+                return;
+            }
+            target.classList.add('backtest-guide-target-active');
+            tourState.currentTarget = target;
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+                inline: 'nearest',
+            });
+        }
+
+        function renderTourStep() {
+            if (!tourTitle || !tourCopy || !tourHint || !tourStepPill) {
+                return;
+            }
+
+            const steps = currentGuideSteps();
+            const step = steps[tourState.stepIndex];
+            if (!step) {
+                finishTour(true);
+                return;
+            }
+
+            const target = findGuideTarget(step);
+            if (!target) {
+                advanceTour();
+                return;
+            }
+
+            tourStepPill.textContent = `${tourState.phase === 'pre' ? 'Setup' : 'Results'} ${tourState.stepIndex + 1} of ${steps.length}`;
+            tourTitle.textContent = step.title;
+            tourCopy.textContent = step.copy;
+            tourHint.textContent = step.hint || 'Tap the highlighted area to continue.';
+            applyGuideHighlight(target);
+        }
+
+        function finishTour(markSeen = true) {
+            if (markSeen) {
+                markTourSeen(tourState.phase);
+            }
+            tourState.active = false;
+            setTourVisibility(false);
+            replayGuideButton?.focus();
+        }
+
+        function advanceTour() {
+            const steps = currentGuideSteps();
+            const step = steps[tourState.stepIndex];
+            if (typeof step?.afterAdvance === 'function') {
+                step.afterAdvance();
+            }
+
+            if (tourState.stepIndex >= steps.length - 1) {
+                finishTour(true);
+                return;
+            }
+
+            tourState.stepIndex += 1;
+            renderTourStep();
+        }
+
+        function openTour(phase = 'pre', force = false) {
+            if (!force && hasSeenTour(phase)) {
+                return;
+            }
+
+            tourState.phase = phase;
+            tourState.stepIndex = 0;
+            tourState.active = true;
+            setTourVisibility(true);
+            renderTourStep();
+        }
+
+        function renderResultGuide(result) {
+            if (!resultGuide) {
+                return;
+            }
+
+            if (!result) {
+                resultGuide.classList.remove('is-visible');
+                resultGuide.innerHTML = '';
+                return;
+            }
+
+            const hasTrades = Array.isArray(result.trade_log) && result.trade_log.length > 0;
+            const indicatorHint = window.rawChartData?.length
+                ? 'You can apply or reapply indicators under the chart tools section to compare overlays against the completed run.'
+                : 'Load chart data if you want to overlay indicators on top of the result.';
+            const markerHint = hasTrades
+                ? 'Entry and exit markers are now plotted on the chart, so compare them against the trade log below.'
+                : 'This run did not close any trades, so the chart will stay focused on price and configured indicators.';
+
+            resultGuide.innerHTML = `
+                <div class="backtest-guide-card">
+                    <div>
+                        <p class="backtest-section-kicker">Result Guide</p>
+                        <h3 class="backtest-section-title">What to inspect next</h3>
+                        <p class="backtest-section-subcopy">${markerHint} ${indicatorHint}</p>
+                    </div>
+                    <div class="backtest-guide-actions">
+                        <a class="backtest-secondary-btn" href="#chart-section">Chart & markers</a>
+                        <a class="backtest-secondary-btn" href="#indicator-panels">Indicators</a>
+                        <a class="backtest-secondary-btn" href="#evidence-panel">Evidence chain</a>
+                        <a class="backtest-secondary-btn" href="#trade-log-golden-cross">Trade log</a>
+                    </div>
+                </div>
+            `;
+            resultGuide.classList.add('is-visible');
         }
 
         function setRunButtonLabel() {
@@ -140,6 +427,7 @@
             state.lastResult = null;
             statusPill.textContent = message || 'Waiting for posterior';
             window.BayesBacktestUI.resetResults(targets);
+            renderResultGuide(null);
             dispatchBayesRunEvent(null, message || 'Waiting for posterior');
             renderStrategyPanels();
             updateWorkflowMessage();
@@ -192,7 +480,7 @@
 
         function renderStrategyPanels() {
             if (!state.strategies.length) {
-                strategyPanels.innerHTML = '<p class="backtest-empty-state">Configure Golden Cross or Momentum to create the Bayesian strategy chain.</p>';
+                strategyPanels.innerHTML = '<p class="backtest-empty-state">Configure Golden Cross, a Bollinger-confirmed Golden Cross variant, or Momentum to create the Bayesian strategy chain.</p>';
                 syncStrategyButtons();
                 return;
             }
@@ -225,7 +513,7 @@
 
         function canAddAnotherStrategy(slug) {
             if (!state.definitionsBySlug[slug]) {
-                return { valid: false, reason: 'This Bayesian v1 build only supports Golden Cross and Momentum 12M.' };
+                return { valid: false, reason: 'This Backtest build only supports the currently exposed Bayesian strategies.' };
             }
 
             if (state.editingIndex !== null) {
@@ -271,6 +559,30 @@
             document.getElementById('mom-override').value = params.override_shares ?? '';
         }
 
+        function fillGoldenCrossBollingerSqueezeForm(params) {
+            document.getElementById('gcbs-fast-sma').value = params.fast_sma;
+            document.getElementById('gcbs-slow-sma').value = params.slow_sma;
+            document.getElementById('gcbs-bb-period').value = params.bb_period;
+            document.getElementById('gcbs-bb-std-dev').value = params.bb_std_dev;
+            document.getElementById('gcbs-squeeze-lookback').value = params.squeeze_lookback;
+            document.getElementById('gcbs-squeeze-quantile').value = params.squeeze_quantile;
+            document.getElementById('gcbs-order-percentage').value = params.order_percentage;
+            document.getElementById('gcbs-starting-cash').value = params.starting_cash;
+            document.getElementById('gcbs-override-shares').value = params.override_shares ?? '';
+        }
+
+        function fillGoldenCrossBollingerBreakoutForm(params) {
+            document.getElementById('gcbc-fast-sma').value = params.fast_sma;
+            document.getElementById('gcbc-slow-sma').value = params.slow_sma;
+            document.getElementById('gcbc-bb-period').value = params.bb_period;
+            document.getElementById('gcbc-bb-std-dev').value = params.bb_std_dev;
+            document.getElementById('gcbc-squeeze-lookback').value = params.squeeze_lookback;
+            document.getElementById('gcbc-squeeze-quantile').value = params.squeeze_quantile;
+            document.getElementById('gcbc-order-percentage').value = params.order_percentage;
+            document.getElementById('gcbc-starting-cash').value = params.starting_cash;
+            document.getElementById('gcbc-override-shares').value = params.override_shares ?? '';
+        }
+
         function openStrategyEditor(indexOrSlug) {
             let slug = indexOrSlug;
             state.editingIndex = null;
@@ -305,12 +617,26 @@
                 setModalVisibility(momentumModal, true);
                 return;
             }
+
+            if (slug === 'golden_cross_bollinger_squeeze') {
+                fillGoldenCrossBollingerSqueezeForm(existingParams);
+                setModalVisibility(gcBollingerSqueezeModal, true);
+                return;
+            }
+
+            if (slug === 'golden_cross_bollinger_breakout_confirm') {
+                fillGoldenCrossBollingerBreakoutForm(existingParams);
+                setModalVisibility(gcBollingerBreakoutModal, true);
+                return;
+            }
         }
 
         function closeModals() {
             state.editingIndex = null;
             setModalVisibility(gcModal, false);
             setModalVisibility(momentumModal, false);
+            setModalVisibility(gcBollingerSqueezeModal, false);
+            setModalVisibility(gcBollingerBreakoutModal, false);
         }
 
         function upsertStrategy(slug, params) {
@@ -434,10 +760,17 @@
 
                 state.lastResult = payload;
                 window.BayesBacktestUI.renderRunResult(targets, payload);
+                renderResultGuide(payload);
                 dispatchBayesRunEvent(payload, 'Run completed');
                 renderStrategyPanels();
                 updateWorkflowMessage();
                 setRunButtonLabel();
+
+                if (!hasSeenTour('post')) {
+                    window.setTimeout(function () {
+                        openTour('post');
+                    }, 200);
+                }
             } catch (error) {
                 statusPill.textContent = 'Run failed';
                 alert(error.message || 'Unable to run Bayesian analysis.');
@@ -455,7 +788,7 @@
 
         document.querySelectorAll('.btn-clickable[data-coming-soon="1"]').forEach((button) => {
             button.addEventListener('click', function () {
-                alert('Bayesian v1 currently supports Golden Cross and Momentum 12M only. Additional strategies come in later phases.');
+                alert('This Backtest build currently supports Golden Cross, the two Bollinger-confirmed Golden Cross variants, and Momentum 12M. Additional strategies come later.');
             });
         });
 
@@ -478,6 +811,12 @@
         if (momentumCancel) {
             momentumCancel.addEventListener('click', closeModals);
         }
+        if (gcBollingerSqueezeCancel) {
+            gcBollingerSqueezeCancel.addEventListener('click', closeModals);
+        }
+        if (gcBollingerBreakoutCancel) {
+            gcBollingerBreakoutCancel.addEventListener('click', closeModals);
+        }
 
         if (gcModal) {
             gcModal.addEventListener('click', function (event) {
@@ -490,6 +829,20 @@
         if (momentumModal) {
             momentumModal.addEventListener('click', function (event) {
                 if (event.target === momentumModal) {
+                    closeModals();
+                }
+            });
+        }
+        if (gcBollingerSqueezeModal) {
+            gcBollingerSqueezeModal.addEventListener('click', function (event) {
+                if (event.target === gcBollingerSqueezeModal) {
+                    closeModals();
+                }
+            });
+        }
+        if (gcBollingerBreakoutModal) {
+            gcBollingerBreakoutModal.addEventListener('click', function (event) {
+                if (event.target === gcBollingerBreakoutModal) {
                     closeModals();
                 }
             });
@@ -522,15 +875,90 @@
             });
         }
 
+        if (gcBollingerSqueezeForm) {
+            gcBollingerSqueezeForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                upsertStrategy('golden_cross_bollinger_squeeze', {
+                    fast_sma: Number(document.getElementById('gcbs-fast-sma').value),
+                    slow_sma: Number(document.getElementById('gcbs-slow-sma').value),
+                    bb_period: Number(document.getElementById('gcbs-bb-period').value),
+                    bb_std_dev: Number(document.getElementById('gcbs-bb-std-dev').value),
+                    squeeze_lookback: Number(document.getElementById('gcbs-squeeze-lookback').value),
+                    squeeze_quantile: Number(document.getElementById('gcbs-squeeze-quantile').value),
+                    order_percentage: Number(document.getElementById('gcbs-order-percentage').value),
+                    starting_cash: Number(document.getElementById('gcbs-starting-cash').value),
+                    override_shares: document.getElementById('gcbs-override-shares').value || null,
+                });
+            });
+        }
+
+        if (gcBollingerBreakoutForm) {
+            gcBollingerBreakoutForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                upsertStrategy('golden_cross_bollinger_breakout_confirm', {
+                    fast_sma: Number(document.getElementById('gcbc-fast-sma').value),
+                    slow_sma: Number(document.getElementById('gcbc-slow-sma').value),
+                    bb_period: Number(document.getElementById('gcbc-bb-period').value),
+                    bb_std_dev: Number(document.getElementById('gcbc-bb-std-dev').value),
+                    squeeze_lookback: Number(document.getElementById('gcbc-squeeze-lookback').value),
+                    squeeze_quantile: Number(document.getElementById('gcbc-squeeze-quantile').value),
+                    order_percentage: Number(document.getElementById('gcbc-order-percentage').value),
+                    starting_cash: Number(document.getElementById('gcbc-starting-cash').value),
+                    override_shares: document.getElementById('gcbc-override-shares').value || null,
+                });
+            });
+        }
+
         window.addEventListener('backtest:chart-error', function (event) {
             if (event.detail?.error) {
                 statusPill.textContent = 'Chart data unavailable';
             }
         });
 
+        replayGuideButton?.addEventListener('click', function () {
+            guideStorageSet(TOUR_STORAGE_KEY, '');
+            guideStorageSet(TOUR_RESULTS_STORAGE_KEY, '');
+            openTour('pre', true);
+        });
+
+        tourSkip?.addEventListener('click', function () {
+            finishTour(true);
+        });
+
+        tourModal?.addEventListener('click', function (event) {
+            if (event.target === tourModal) {
+                event.preventDefault();
+            }
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!tourState.active || !tourState.currentTarget) {
+                return;
+            }
+
+            const target = tourState.currentTarget;
+            const isTargetClick = target === event.target || target.contains(event.target);
+            if (!isTargetClick) {
+                return;
+            }
+
+            window.setTimeout(function () {
+                const currentStep = currentGuideSteps()[tourState.stepIndex];
+                if (tourState.phase === 'pre' && currentStep?.target === '#run-bayes-button') {
+                    finishTour(true);
+                    return;
+                }
+                advanceTour();
+            }, 0);
+        }, true);
+
         renderStrategyPanels();
         updateWorkflowMessage();
         setRunButtonLabel();
         loadDefinitions();
+
+        if (!hasSeenTour()) {
+            window.requestAnimationFrame(() => openTour('pre'));
+        }
     });
 })();

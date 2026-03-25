@@ -9,6 +9,8 @@ pandas = "*"
 backtrader = "*"
 lxml = "*"
 yfinance = "==0.2.65"
+gunicorn = "*"
+psycopg = {extras = ["binary"], version = "*"}
 
 [dev-packages]
 

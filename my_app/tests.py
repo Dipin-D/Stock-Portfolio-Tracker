@@ -13,7 +13,7 @@ from django.utils import timezone
 from .bayes.likelihoods import estimate_binary_likelihood
 from .bayes.posterior import apply_evidence, estimate_signal_weight
 from .bayes.priors import estimate_universe_prior
-from .models import AppSettings, BacktestRun, EvidenceSnapshot, Stock, Stock_Group, StrategyRun, TradeLog
+from .models import AppSettings, BacktestRun, EvidenceSnapshot, Portfolio, Stock, Stock_Group, StrategyRun, TradeLog
 from .services.backtest_service import ensure_strategy_definitions
 from .utils import PriceDataError, _cache_set, _make_cache_key, download_n_clean_data
 
@@ -151,12 +151,16 @@ class BacktestChartTests(TestCase):
         self.assertFalse(payload['valid'])
         self.assertIn('Unable to reach Yahoo Finance right now', payload['error'])
 
+    @patch('my_app.views.get_weighted_golden_cross_snapshot')
+    @patch('my_app.views.get_live_golden_cross_snapshot')
     @patch('my_app.views.download_n_clean_data')
-    def test_fetch_group_data_serializes_chart_rows_without_nan_tokens(self, mock_download):
+    def test_fetch_group_data_serializes_chart_rows_without_nan_tokens(self, mock_download, mock_live_snapshot, mock_weighted_snapshot):
         frame = self.sample_price_frame()
         frame['sma_50'] = np.nan
         frame['sma_200'] = np.nan
         mock_download.return_value = frame
+        mock_live_snapshot.return_value = {'composite_score': 82.5}
+        mock_weighted_snapshot.return_value = {'quality_score': 74.1}
 
         group = Stock_Group.objects.create(name='Big Tech')
         stock = Stock.objects.create(name='Apple', symbol='AAPL', sector='Tech')
@@ -176,7 +180,42 @@ class BacktestChartTests(TestCase):
         self.assertEqual(payload['data'][0]['symbol'], 'AAPL')
         self.assertIsNone(payload['data'][0]['chartData'][0]['sma_50'])
         self.assertIsNone(payload['data'][0]['chartData'][0]['sma_200'])
+        self.assertEqual(payload['data'][0]['golden_cross_quality_score'], 74.1)
+        self.assertEqual(payload['data'][0]['golden_cross_live_score'], 82.5)
+        self.assertIn('golden_cross_math_url', payload['data'][0])
+        self.assertIn('research_url', payload['data'][0])
         self.assertNotIn('NaN', raw_response)
+
+    def test_backtest_shell_exposes_watchlist_source_context(self):
+        response = self.client.get(reverse('backtest'), {
+            'ticker': 'AAPL',
+            'analysis_mode': 'single',
+            'prior_mode': 'universe',
+            'prefill_strategy': 'golden_cross',
+            'source_list': 'Golden Cross 10Y Weighted Backtest',
+            'source_rank': '2',
+            'source_score': '84.25',
+            'source_signal': 'golden_cross_weighted',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['initial_source_context']['source_rank'], '2')
+        self.assertEqual(response.context['initial_source_context']['source_signal'], 'golden_cross_weighted')
+        self.assertContains(response, 'Watchlist source context')
+        self.assertContains(response, 'Golden Cross 10Y Weighted Backtest')
+
+
+@override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
+class DeploymentHealthTests(TestCase):
+    def test_health_endpoint_returns_ok_payload(self):
+        response = self.client.get(reverse('health'))
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+
+        self.assertEqual(payload['status'], 'ok')
+        self.assertEqual(payload['service'], 'trading-pro')
+        self.assertIn('timestamp', payload)
 
 
 class BayesianMathTests(TestCase):
@@ -252,6 +291,39 @@ class WatchlistAndResearchTests(TestCase):
         self.assertEqual(payload['results'][0]['research_url'], '/research/AAPL/')
         self.assertEqual(payload['refresh_seconds'], 300)
 
+    @patch('my_app.views.get_golden_cross_weighted_watchlist')
+    def test_watchlist_golden_cross_weighted_api_returns_weighted_payload(self, mock_watchlist):
+        mock_watchlist.return_value = {
+            'valid': True,
+            'as_of': '2026-03-23 10:15',
+            'refresh_seconds': 300,
+            'results': [
+                {
+                    'symbol': 'AAPL',
+                    'quality_score': 78.2,
+                    'win_rate': 0.61,
+                    'avg_trade_return': 0.084,
+                    'total_return_pct': 1.44,
+                    'max_drawdown': -0.22,
+                    'trade_count': 11,
+                    'live_composite_score': 82.5,
+                    'consensus_label': 'Strong Now + Strong History',
+                    'research_url': '/research/AAPL/?source_list=Golden%20Cross',
+                    'math_url': '/theMath/?section=watchlist_signals&signal=golden_cross_weighted&ticker=AAPL#watchlist-signals',
+                },
+            ],
+        }
+
+        response = self.client.get(reverse('watchlist_golden_cross_weighted_api'))
+        payload = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(payload['valid'])
+        self.assertEqual(payload['results'][0]['symbol'], 'AAPL')
+        self.assertEqual(payload['results'][0]['quality_score'], 78.2)
+        self.assertEqual(payload['results'][0]['consensus_label'], 'Strong Now + Strong History')
+        self.assertIn('math_url', payload['results'][0])
+
     @patch('my_app.views.build_research_payload')
     def test_research_page_renders_fundamentals_and_backtest_cta(self, mock_research_payload):
         mock_research_payload.return_value = {
@@ -283,6 +355,45 @@ class WatchlistAndResearchTests(TestCase):
         self.assertContains(response, 'Run on Backtest')
         self.assertContains(response, 'prefill_strategy=golden_cross')
 
+    @patch('my_app.views.build_watchlist_signal_math_context')
+    def test_the_math_watchlist_signals_section_renders(self, mock_math_context):
+        mock_math_context.return_value = {
+            'selected_signal': 'golden_cross_weighted',
+            'selected_ticker': 'AAPL',
+            'composite': {
+                'formula': {'formula': 'composite_formula', 'components': []},
+                'inputs': [],
+                'component_rows': [],
+            },
+            'weighted': {
+                'formula': {'formula': 'weighted_formula', 'components': []},
+                'metrics': [],
+                'component_rows': [],
+                'window': {'start_date': '2016-03-23', 'end_date': '2026-03-23'},
+            },
+            'comparison': {
+                'live_score': 82.5,
+                'weighted_score': 74.1,
+                'consensus_label': 'Strong Now + Strong History',
+                'interpretation': 'The setup is strong now and historically.',
+            },
+            'leaderboards': {
+                'live': {'results': []},
+                'weighted': {'results': []},
+            },
+        }
+
+        response = self.client.get(reverse('theMath'), {
+            'section': 'watchlist_signals',
+            'signal': 'golden_cross_weighted',
+            'ticker': 'AAPL',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Watchlist Signals')
+        self.assertContains(response, 'Golden Cross Composite Score')
+        self.assertContains(response, 'Golden Cross Weighted Backtest Rank')
+
     @patch('my_app.views.build_research_payload')
     def test_research_page_handles_provider_error_gracefully(self, mock_research_payload):
         mock_research_payload.side_effect = PriceDataError('Unable to load research data for AAPL right now.')
@@ -292,6 +403,14 @@ class WatchlistAndResearchTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Unable to load research data for AAPL right now.')
 
+    def test_indicators_page_renders_indicator_library_content(self):
+        response = self.client.get(reverse('indicators'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Indicators')
+        self.assertContains(response, 'Bollinger Bands')
+        self.assertContains(response, 'Relative Strength Index')
+
 
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
 class PortfolioViewTests(TestCase):
@@ -299,7 +418,9 @@ class PortfolioViewTests(TestCase):
         response = self.client.get(reverse('portfolio'))
 
         self.assertEqual(response.status_code, 200)
-        chart_data = json.loads(response.context['chart_data'])
+        chart_data = response.context['chart_data']
+        if isinstance(chart_data, str):
+            chart_data = json.loads(chart_data)
 
         self.assertEqual(chart_data['labels'], ['VTI', 'VXUS', 'BND'])
         self.assertEqual(chart_data['series'], [20.0, 30.0, 50.0])
@@ -632,6 +753,8 @@ class BayesianBacktestApiTests(TestCase):
         returned_slugs = [item['slug'] for item in payload['strategies']]
         self.assertIn('golden_cross', returned_slugs)
         self.assertIn('momentum_12m', returned_slugs)
+        self.assertIn('golden_cross_bollinger_squeeze', returned_slugs)
+        self.assertIn('golden_cross_bollinger_breakout_confirm', returned_slugs)
 
     @patch('my_app.services.backtest_service.load_training_frames')
     @patch('my_app.services.backtest_service.load_feature_frame')
@@ -660,3 +783,102 @@ class BayesianBacktestApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(payload['valid'])
+
+
+@override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
+class ProScanPortfolioApiTests(TestCase):
+    def setUp(self):
+        self.portfolio = Portfolio.objects.create(
+            name='Income Sleeve',
+            ticker='SPY,TLT',
+            allocation='60,40',
+            is_default=True,
+        )
+
+    def sample_feature_frame(self):
+        dates = pd.date_range('2020-01-01', periods=40, freq='B')
+        close = np.linspace(100, 120, len(dates))
+        return pd.DataFrame({
+            'Date': dates.view('int64') // 10**9,
+            'Date_dt': dates,
+            'Open': close - 0.5,
+            'High': close + 1.0,
+            'Low': close - 1.0,
+            'Close': close,
+            'Volume': np.full(len(dates), 1_000_000),
+        })
+
+    def test_pro_scan_portfolio_options_returns_preset_and_saved_lists(self):
+        response = self.client.get(reverse('api_pro_scan_portfolio_options'))
+        payload = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(payload['valid'])
+        self.assertTrue(any(item['type'] == 'saved' and item['name'] == 'Income Sleeve' for item in payload['saved_portfolios']))
+        self.assertTrue(any(item['type'] == 'preset' and item['key'] == 'threefund' for item in payload['preset_portfolios']))
+        saved_default = next(item for item in payload['saved_portfolios'] if item['name'] == 'Income Sleeve')
+        self.assertTrue(saved_default['is_default'])
+
+    @patch('my_app.views.download_n_clean_data')
+    def test_pro_scan_run_portfolio_returns_aggregated_portfolio_results(self, mock_download):
+        mock_download.return_value = self.sample_feature_frame()
+
+        response = self.client.post(
+            reverse('api_pro_scan_run_portfolio'),
+            data=json.dumps({
+                'selection_type': 'saved',
+                'selection_key': str(self.portfolio.id),
+                'strategy_slug': 'golden_cross',
+                'start_date': '2020-01-01',
+                'end_date': '2020-03-31',
+                'strategy_params': {
+                    'fast_sma': 5,
+                    'slow_sma': 20,
+                    'order_percentage': 100,
+                },
+            }),
+            content_type='application/json',
+        )
+        payload = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(payload['valid'])
+        self.assertEqual(payload['portfolio']['name'], 'Income Sleeve')
+        self.assertEqual(len(payload['results']), 1)
+        self.assertEqual(payload['results'][0]['portfolio_name'], 'Income Sleeve')
+        self.assertEqual(len(payload['results'][0]['holdings']), 2)
+        self.assertIn('trade_count', payload['results'][0])
+
+    def test_builtin_stock_group_route_returns_controlled_response_without_database_group(self):
+        response = self.client.get(reverse('stock_list', args=['S&P-500']))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Ticker Group')
+
+    @patch('my_app.views.get_weighted_golden_cross_snapshot')
+    @patch('my_app.views.get_live_golden_cross_snapshot')
+    @patch('my_app.views.download_n_clean_data')
+    def test_fetch_group_data_uses_builtin_group_fallback_without_database_group(
+        self,
+        mock_download,
+        mock_live_snapshot,
+        mock_weighted_snapshot,
+    ):
+        mock_download.return_value = self.sample_feature_frame()
+        mock_live_snapshot.return_value = {'composite_score': 61.5}
+        mock_weighted_snapshot.return_value = {'quality_score': 74.25}
+
+        response = self.client.get(reverse('fetch_group_data'), {
+            'ticker_group': 'Dow-Jones-30',
+            'start_date': '2020-01-01',
+            'end_date': '2020-03-31',
+        })
+        payload = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(payload['valid'])
+        self.assertGreater(len(payload['data']), 0)
+        self.assertIn('name', payload['data'][0])
+        self.assertIn('symbol', payload['data'][0])
+        self.assertEqual(payload['data'][0]['golden_cross_live_score'], 61.5)
+        self.assertEqual(payload['data'][0]['golden_cross_quality_score'], 74.25)

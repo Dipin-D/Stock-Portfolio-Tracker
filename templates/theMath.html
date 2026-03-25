@@ -508,7 +508,18 @@
             {% endif %}
 
             <div class="math-workspace">
-                <aside class="math-sidebar-shell">
+                <button
+                    type="button"
+                    class="responsive-panel-toggle"
+                    data-collapsible-trigger
+                    data-default-state="closed"
+                    aria-expanded="false"
+                    aria-controls="math-navigator-panel"
+                >
+                    Math navigator
+                </button>
+
+                <aside id="math-navigator-panel" class="math-sidebar-shell" data-collapsible-panel>
                     <div>
                         <p class="math-kicker">Computation Layers</p>
                         <h2 class="math-section-title">Computation Layers</h2>
@@ -598,7 +609,7 @@
                                     {% endfor %}
                                 </div>
                                 <div class="math-table-wrap" style="margin-top: 1rem;">
-                                    <table class="math-table">
+                                    <table class="math-table" data-responsive-table data-responsive-title-col="0">
                                         <thead>
                                             <tr>
                                                 <th>Component</th>
@@ -657,7 +668,7 @@
                                     {% endfor %}
                                 </div>
                                 <div class="math-table-wrap" style="margin-top: 1rem;">
-                                    <table class="math-table">
+                                    <table class="math-table" data-responsive-table data-responsive-title-col="0">
                                         <thead>
                                             <tr>
                                                 <th>Component</th>
@@ -688,7 +699,7 @@
                                 </div>
 
                                 <div class="math-table-wrap" style="margin-top: 1rem;">
-                                    <table class="math-table">
+                                    <table class="math-table" data-responsive-table data-responsive-title-col="1" data-responsive-subtitle-col="0">
                                         <thead>
                                             <tr>
                                                 <th>Rank</th>

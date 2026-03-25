@@ -104,6 +104,149 @@
             gap: 0.6rem;
         }
 
+        .proscan-option-stack {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .proscan-accordion-shell {
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            background: #f8fbff;
+            overflow: hidden;
+        }
+
+        .proscan-accordion-trigger {
+            width: 100%;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            color: #0f172a;
+            padding: 0.85rem 1rem;
+            font: inherit;
+            font-weight: 700;
+            text-align: left;
+            cursor: pointer;
+            box-shadow: none;
+            position: relative;
+            transition: background-color 160ms ease, color 160ms ease;
+        }
+
+        .proscan-accordion-trigger:hover {
+            background: #eff6ff;
+        }
+
+        .proscan-accordion-trigger::after {
+            content: '▾';
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .proscan-accordion-trigger[aria-expanded="true"]::after {
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        .proscan-accordion-trigger[aria-expanded="true"] {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .proscan-accordion-panel {
+            display: grid;
+            gap: 0.55rem;
+            padding: 0 0.8rem 0.8rem;
+        }
+
+        .proscan-accordion-panel.hidden {
+            display: none;
+        }
+
+        .proscan-option-item {
+            width: 100%;
+            border: 1px solid #dbe4f0;
+            border-radius: 14px;
+            background: #fff;
+            color: #0f172a;
+            padding: 0.8rem 0.9rem;
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+            transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+        }
+
+        .proscan-option-item:hover {
+            transform: translateY(-1px);
+            border-color: #93c5fd;
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12);
+        }
+
+        .proscan-option-item.active {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .proscan-option-item-copy {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.8rem;
+        }
+
+        .proscan-option-item-copy strong {
+            display: block;
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .proscan-option-item-copy span {
+            display: block;
+            margin-top: 0.18rem;
+            color: #64748b;
+            font-size: 0.82rem;
+            line-height: 1.45;
+        }
+
+        .proscan-default-marker {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.28rem 0.6rem;
+            border-radius: 999px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .proscan-inline-note,
+        .proscan-inline-error {
+            margin: 0;
+            border-radius: 16px;
+            padding: 0.85rem 1rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .proscan-inline-note {
+            border: 1px solid #dbeafe;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .proscan-inline-error {
+            border: 1px solid #fecaca;
+            background: #fff1f2;
+            color: #b91c1c;
+        }
+
         .btn-option {
             width: 100%;
             border: 1px solid #dbe4f0;
@@ -328,6 +471,79 @@
             background: #fff7ed;
         }
 
+        .proscan-holdings-summary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: #1d4ed8;
+            font-weight: 800;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .proscan-holdings-summary:hover {
+            text-decoration: underline;
+        }
+
+        .proscan-holdings-details {
+            margin: 0;
+        }
+
+        .proscan-holdings-details[open] {
+            margin-top: 0.3rem;
+        }
+
+        .proscan-holdings-panel {
+            margin-top: 0.65rem;
+            display: grid;
+            gap: 0.65rem;
+        }
+
+        .proscan-holding-card {
+            border: 1px solid #dbe4f0;
+            border-radius: 16px;
+            background: #f8fbff;
+            padding: 0.8rem 0.9rem;
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .proscan-holding-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .proscan-holding-card strong {
+            color: #0f172a;
+        }
+
+        .proscan-holding-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 0.55rem;
+        }
+
+        .proscan-holding-metric {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        .proscan-holding-metric span {
+            color: #64748b;
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .proscan-holding-metric strong {
+            font-size: 0.92rem;
+        }
+
         .proscan-status-card h3 {
             margin: 0 0 0.6rem;
             font-size: 0.95rem;
@@ -468,34 +684,64 @@
 {% block title %}Pro Scan | Trading Pro{% endblock %}
 
 {% block content %}
-<main class="proscan-page" data-pro-scan-page>
+<main class="proscan-page" data-pro-scan-page data-initial-group-name="{{ initial_group_name|default:'' }}">
     <div class="proscan-shell">
-        <aside class="proscan-sidebar">
+        <button
+            type="button"
+            class="responsive-panel-toggle"
+            data-collapsible-trigger
+            data-default-state="closed"
+            aria-expanded="false"
+            aria-controls="proscan-controls-panel"
+        >
+            Scan controls
+        </button>
+
+        <aside id="proscan-controls-panel" class="proscan-sidebar" data-collapsible-panel>
             <div class="proscan-option-group" data-option-group="ticker-group">
                 <h3>Ticker Group</h3>
                 <div class="proscan-option-list">
-                    <button
-                        type="button"
-                        class="btn-option"
-                        data-group-url="{% url 'stock_list' 'Dow-Jones-30' %}"
-                        data-group-name="Dow-Jones-30">
-                        Dow-Jones-30
-                    </button>
-                    <button
-                        type="button"
-                        class="btn-option"
-                        data-group-url="{% url 'stock_list' 'Nasdaq-100' %}"
-                        data-group-name="Nasdaq-100">
-                        Nasdaq-100
-                    </button>
-                    <button
-                        type="button"
-                        class="btn-option"
-                        data-group-url="{% url 'stock_list' 'S&P-500' %}"
-                        data-group-name="S&P-500">
-                        S&amp;P-500
-                    </button>
+                    {% for group in builtin_groups %}
+                        <button
+                            type="button"
+                            class="btn-option"
+                            data-group-name="{{ group.name }}"
+                            data-group-label="{{ group.label }}">
+                            {{ group.label }}
+                        </button>
+                    {% endfor %}
                 </div>
+            </div>
+
+            <div class="proscan-option-group" data-option-group="portfolio-selection">
+                <h3>Portfolios</h3>
+                <div class="proscan-option-stack">
+                    <div class="proscan-accordion-shell">
+                        <button
+                            type="button"
+                            class="proscan-accordion-trigger"
+                            data-portfolio-list-trigger="preset"
+                            aria-expanded="false"
+                            aria-controls="proscan-preset-portfolio-list"
+                        >
+                            Preset Portfolio
+                        </button>
+                        <div id="proscan-preset-portfolio-list" class="proscan-accordion-panel hidden"></div>
+                    </div>
+                    <div class="proscan-accordion-shell">
+                        <button
+                            type="button"
+                            class="proscan-accordion-trigger"
+                            data-portfolio-list-trigger="saved"
+                            aria-expanded="false"
+                            aria-controls="proscan-saved-portfolio-list"
+                        >
+                            Saved Portfolio
+                        </button>
+                        <div id="proscan-saved-portfolio-list" class="proscan-accordion-panel hidden"></div>
+                    </div>
+                </div>
+                <p id="proscan-portfolio-note" class="proscan-inline-note" style="margin-top: 0.85rem;">Portfolio scan mode aggregates holdings under the selected saved or preset allocation.</p>
             </div>
 
             <div class="proscan-option-group" data-option-group="strategy">
@@ -547,6 +793,10 @@
                 </div>
             </div>
 
+            {% if group_error %}
+                <p class="proscan-inline-error">{{ group_error }}</p>
+            {% endif %}
+
             <section class="proscan-board">
                 <h2 class="proscan-section-title">Active Strategy Cards</h2>
                 <p class="proscan-muted">Each card stores its own scan settings. Edit, rerun, or remove them at any time.</p>
@@ -556,7 +806,7 @@
             <section class="proscan-table-card">
                 <div class="proscan-table-header">
                     <h2 class="proscan-section-title">Scan Results</h2>
-                    <p class="proscan-muted">Metrics update row by row when a strategy card is run against the selected ticker group.</p>
+                    <p id="proscan-results-copy" class="proscan-muted">Metrics update row by row when a strategy card is run against the selected ticker group.</p>
                     <div class="proscan-table-toolbar">
                         <label class="proscan-field proscan-toolbar-field">
                             <span>Search ticker or company</span>
@@ -584,17 +834,21 @@
                 </div>
 
                 <div class="proscan-table-wrapper">
-                    <table id="proscan-table" class="proscan-table">
+                    <table id="proscan-table" class="proscan-table" data-responsive-table data-responsive-title-col="1" data-responsive-subtitle-col="0">
                         <thead>
                             <tr>
                                 <th data-sort-key="name" data-sort-type="text" data-sort-indicator="">Name</th>
-                                <th data-sort-key="ticker" data-sort-type="text" data-sort-indicator="">Ticker</th>
+                                <th data-sort-key="ticker" data-sort-type="text" data-sort-indicator="">Ticker / Scope</th>
+                                <th data-sort-key="gcQuality" data-sort-type="number" data-sort-indicator="">GC Quality</th>
+                                <th data-sort-key="liveGc" data-sort-type="number" data-sort-indicator="">Live GC</th>
+                                <th data-sort-key="consensus" data-sort-type="text" data-sort-indicator="">Consensus</th>
                                 <th data-sort-key="wins" data-sort-type="number" data-sort-indicator=""># Wins</th>
                                 <th data-sort-key="losses" data-sort-type="number" data-sort-indicator=""># Losses</th>
                                 <th data-sort-key="winRate" data-sort-type="number" data-sort-indicator="">Win Rate</th>
                                 <th data-sort-key="avgTradeReturn" data-sort-type="number" data-sort-indicator="">Avg Trade Return</th>
                                 <th data-sort-key="totalReturn" data-sort-type="number" data-sort-indicator="">Total Backtest Return</th>
                                 <th data-sort-key="trades" data-sort-type="number" data-sort-indicator="">Trades</th>
+                                <th>Math</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -602,12 +856,16 @@
                                 <tr data-ticker="{{ stock.symbol }}" data-name="{{ stock.name|default:'-' }}">
                                     <td>{{ stock.name|default:"-" }}</td>
                                     <td>{{ stock.symbol|default:"-" }}</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>-</td>
                                     <td>{{ stock.win_count|default:"-" }}</td>
                                     <td>{{ stock.loss_count|default:"-" }}</td>
                                     <td>{{ stock.win_rate|default:"-" }}</td>
                                     <td>{{ stock.avg_trade_return|default:"-" }}</td>
                                     <td>{{ stock.backtest_return|default:"-" }}</td>
                                     <td>{{ stock.backtest_length|default:"-" }}</td>
+                                    <td>-</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -616,12 +874,31 @@
             </section>
         </section>
 
-        <aside class="proscan-aside">
+        <button
+            type="button"
+            class="responsive-panel-toggle"
+            data-collapsible-trigger
+            data-default-state="closed"
+            aria-expanded="false"
+            aria-controls="proscan-context-panel"
+        >
+            Scan context
+        </button>
+
+        <aside id="proscan-context-panel" class="proscan-aside" data-collapsible-panel>
             <section class="proscan-status-card">
                 <h3>Current Context</h3>
-                <div class="proscan-status-list">
+                    <div class="proscan-status-list">
                     <div class="proscan-status-item">
-                        <strong>Selected Group</strong>
+                        <strong>Scan Mode</strong>
+                        <span id="current-scan-mode">Ticker group</span>
+                    </div>
+                    <div class="proscan-status-item">
+                        <strong>Active Selection</strong>
+                        <span id="current-scope-value">None selected</span>
+                    </div>
+                    <div class="proscan-status-item">
+                        <strong>Selection Type</strong>
                         <span id="current-group-value">None selected</span>
                     </div>
                     <div class="proscan-status-item">

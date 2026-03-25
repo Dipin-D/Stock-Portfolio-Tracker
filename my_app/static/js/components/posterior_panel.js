@@ -124,9 +124,88 @@
         `;
     }
 
+    function renderEvidenceDetailMarkup(strategy) {
+        return `
+            <div class="bayes-evidence-detail-header">
+                <div class="bayes-evidence-detail-title">
+                    ${renderStrategyBadge(strategy.slug, strategy.name)}
+                    <strong>Step ${strategy.sequence_index} contribution</strong>
+                </div>
+                <span class="strategy-signal-pill ${strategy.active ? 'strategy-signal-pill-active' : 'strategy-signal-pill-inactive'}">
+                    ${strategy.active ? 'Active' : 'Inactive'}
+                </span>
+            </div>
+            <p class="bayes-evidence-detail-meta">
+                Inspect how this strategy changed the posterior after the prior and earlier steps were already taken into account.
+            </p>
+            <div class="bayes-evidence-detail-grid">
+                <div class="bayes-evidence-detail-metric">
+                    <span>Strength</span>
+                    <strong>${formatDecimal(strategy.strength, 2)}</strong>
+                </div>
+                <div class="bayes-evidence-detail-metric">
+                    <span>Likelihood Ratio</span>
+                    <strong>${formatDecimal(strategy.likelihood_ratio, 2)}</strong>
+                </div>
+                <div class="bayes-evidence-detail-metric">
+                    <span>Weighted Log-LR</span>
+                    <strong>${formatDecimal(strategy.weighted_log_lr, 3)}</strong>
+                </div>
+                <div class="bayes-evidence-detail-metric">
+                    <span>Posterior After</span>
+                    <strong>${formatPercent(strategy.posterior_after || 0)}</strong>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderEvidenceMobileCard(strategy) {
+        return `
+            <article class="bayes-evidence-mobile-card" data-evidence-mobile-card>
+                <div class="bayes-evidence-mobile-summary">
+                    <div class="bayes-evidence-detail-title">
+                        ${renderStrategyBadge(strategy.slug, strategy.name)}
+                        <span class="bayes-evidence-detail-meta">Step ${strategy.sequence_index}</span>
+                    </div>
+                    <span class="bayes-evidence-mobile-step">#${strategy.sequence_index}</span>
+                </div>
+                <div class="bayes-evidence-mobile-core">
+                    <div class="bayes-evidence-mobile-core-item">
+                        <span>Signal</span>
+                        <strong>${strategy.active ? 'Active' : 'Inactive'}</strong>
+                    </div>
+                    <div class="bayes-evidence-mobile-core-item">
+                        <span>Strength</span>
+                        <strong>${formatDecimal(strategy.strength, 2)}</strong>
+                    </div>
+                    <div class="bayes-evidence-mobile-core-item">
+                        <span>Posterior After</span>
+                        <strong>${formatPercent(strategy.posterior_after || 0)}</strong>
+                    </div>
+                    <div class="bayes-evidence-mobile-core-item">
+                        <span>LR</span>
+                        <strong>${formatDecimal(strategy.likelihood_ratio, 2)}</strong>
+                    </div>
+                </div>
+                <button type="button" class="indicator-card-btn bayes-evidence-mobile-toggle" aria-expanded="false">Show details</button>
+                <div class="bayes-evidence-mobile-detail">
+                    <div class="bayes-evidence-mobile-detail-item">
+                        <span>Weighted Log-LR</span>
+                        <strong>${formatDecimal(strategy.weighted_log_lr, 3)}</strong>
+                    </div>
+                    <div class="bayes-evidence-mobile-detail-item">
+                        <span>Signal State</span>
+                        <strong>${strategy.active ? 'Active' : 'Inactive'}</strong>
+                    </div>
+                </div>
+            </article>
+        `;
+    }
+
     function renderEvidencePanel(result) {
-        const rows = (result.strategies || []).map((strategy) => `
-            <tr class="bayes-evidence-row" ${strategyStyleAttr(strategy.slug)}>
+        const strategies = Array.isArray(result.strategies) ? result.strategies : [];
+        const rows = strategies.map((strategy, index) => `
+            <tr class="bayes-evidence-row" data-evidence-index="${index}" tabindex="0" ${strategyStyleAttr(strategy.slug)}>
                 <td>${strategy.sequence_index}</td>
                 <td>${renderStrategyBadge(strategy.slug, strategy.name)}</td>
                 <td>
@@ -156,24 +235,76 @@
                     </div>
                     ${renderMathLink(mathUrl, 'Open full derivation')}
                 </div>
-                <div class="bayes-table-wrap">
-                    <table class="zebra-table bayes-data-table min-w-full text-sm text-gray-700 border border-gray-300">
-                        <thead class="bg-gray-200 text-xs font-semibold">
-                            <tr>
-                                <th class="px-3 py-2 text-left">Step</th>
-                                <th class="px-3 py-2 text-left">Strategy</th>
-                                <th class="px-3 py-2 text-left">Signal</th>
-                                <th class="px-3 py-2 text-left">Strength</th>
-                                <th class="px-3 py-2 text-left">LR</th>
-                                <th class="px-3 py-2 text-left">Weighted Log-LR</th>
-                                <th class="px-3 py-2 text-left">Posterior After</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
+                <div class="bayes-evidence-desktop">
+                    <div class="bayes-table-wrap">
+                        <table class="zebra-table bayes-data-table min-w-full text-sm text-gray-700 border border-gray-300">
+                            <thead class="bg-gray-200 text-xs font-semibold">
+                                <tr>
+                                    <th class="px-3 py-2 text-left">Step</th>
+                                    <th class="px-3 py-2 text-left">Strategy</th>
+                                    <th class="px-3 py-2 text-left">Signal</th>
+                                    <th class="px-3 py-2 text-left">Strength</th>
+                                    <th class="px-3 py-2 text-left">LR</th>
+                                    <th class="px-3 py-2 text-left">Weighted Log-LR</th>
+                                    <th class="px-3 py-2 text-left">Posterior After</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                    <div class="bayes-evidence-detail" data-evidence-detail-panel>
+                        ${renderEvidenceDetailMarkup(strategies[0])}
+                    </div>
+                </div>
+                <div class="bayes-evidence-mobile-list">
+                    ${strategies.map(renderEvidenceMobileCard).join('')}
                 </div>
             </div>
         `;
+    }
+
+    function activateEvidenceRow(panel, strategies, index) {
+        const strategy = strategies[index];
+        const detailPanel = panel.querySelector('[data-evidence-detail-panel]');
+        if (!strategy || !detailPanel) {
+            return;
+        }
+
+        detailPanel.innerHTML = renderEvidenceDetailMarkup(strategy);
+        panel.querySelectorAll('.bayes-evidence-row').forEach((row) => {
+            row.classList.toggle('is-active', Number(row.dataset.evidenceIndex) === index);
+        });
+    }
+
+    function bindEvidencePanelInteractions(panel, result) {
+        const strategies = Array.isArray(result?.strategies) ? result.strategies : [];
+        if (!panel || !strategies.length) {
+            return;
+        }
+
+        panel.querySelectorAll('.bayes-evidence-row').forEach((row) => {
+            const index = Number(row.dataset.evidenceIndex || 0);
+            const activate = function () {
+                activateEvidenceRow(panel, strategies, index);
+            };
+            row.addEventListener('mouseenter', activate);
+            row.addEventListener('focus', activate);
+            row.addEventListener('click', activate);
+        });
+
+        panel.querySelectorAll('.bayes-evidence-mobile-toggle').forEach((button) => {
+            button.addEventListener('click', function () {
+                const card = button.closest('[data-evidence-mobile-card]');
+                if (!card) {
+                    return;
+                }
+                const isOpen = card.classList.toggle('is-open');
+                button.textContent = isOpen ? 'Hide details' : 'Show details';
+                button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+        });
+
+        activateEvidenceRow(panel, strategies, 0);
     }
 
     function summarizeTradesByStrategy(trades) {
@@ -281,7 +412,7 @@
                 </div>
                 <div class="trade-log-breakdown">${breakoutMarkup}</div>
                 <div class="trade-log-table-wrap">
-                    <table class="zebra-table bayes-data-table min-w-full text-sm text-gray-700 border border-gray-300">
+                    <table class="zebra-table bayes-data-table min-w-full text-sm text-gray-700 border border-gray-300" data-responsive-table data-responsive-title-col="0" data-responsive-subtitle-col="1">
                         <thead class="bg-gray-200 text-xs font-semibold">
                             <tr>
                                 <th class="px-3 py-2 text-left">Strategy</th>
@@ -432,6 +563,8 @@
         if (targets.chainPanel) {
             targets.chainPanel.innerHTML = renderChainEmpty();
         }
+
+        window.TradingProResponsive?.refreshResponsiveTables();
     }
 
     function renderRunResult(targets, result) {
@@ -440,6 +573,7 @@
         }
         if (targets.evidencePanel) {
             targets.evidencePanel.innerHTML = renderEvidencePanel(result);
+            bindEvidencePanelInteractions(targets.evidencePanel, result);
         }
         if (targets.tradeLog) {
             targets.tradeLog.innerHTML = renderTradeLog(result);
@@ -453,6 +587,8 @@
         if (targets.statusPill) {
             targets.statusPill.textContent = `${result.confidence_label || 'Posterior'} · ${formatPercent(result.posterior_probability)}`;
         }
+
+        window.TradingProResponsive?.refreshResponsiveTables();
     }
 
     window.BayesBacktestUI = {

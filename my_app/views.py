@@ -1,4 +1,6 @@
 from datetime import date, datetime, timedelta
+from functools import lru_cache
+from pathlib import Path
 from typing import Optional
 import json
 import pandas as pd
@@ -14,6 +16,7 @@ from django.urls import reverse
 
 from .forms import AppSettingsForm, CustomLoginForm, PortfolioForm
 from .models import AppSettings, BacktestRun, Portfolio, Stock, Stock_Group
+from .services.indicator_library import get_indicator_library, get_indicator_map
 from .services.backtest_service import (
     list_strategy_definitions,
     run_bayesian_backtest,
@@ -30,8 +33,93 @@ from .services.watchlist_service import (
     get_momentum_watchlist,
     get_weighted_golden_cross_snapshot,
 )
+from .strategies import get_strategy
 from .utils import PriceDataError, download_n_clean_data, serialize_price_frame
 
+
+BUILTIN_PRO_SCAN_GROUPS = (
+    {'name': 'Dow-Jones-30', 'label': 'Dow Jones 30'},
+    {'name': 'Nasdaq-100', 'label': 'Nasdaq 100'},
+    {'name': 'S&P-500', 'label': 'S&P 500'},
+)
+
+
+def _built_in_group_names() -> set[str]:
+    return {group['name'] for group in BUILTIN_PRO_SCAN_GROUPS}
+
+
+@lru_cache(maxsize=1)
+def _load_builtin_group_members() -> dict[str, list[dict[str, str]]]:
+    data_dir = Path(__file__).resolve().parent / 'static' / 'data'
+    registry: dict[str, list[dict[str, str]]] = {}
+
+    for group in BUILTIN_PRO_SCAN_GROUPS:
+        group_name = group['name']
+        file_path = data_dir / f'{group_name}.json'
+        members: list[dict[str, str]] = []
+        if file_path.exists():
+            try:
+                payload = json.loads(file_path.read_text(encoding='utf-8'))
+                for item in payload.get(group_name, []):
+                    symbol = str(item.get('symbol') or '').strip().upper()
+                    if not symbol:
+                        continue
+                    members.append({
+                        'symbol': symbol,
+                        'name': str(item.get('name') or symbol).strip(),
+                    })
+            except (json.JSONDecodeError, OSError):
+                members = []
+        registry[group_name] = members
+
+    return registry
+
+
+def _resolve_group_stocks(group_name: str):
+    db_stocks = list(
+        Stock.objects.filter(groups__name=group_name)
+        .exclude(symbol='MRPW')
+        .order_by('symbol')
+        .values('name', 'symbol')
+        .distinct()
+    )
+    if db_stocks:
+        return [
+            {
+                'name': str(stock.get('name') or stock.get('symbol') or '').strip(),
+                'symbol': str(stock.get('symbol') or '').strip().upper(),
+            }
+            for stock in db_stocks
+            if stock.get('symbol')
+        ]
+
+    return list(_load_builtin_group_members().get(group_name, []))
+
+
+def _serialize_portfolio_scan_option(
+    key: str,
+    name: str,
+    portfolio_like: Portfolio,
+    notional_balance: float,
+    selection_type: str,
+    is_default: bool = False,
+) -> dict:
+    allocation_rows = _build_portfolio_allocation_rows(portfolio_like, notional_balance)
+    return {
+        'key': str(key),
+        'name': name,
+        'type': selection_type,
+        'is_default': bool(is_default),
+        'ticker_count': len(allocation_rows),
+        'allocation_rows': allocation_rows,
+    }
+
+
+def _parse_strategy_payload(request):
+    try:
+        return json.loads(request.body.decode('utf-8') or '{}')
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return None
 
 
 class CustomLoginView(LoginView):
@@ -41,8 +129,22 @@ class CustomLoginView(LoginView):
 def home(request):
     return render(request, 'home.html')
 
+
+def health(request):
+    return JsonResponse({
+        'status': 'ok',
+        'service': 'trading-pro',
+        'timestamp': timezone.now().isoformat(),
+    })
+
 def watchlist_view(request):
     return render(request, "watchlist.html")
+
+
+def indicators(request):
+    return render(request, 'indicators.html', {
+        'indicator_library': get_indicator_library(),
+    })
 
 
 def research(request, ticker: str):
@@ -136,7 +238,7 @@ def _build_portfolio_context(default_portfolio: Portfolio | None, app_settings: 
         'portfolio_builder_limit': int(app_settings.portfolio_builder_limit or 5),
         'portfolio_ticker_limit': int(app_settings.portfolio_ticker_limit or 10),
         'portfolio_glidepath_leg_limit': 2,
-        'chart_data': json.dumps(chart_data),
+        'chart_data': chart_data,
     }
 
 
@@ -407,7 +509,12 @@ def _build_backtest_shell_state(request):
         or app_settings.backtest_default_prefill_strategy
         or ''
     ).strip().lower()
-    if prefill_strategy not in {'golden_cross', 'momentum_12m'}:
+    if prefill_strategy not in {
+        'golden_cross',
+        'momentum_12m',
+        'golden_cross_bollinger_squeeze',
+        'golden_cross_bollinger_breakout_confirm',
+    }:
         prefill_strategy = ''
 
     default_start_date = app_settings.backtest_default_start_date or BACKTEST_DEFAULT_START_DATE
@@ -481,7 +588,10 @@ def _normalize_fetch_stock_request(request):
 
 @ensure_csrf_cookie
 def backtest(request):
-    return render(request, 'backtest.html', _build_backtest_shell_state(request))
+    context = _build_backtest_shell_state(request)
+    context['indicator_library'] = get_indicator_library()
+    context['indicator_map'] = get_indicator_map()
+    return render(request, 'backtest.html', context)
 
 def render_indicator_partial(request, indicator):
     if indicator == 'sma':
@@ -548,15 +658,20 @@ def fetch_group_data(request):
         if not ticker_group:
             return JsonResponse({'valid': False, 'error': 'No ticker_group provided'})
 
-        group = Stock_Group.objects.get(name=ticker_group)
-        print("Found group:", group.name)
+        stock_records = _resolve_group_stocks(ticker_group)
+        if not stock_records and ticker_group not in _built_in_group_names() and not Stock_Group.objects.filter(name=ticker_group).exists():
+            return JsonResponse({
+                'valid': True,
+                'data': [],
+                'error': f'Group {ticker_group} is unavailable right now.',
+            }, status=200)
 
-        # Exclude the problematic ticker:
-        tickers = group.stocks.exclude(symbol='MRPW').values_list('symbol', flat=True)
-        print("Tickers in group:", tickers)
-
-        for symbol in tickers:
+        for stock_record in stock_records:
+            symbol = str(stock_record.get('symbol') or '').strip().upper()
+            if not symbol:
+                continue
             yf_symbol = symbol.replace('.', '-')
+            stock_name = str(stock_record.get('name') or symbol).strip()
             live_snapshot = get_live_golden_cross_snapshot(symbol, require_active=False) or {}
             weighted_snapshot = get_weighted_golden_cross_snapshot(symbol) or {}
             quality_score = float(weighted_snapshot.get('quality_score', 0.0))
@@ -564,22 +679,11 @@ def fetch_group_data(request):
             consensus_label = get_golden_cross_consensus_label(live_score, quality_score)
             research_url = reverse('research', args=[symbol])
             math_url = build_watchlist_math_url('golden_cross_weighted', symbol)
-            if not Stock.objects.filter(symbol=symbol).exists():
-                print(f"Symbol {symbol} not found in DB")
-                result.append({
-                    'symbol': symbol,
-                    'chartData': [],
-                    'golden_cross_quality_score': quality_score,
-                    'golden_cross_live_score': live_score,
-                    'golden_cross_consensus_label': consensus_label,
-                    'golden_cross_math_url': math_url,
-                    'research_url': research_url,
-                })
-                continue
 
             try:
                 clean_data = download_n_clean_data(yf_symbol, start_date, end_date, compute_sma=True)
                 result.append({
+                    'name': stock_name,
                     'symbol': symbol,
                     'chartData': serialize_price_frame(clean_data, compute_sma=True),
                     'golden_cross_quality_score': quality_score,
@@ -591,6 +695,7 @@ def fetch_group_data(request):
             except Exception as e:
                 print(f"Error processing {symbol}: {str(e)}")
                 result.append({
+                    'name': stock_name,
                     'symbol': symbol,
                     'chartData': [],
                     'golden_cross_quality_score': quality_score,
@@ -601,10 +706,6 @@ def fetch_group_data(request):
                 })
 
         return JsonResponse({'valid': True, 'data': result})
-    
-    except Stock_Group.DoesNotExist:
-            print("Group not found:", ticker_group)
-            return JsonResponse({'valid': False, 'error': f'Group {ticker_group} not found'}, status=200)
     except Exception as e:
             print("Error in fetch_group_data:", str(e))
             return JsonResponse({'valid': False, 'error': str(e)}, status=200)
@@ -692,12 +793,198 @@ def contact_us(request):
     return render(request, 'contact_us.html')
 
 def pro_scan(request):
-    return render(request, 'pro_scan.html')
+    return render(request, 'pro_scan.html', {
+        'builtin_groups': BUILTIN_PRO_SCAN_GROUPS,
+        'initial_group_name': '',
+        'stocks': [],
+        'group_error': '',
+    })
 
 def stock_list(request, group_name):
-    group = Stock_Group.objects.get(name=group_name)
-    stocks = group.stocks.all()
-    return render(request, 'pro_scan.html', {'stocks': stocks})
+    stocks = list(_resolve_group_stocks(group_name))
+    group_missing = (
+        not stocks
+        and group_name not in _built_in_group_names()
+        and not Stock_Group.objects.filter(name=group_name).exists()
+    )
+    return render(request, 'pro_scan.html', {
+        'builtin_groups': BUILTIN_PRO_SCAN_GROUPS,
+        'initial_group_name': '' if group_missing else group_name,
+        'stocks': stocks,
+        'group_error': '' if stocks or not group_missing else f'{group_name} is unavailable right now.',
+    })
+
+
+@require_GET
+def api_pro_scan_portfolio_options(request):
+    app_settings = _get_app_settings()
+    notional_balance = float(app_settings.portfolio_notional_balance or 0)
+    saved_default = Portfolio.objects.filter(is_default=True).first()
+
+    saved_options = [
+        _serialize_portfolio_scan_option(
+            key=str(portfolio.id),
+            name=portfolio.name,
+            portfolio_like=portfolio,
+            notional_balance=notional_balance,
+            selection_type='saved',
+            is_default=portfolio.is_default,
+        )
+        for portfolio in Portfolio.objects.order_by('name')
+    ]
+
+    preset_options = []
+    for preset_key, preset_data in PRESET_PORTFOLIOS.items():
+        preset_options.append(
+            _serialize_portfolio_scan_option(
+                key=preset_key,
+                name=str(preset_data.get('name') or preset_key).strip(),
+                portfolio_like=Portfolio(**preset_data),
+                notional_balance=notional_balance,
+                selection_type='preset',
+                is_default=saved_default is None and preset_key == 'threefund',
+            )
+        )
+
+    return JsonResponse({
+        'valid': True,
+        'preset_portfolios': preset_options,
+        'saved_portfolios': saved_options,
+        'notional_balance': notional_balance,
+    })
+
+
+@require_POST
+def api_pro_scan_run_portfolio(request):
+    payload = _parse_strategy_payload(request)
+    if payload is None:
+        return JsonResponse({'valid': False, 'error': 'Request body must be valid JSON.'}, status=400)
+
+    selection_type = str(payload.get('selection_type') or '').strip().lower()
+    selection_key = str(payload.get('selection_key') or '').strip()
+    strategy_slug = str(payload.get('strategy_slug') or '').strip().lower()
+    start_date = str(payload.get('start_date') or '').strip()
+    end_date = str(payload.get('end_date') or '').strip()
+    strategy_params = payload.get('strategy_params') or {}
+
+    if selection_type not in {'preset', 'saved'}:
+        return JsonResponse({'valid': False, 'error': 'Portfolio selection type is required.'}, status=400)
+    if not selection_key:
+        return JsonResponse({'valid': False, 'error': 'Portfolio selection is required.'}, status=400)
+    if not strategy_slug:
+        return JsonResponse({'valid': False, 'error': 'Strategy selection is required.'}, status=400)
+
+    try:
+        strategy = get_strategy(strategy_slug)
+    except ValueError as error:
+        return JsonResponse({'valid': False, 'error': str(error)}, status=400)
+
+    if selection_type == 'saved':
+        portfolio = get_object_or_404(Portfolio, id=selection_key)
+        portfolio_label = portfolio.name
+        is_default = portfolio.is_default
+    else:
+        preset_data = PRESET_PORTFOLIOS.get(selection_key)
+        if not preset_data:
+            return JsonResponse({'valid': False, 'error': 'Selected preset portfolio is unavailable.'}, status=400)
+        portfolio = Portfolio(**preset_data)
+        portfolio_label = portfolio.name
+        is_default = selection_key == 'threefund' and not Portfolio.objects.filter(is_default=True).exists()
+
+    app_settings = _get_app_settings()
+    notional_balance = float(app_settings.portfolio_notional_balance or 0)
+    allocation_rows = _build_portfolio_allocation_rows(portfolio, notional_balance)
+    if not allocation_rows:
+        return JsonResponse({'valid': False, 'error': 'The selected portfolio has no holdings to scan.'}, status=400)
+
+    normalized_params = strategy.normalize_params(strategy_params)
+    holding_results = []
+    total_wins = 0
+    total_losses = 0
+    total_trade_count = 0
+    all_trade_returns = []
+    final_cash_total = 0.0
+
+    for row in allocation_rows:
+        sleeve_cash = notional_balance * (float(row['weight_pct']) / 100.0)
+        symbol = row['ticker']
+        holding_params = dict(normalized_params)
+        holding_params['starting_cash'] = sleeve_cash
+        holding_params['override_shares'] = None
+
+        try:
+            price_frame = download_n_clean_data(symbol.replace('.', '-'), start_date, end_date, compute_sma=True)
+            feature_frame = strategy.compute_features(price_frame.copy(), holding_params)
+            backtest_result = strategy.backtest(feature_frame, holding_params)
+            metrics = backtest_result.get('metrics', {})
+            total_wins += int(metrics.get('wins', 0) or 0)
+            total_losses += int(metrics.get('losses', 0) or 0)
+            total_trade_count += int(metrics.get('trade_count', 0) or 0)
+            final_cash_total += float(metrics.get('final_cash', sleeve_cash) or sleeve_cash)
+            all_trade_returns.extend([
+                float(trade.get('return_pct', 0.0) or 0.0)
+                for trade in backtest_result.get('trades', [])
+            ])
+            holding_results.append({
+                'ticker': symbol,
+                'weight_pct': row['weight_pct'],
+                'allocated_cash': round(sleeve_cash, 2),
+                'allocated_cash_display': f"${sleeve_cash:,.2f}",
+                'trade_count': int(metrics.get('trade_count', 0) or 0),
+                'wins': int(metrics.get('wins', 0) or 0),
+                'losses': int(metrics.get('losses', 0) or 0),
+                'win_rate': float(metrics.get('win_rate', 0.0) or 0.0),
+                'avg_trade_return': float(metrics.get('avg_trade_return', 0.0) or 0.0),
+                'total_return_pct': float(metrics.get('total_return_pct', 0.0) or 0.0),
+                'status': 'ok',
+            })
+        except Exception as error:
+            final_cash_total += sleeve_cash
+            holding_results.append({
+                'ticker': symbol,
+                'weight_pct': row['weight_pct'],
+                'allocated_cash': round(sleeve_cash, 2),
+                'allocated_cash_display': f"${sleeve_cash:,.2f}",
+                'trade_count': 0,
+                'wins': 0,
+                'losses': 0,
+                'win_rate': 0.0,
+                'avg_trade_return': 0.0,
+                'total_return_pct': 0.0,
+                'status': 'error',
+                'error': str(error),
+            })
+
+    average_trade_return = (sum(all_trade_returns) / len(all_trade_returns)) if all_trade_returns else 0.0
+    win_rate = (total_wins / total_trade_count) if total_trade_count else 0.0
+    total_return_pct = ((final_cash_total - notional_balance) / notional_balance) if notional_balance else 0.0
+
+    return JsonResponse({
+        'valid': True,
+        'portfolio': {
+            'name': portfolio_label,
+            'type': selection_type,
+            'key': selection_key,
+            'is_default': is_default,
+            'notional_balance': notional_balance,
+            'notional_balance_display': f"${notional_balance:,.2f}",
+        },
+        'results': [{
+            'portfolio_name': portfolio_label,
+            'portfolio_key': selection_key,
+            'selection_type': selection_type,
+            'is_default': is_default,
+            'strategy_slug': strategy_slug,
+            'strategy_name': strategy.name,
+            'trade_count': total_trade_count,
+            'wins': total_wins,
+            'losses': total_losses,
+            'win_rate': win_rate,
+            'avg_trade_return': average_trade_return,
+            'total_return_pct': total_return_pct,
+            'holdings': holding_results,
+        }],
+    })
 
 @require_GET
 def backtest_momentum(request):
