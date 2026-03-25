@@ -48,6 +48,13 @@ def _built_in_group_names() -> set[str]:
     return {group['name'] for group in BUILTIN_PRO_SCAN_GROUPS}
 
 
+def _get_builtin_group_label(group_name: str) -> str:
+    for group in BUILTIN_PRO_SCAN_GROUPS:
+        if group['name'] == group_name:
+            return group['label']
+    return str(group_name or '').replace('-', ' ').strip()
+
+
 @lru_cache(maxsize=1)
 def _load_builtin_group_members() -> dict[str, list[dict[str, str]]]:
     data_dir = Path(__file__).resolve().parent / 'static' / 'data'
@@ -120,6 +127,56 @@ def _parse_strategy_payload(request):
         return json.loads(request.body.decode('utf-8') or '{}')
     except (json.JSONDecodeError, UnicodeDecodeError):
         return None
+
+
+def _serialize_group_scan_result(
+    strategy,
+    symbol: str,
+    stock_name: str,
+    metrics: dict | None,
+    *,
+    status: str,
+    error: str = '',
+) -> dict:
+    live_snapshot = get_live_golden_cross_snapshot(symbol, require_active=False) or {}
+    weighted_snapshot = get_weighted_golden_cross_snapshot(symbol) or {}
+    quality_score = float(weighted_snapshot.get('quality_score', 0.0) or 0.0)
+    live_score = float(live_snapshot.get('composite_score', 0.0) or 0.0)
+    consensus_label = get_golden_cross_consensus_label(live_score, quality_score)
+
+    payload = {
+        'name': stock_name,
+        'symbol': symbol,
+        'strategy_slug': strategy.slug,
+        'strategy_name': strategy.name,
+        'status': status,
+        'golden_cross_quality_score': quality_score,
+        'golden_cross_live_score': live_score,
+        'golden_cross_consensus_label': consensus_label,
+        'golden_cross_math_url': build_watchlist_math_url('golden_cross_weighted', symbol),
+        'research_url': reverse('research', args=[symbol]),
+        'trade_count': 0,
+        'wins': 0,
+        'losses': 0,
+        'win_rate': 0.0,
+        'avg_trade_return': 0.0,
+        'total_return_pct': 0.0,
+    }
+
+    if metrics:
+        payload.update({
+            'trade_count': int(metrics.get('trade_count', 0) or 0),
+            'wins': int(metrics.get('wins', 0) or 0),
+            'losses': int(metrics.get('losses', 0) or 0),
+            'win_rate': float(metrics.get('win_rate', 0.0) or 0.0),
+            'avg_trade_return': float(metrics.get('avg_trade_return', 0.0) or 0.0),
+            'total_return_pct': float(metrics.get('total_return_pct', 0.0) or 0.0),
+        })
+
+    if error:
+        payload['error'] = error
+
+    return payload
 
 
 class CustomLoginView(LoginView):
@@ -796,6 +853,7 @@ def pro_scan(request):
     return render(request, 'pro_scan.html', {
         'builtin_groups': BUILTIN_PRO_SCAN_GROUPS,
         'initial_group_name': '',
+        'initial_group_label': '',
         'stocks': [],
         'group_error': '',
     })
@@ -810,6 +868,7 @@ def stock_list(request, group_name):
     return render(request, 'pro_scan.html', {
         'builtin_groups': BUILTIN_PRO_SCAN_GROUPS,
         'initial_group_name': '' if group_missing else group_name,
+        'initial_group_label': '' if group_missing else _get_builtin_group_label(group_name),
         'stocks': stocks,
         'group_error': '' if stocks or not group_missing else f'{group_name} is unavailable right now.',
     })
@@ -851,6 +910,83 @@ def api_pro_scan_portfolio_options(request):
         'preset_portfolios': preset_options,
         'saved_portfolios': saved_options,
         'notional_balance': notional_balance,
+    })
+
+
+@require_POST
+def api_pro_scan_run_group(request):
+    payload = _parse_strategy_payload(request)
+    if payload is None:
+        return JsonResponse({'valid': False, 'error': 'Request body must be valid JSON.'}, status=400)
+
+    group_name = str(payload.get('group_name') or '').strip()
+    strategy_slug = str(payload.get('strategy_slug') or '').strip().lower()
+    start_date = str(payload.get('start_date') or '').strip()
+    end_date = str(payload.get('end_date') or '').strip()
+    strategy_params = payload.get('strategy_params') or {}
+
+    if not group_name:
+        return JsonResponse({'valid': False, 'error': 'Ticker group selection is required.'}, status=400)
+    if not strategy_slug:
+        return JsonResponse({'valid': False, 'error': 'Strategy selection is required.'}, status=400)
+    if not start_date or not end_date:
+        return JsonResponse({'valid': False, 'error': 'Start and end dates are required.'}, status=400)
+
+    try:
+        strategy = get_strategy(strategy_slug)
+    except ValueError as error:
+        return JsonResponse({'valid': False, 'error': str(error)}, status=400)
+
+    stock_records = _resolve_group_stocks(group_name)
+    if not stock_records and group_name not in _built_in_group_names() and not Stock_Group.objects.filter(name=group_name).exists():
+        return JsonResponse({
+            'valid': True,
+            'group': {
+                'name': group_name,
+                'label': _get_builtin_group_label(group_name),
+            },
+            'results': [],
+            'error': f'{group_name} is unavailable right now.',
+        })
+
+    normalized_params = strategy.normalize_params(strategy_params)
+    results = []
+
+    for stock_record in stock_records:
+        symbol = str(stock_record.get('symbol') or '').strip().upper()
+        if not symbol:
+            continue
+
+        stock_name = str(stock_record.get('name') or symbol).strip()
+        try:
+            price_frame = download_n_clean_data(symbol.replace('.', '-'), start_date, end_date, compute_sma=False)
+            feature_frame = strategy.compute_features(price_frame.copy(), normalized_params)
+            backtest_result = strategy.backtest(feature_frame, normalized_params)
+            metrics = backtest_result.get('metrics', {})
+            results.append(_serialize_group_scan_result(
+                strategy,
+                symbol,
+                stock_name,
+                metrics,
+                status='ok',
+            ))
+        except Exception as error:
+            results.append(_serialize_group_scan_result(
+                strategy,
+                symbol,
+                stock_name,
+                None,
+                status='error',
+                error=str(error),
+            ))
+
+    return JsonResponse({
+        'valid': True,
+        'group': {
+            'name': group_name,
+            'label': _get_builtin_group_label(group_name),
+        },
+        'results': results,
     })
 
 

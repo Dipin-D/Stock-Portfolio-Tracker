@@ -3,10 +3,6 @@
 
 {% block head %}
     {{ block.super }}
-    <script src="{% static 'js/indicator/indicator.js' %}"></script>
-    <script src="{% static 'js/strategy/golden_cross_sim.js' %}"></script>
-    <script src="{% static 'js/strategy/momentum_sim.js' %}"></script>
-    <script src="{% static 'js/strategy/helpers.js' %}"></script>
     <script src="{% static 'js/pro_scan_page.js' %}"></script>
     <style>
         .proscan-page {
@@ -151,8 +147,17 @@
         }
 
         .proscan-accordion-trigger[aria-expanded="true"] {
-            background: #eff6ff;
-            color: #1d4ed8;
+            background: #eef2f7;
+            color: #0f172a;
+        }
+
+        .proscan-accordion-trigger.is-context-selected {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #fff;
+        }
+
+        .proscan-accordion-trigger.is-context-selected::after {
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .proscan-accordion-panel {
@@ -704,7 +709,7 @@
                     {% for group in builtin_groups %}
                         <button
                             type="button"
-                            class="btn-option"
+                            class="btn-option{% if group.name == initial_group_name %} active{% endif %}"
                             data-group-name="{{ group.name }}"
                             data-group-label="{{ group.label }}">
                             {{ group.label }}
@@ -891,15 +896,15 @@
                     <div class="proscan-status-list">
                     <div class="proscan-status-item">
                         <strong>Scan Mode</strong>
-                        <span id="current-scan-mode">Ticker group</span>
+                        <span id="current-scan-mode">{% if initial_group_name %}Ticker group{% else %}None{% endif %}</span>
                     </div>
                     <div class="proscan-status-item">
                         <strong>Active Selection</strong>
-                        <span id="current-scope-value">None selected</span>
+                        <span id="current-scope-value">{% if initial_group_name %}{{ initial_group_label }}{% else %}None selected{% endif %}</span>
                     </div>
                     <div class="proscan-status-item">
                         <strong>Selection Type</strong>
-                        <span id="current-group-value">None selected</span>
+                        <span id="current-group-value">{% if initial_group_name %}Ticker group{% else %}None selected{% endif %}</span>
                     </div>
                     <div class="proscan-status-item">
                         <strong>Last Strategy</strong>

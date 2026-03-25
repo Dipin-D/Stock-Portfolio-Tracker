@@ -43,6 +43,7 @@ urlpatterns = [
     path('fetch_stock_data/', views.fetch_stock_data, name='fetch_stock_data'),
     path('fetch_group_data/', views.fetch_group_data, name='fetch_group_data'),
     path('api/pro-scan/portfolio-options/', views.api_pro_scan_portfolio_options, name='api_pro_scan_portfolio_options'),
+    path('api/pro-scan/run-group/', views.api_pro_scan_run_group, name='api_pro_scan_run_group'),
     path('api/pro-scan/run-portfolio/', views.api_pro_scan_run_portfolio, name='api_pro_scan_run_portfolio'),
     path('api/strategies/definitions/', views.api_strategy_definitions, name='api_strategy_definitions'),
     path('api/backtest/run/', views.api_run_backtest, name='api_run_backtest'),

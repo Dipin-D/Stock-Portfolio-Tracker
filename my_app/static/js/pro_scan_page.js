@@ -33,45 +33,6 @@
         return cookieValue ? decodeURIComponent(cookieValue.split('=').slice(1).join('=')) : '';
     }
 
-    function summarizeSignals(signals, startCash, finalCash) {
-        let wins = 0;
-        let losses = 0;
-        let totalTradeReturnPct = 0;
-        let trades = 0;
-        let openTrade = null;
-
-        (signals || []).forEach((signal) => {
-            if (!openTrade && signal.action === 'BUY') {
-                openTrade = signal;
-                return;
-            }
-
-            if (openTrade && signal.action === 'SELL') {
-                const pnl = (signal.price - openTrade.price) * openTrade.shares;
-                const tradeReturnPct = openTrade.price ? ((signal.price - openTrade.price) / openTrade.price) * 100 : 0;
-
-                if (pnl >= 0) {
-                    wins += 1;
-                } else {
-                    losses += 1;
-                }
-
-                totalTradeReturnPct += tradeReturnPct;
-                trades += 1;
-                openTrade = null;
-            }
-        });
-
-        return {
-            wins,
-            losses,
-            trades,
-            winRatePct: trades ? (wins / trades) * 100 : 0,
-            avgTradeReturnPct: trades ? totalTradeReturnPct / trades : 0,
-            totalReturnPct: startCash ? ((finalCash - startCash) / startCash) * 100 : 0,
-        };
-    }
-
     function strategyContextSummary(config, context) {
         if (context.type === 'portfolio') {
             return `Portfolio context: <strong>${escapeHtml(context.label)}</strong><br>Dates ${escapeHtml(config.startDate)} → ${escapeHtml(config.endDate)}<br>Capital comes from stored portfolio weights and notional balance.`;
@@ -226,6 +187,15 @@
                         overrideShares: document.getElementById('ps-gc-override-shares').value,
                     };
                 },
+                groupParams(config) {
+                    return {
+                        fast_sma: config.fastSma,
+                        slow_sma: config.slowSma,
+                        order_percentage: config.orderPct,
+                        starting_cash: config.startCash,
+                        override_shares: config.overrideShares || null,
+                    };
+                },
                 fillConfig(config) {
                     document.getElementById('ps-gc-start-date').value = config.startDate;
                     document.getElementById('ps-gc-end-date').value = config.endDate;
@@ -234,16 +204,6 @@
                     document.getElementById('ps-gc-order-percentage').value = config.orderPct;
                     document.getElementById('ps-gc-starting-cash').value = config.startCash;
                     document.getElementById('ps-gc-override-shares').value = config.overrideShares || '';
-                },
-                runGroup(chartData, config) {
-                    return window.runGoldenCrossStrategySim(
-                        chartData,
-                        config.fastSma,
-                        config.slowSma,
-                        config.orderPct,
-                        config.startCash,
-                        config.overrideShares
-                    );
                 },
                 portfolioParams(config) {
                     return {
@@ -274,6 +234,16 @@
                         overrideShares: document.getElementById('ps-mom-override-shares').value,
                     };
                 },
+                groupParams(config) {
+                    return {
+                        lookback: config.lookback,
+                        buy_threshold: Number(config.buyPct) / 100,
+                        exit_threshold: Number(config.exitPct) / 100,
+                        order_percentage: config.orderPct,
+                        starting_cash: config.startCash,
+                        override_shares: config.overrideShares || null,
+                    };
+                },
                 fillConfig(config) {
                     document.getElementById('ps-mom-start-date').value = config.startDate;
                     document.getElementById('ps-mom-end-date').value = config.endDate;
@@ -283,17 +253,6 @@
                     document.getElementById('ps-mom-order-percentage').value = config.orderPct;
                     document.getElementById('ps-mom-starting-cash').value = config.startCash;
                     document.getElementById('ps-mom-override-shares').value = config.overrideShares || '';
-                },
-                runGroup(chartData, config) {
-                    return window.runMomentumStrategySim(
-                        chartData,
-                        config.lookback,
-                        config.buyPct,
-                        config.exitPct,
-                        config.orderPct,
-                        config.startCash,
-                        config.overrideShares
-                    );
                 },
                 portfolioParams(config) {
                     return {
@@ -414,6 +373,12 @@
         function setActiveContextButtons() {
             groupButtons.forEach((button) => {
                 button.classList.toggle('active', state.context.type === 'group' && button.dataset.groupName === state.context.groupName);
+            });
+
+            accordionButtons.forEach((button) => {
+                const isSelectedContext = state.context.type === 'portfolio'
+                    && button.dataset.portfolioListTrigger === state.context.selectionType;
+                button.classList.toggle('is-context-selected', isSelectedContext);
             });
 
             document.querySelectorAll('[data-portfolio-option]').forEach((button) => {
@@ -627,29 +592,38 @@
             `;
         }
 
-        function buildGroupRow(stock, stats, hasScanData) {
+        function buildGroupRow(result) {
+            const hasScanData = result.status === 'ok';
             const row = document.createElement('tr');
             row.dataset.rowMode = 'group';
-            row.dataset.name = stock.name || '-';
-            row.dataset.ticker = stock.symbol || '-';
+            row.dataset.name = result.name || '-';
+            row.dataset.ticker = result.symbol || '-';
             row.innerHTML = `
-                <td>${escapeHtml(stock.name || '-')}</td>
-                <td>${escapeHtml(stock.symbol || '-')}</td>
+                <td>${escapeHtml(result.name || '-')}</td>
+                <td>${escapeHtml(result.symbol || '-')}</td>
                 <td>-</td>
                 <td>-</td>
                 <td>-</td>
-                <td>${hasScanData ? escapeHtml(String(stats.wins)) : '-'}</td>
-                <td>${hasScanData ? escapeHtml(String(stats.losses)) : '-'}</td>
-                <td>${hasScanData ? formatPercent(stats.winRatePct, 1) : '-'}</td>
-                <td>${hasScanData ? formatPercent(stats.avgTradeReturnPct, 2) : '-'}</td>
-                <td>${hasScanData ? formatPercent(stats.totalReturnPct, 2) : 'No data'}</td>
-                <td>${hasScanData ? escapeHtml(String(stats.trades || '-')) : '-'}</td>
+                <td>${hasScanData ? escapeHtml(String(result.wins || 0)) : '-'}</td>
+                <td>${hasScanData ? escapeHtml(String(result.losses || 0)) : '-'}</td>
+                <td>${hasScanData ? formatPercent(Number(result.win_rate || 0) * 100, 1) : '-'}</td>
+                <td>${hasScanData ? formatPercent(Number(result.avg_trade_return || 0) * 100, 2) : '-'}</td>
+                <td>${hasScanData ? formatPercent(Number(result.total_return_pct || 0) * 100, 2) : 'No data'}</td>
+                <td>${hasScanData ? escapeHtml(String(result.trade_count || 0)) : '-'}</td>
                 <td>-</td>
             `;
-            updateSignalColumns(row, stock);
-            updateRowDataset(row, Object.assign({}, stats, { hasScanData }));
+            updateSignalColumns(row, result);
+            updateRowDataset(row, {
+                wins: Number(result.wins || 0),
+                losses: Number(result.losses || 0),
+                winRatePct: Number(result.win_rate || 0) * 100,
+                avgTradeReturnPct: Number(result.avg_trade_return || 0) * 100,
+                totalReturnPct: Number(result.total_return_pct || 0) * 100,
+                trades: Number(result.trade_count || 0),
+                hasScanData,
+            });
             if (hasScanData) {
-                row.classList.add(stats.totalReturnPct >= 0 ? 'scan-positive' : 'scan-negative');
+                row.classList.add(Number(result.total_return_pct || 0) >= 0 ? 'scan-positive' : 'scan-negative');
             }
             return row;
         }
@@ -744,39 +718,38 @@
             currentStrategyValue.textContent = strategyDescriptor.label;
 
             try {
-                const response = await fetch(
-                    `/fetch_group_data/?ticker_group=${encodeURIComponent(state.context.groupName)}&start_date=${encodeURIComponent(strategyDescriptor.config.startDate)}&end_date=${encodeURIComponent(strategyDescriptor.config.endDate)}`
-                );
-                const data = await response.json();
+                const response = await fetch('/api/pro-scan/run-group/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify({
+                        group_name: state.context.groupName,
+                        strategy_slug: strategyDescriptor.slug,
+                        start_date: strategyDescriptor.config.startDate,
+                        end_date: strategyDescriptor.config.endDate,
+                        strategy_params: strategyDescriptor.groupParams(strategyDescriptor.config),
+                    }),
+                });
+                const data = await response.json().catch(function () {
+                    return {
+                        valid: false,
+                        error: `Group scan returned HTTP ${response.status}.`,
+                    };
+                });
 
-                if (!data.valid) {
+                if (!response.ok || !data.valid) {
                     throw new Error(data.error || 'Unable to load group data.');
                 }
 
                 tableBody.innerHTML = '';
-                (data.data || []).forEach((stock) => {
-                    const hasChartData = Array.isArray(stock.chartData) && stock.chartData.length;
-                    let stats = {
-                        wins: 0,
-                        losses: 0,
-                        trades: 0,
-                        winRatePct: 0,
-                        avgTradeReturnPct: 0,
-                        totalReturnPct: 0,
-                    };
-                    let hasScanData = false;
-
-                    if (hasChartData) {
-                        const simResult = strategyDescriptor.runner(stock.chartData, strategyDescriptor.config);
-                        stats = summarizeSignals(simResult.signals, strategyDescriptor.config.startCash, simResult.finalCash);
-                        hasScanData = true;
-                    }
-
-                    tableBody.appendChild(buildGroupRow(stock, stats, hasScanData));
+                (data.results || []).forEach((result) => {
+                    tableBody.appendChild(buildGroupRow(result));
                 });
 
-                if (!data.data || !data.data.length) {
-                    renderEmptyTable(`${state.context.groupName} returned no stocks to scan.`);
+                if (!data.results || !data.results.length) {
+                    renderEmptyTable(data.error || `${state.context.groupName} returned no stocks to scan.`);
                     return;
                 }
 
@@ -853,7 +826,7 @@
                 slug: descriptor.slug,
                 label: descriptor.label,
                 config,
-                runner: descriptor.runGroup,
+                groupParams: descriptor.groupParams,
                 portfolioParams: descriptor.portfolioParams,
             };
             const existingCard = strategyPanelContainer.querySelector(`[data-strategy-slug="${descriptor.slug}"]`);
@@ -890,6 +863,7 @@
                 </span>
             `;
             button.addEventListener('click', function () {
+                sessionStorage.removeItem('tickerGroup');
                 setContext({
                     type: 'portfolio',
                     label: option.name,
