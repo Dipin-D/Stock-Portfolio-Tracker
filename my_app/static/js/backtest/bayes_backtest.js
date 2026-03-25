@@ -67,11 +67,6 @@
         return cookieValue ? decodeURIComponent(cookieValue.split('=').slice(1).join('=')) : '';
     }
 
-    function setCookie(name, value, days = 365) {
-        const expires = new Date(Date.now() + (days * 24 * 60 * 60 * 1000)).toUTCString();
-        document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
-    }
-
     function setModalVisibility(modal, visible) {
         if (!modal) {
             return;
@@ -108,14 +103,6 @@
         const tickerInput = document.getElementById('ticker-input');
         const startDateInput = document.getElementById('start-date');
         const endDateInput = document.getElementById('end-date');
-        const replayGuideButton = document.getElementById('backtest-tour-replay');
-        const resultGuide = document.getElementById('backtest-result-guide');
-        const tourModal = document.getElementById('backtest-tour');
-        const tourTitle = document.getElementById('backtest-tour-title');
-        const tourCopy = document.getElementById('backtest-tour-copy');
-        const tourHint = document.getElementById('backtest-tour-hint');
-        const tourStepPill = document.getElementById('backtest-tour-step');
-        const tourSkip = document.getElementById('backtest-tour-skip');
 
         if (!strategyPanels || !runButton || !modeSelect || !priorModeSelect || !window.BayesBacktestUI) {
             return;
@@ -143,75 +130,6 @@
             lastResult: null,
             editingIndex: null,
         };
-        const TOUR_STORAGE_KEY = 'tradingpro:backtest-tour:v2';
-        const TOUR_RESULTS_STORAGE_KEY = 'tradingpro:backtest-tour-results:v2';
-        const tourState = {
-            active: false,
-            phase: 'pre',
-            stepIndex: 0,
-            currentTarget: null,
-        };
-        const tourSteps = {
-            pre: [
-                {
-                    target: '#ticker-input',
-                    title: 'Start with the market controls',
-                    copy: 'Choose the ticker, date window, mode, and prior source here before you run anything.',
-                    hint: 'Tap the ticker field to continue.',
-                },
-                {
-                    target: '#strategy-btn-golden-cross',
-                    title: 'Create the strategy chain here',
-                    copy: 'This left rail is where you open strategy forms. Golden Cross is the base strategy, and the two new Bollinger-confirmed variants live beside it.',
-                    hint: 'Tap a strategy button to continue. The guide will close the modal again so you can keep moving.',
-                    afterAdvance: () => closeModals(),
-                },
-                {
-                    target: '#indicator-toggle',
-                    title: 'Indicators are chart tools, not posterior steps',
-                    copy: 'Use indicators to read context on the chart. They help explain price behavior, but they do not directly change the Bayesian posterior.',
-                    hint: 'Tap Indicators to continue.',
-                    afterAdvance: () => {
-                        const isExpanded = indicatorToggle?.getAttribute('aria-expanded') === 'true';
-                        if (isExpanded) {
-                            indicatorToggle.click();
-                        }
-                    },
-                },
-                {
-                    target: '#run-bayes-button',
-                    title: 'Run the Bayesian analysis here',
-                    copy: 'Once your chain is configured, run it. After the first successful run, the guide will switch into result mode and walk you through the probability cards, evidence chain, chart markers, and trade log.',
-                    hint: 'Tap Run Bayesian Analysis to finish the setup guide.',
-                },
-            ],
-            post: [
-                {
-                    target: '#posterior-panel',
-                    title: 'These cards show the probability shift',
-                    copy: 'Prior, posterior, lift, and confidence summarize how the chosen evidence changed the base belief.',
-                    hint: 'Tap the probability panel to continue.',
-                },
-                {
-                    target: '#evidence-panel',
-                    title: 'The evidence chain explains why the posterior moved',
-                    copy: 'On phones this becomes expandable step cards. On larger screens you can hover each row for a deeper breakdown.',
-                    hint: 'Tap the evidence panel to continue.',
-                },
-                {
-                    target: '#chart-section',
-                    title: 'Check entries, exits, and indicator overlays on the chart',
-                    copy: 'After a run, the entry and exit markers appear directly on the graph. This is also where your configured indicators help you interpret the move visually.',
-                    hint: 'Tap the chart area to continue.',
-                },
-                {
-                    target: '#trade-log-golden-cross',
-                    title: 'The trade log is the execution ledger',
-                    copy: 'Use it to verify the exact entries, exits, returns, and strategy ownership behind the completed run.',
-                    hint: 'Tap the trade log to finish the result guide.',
-                },
-            ],
-        };
 
         const initialAnalysisMode = page?.dataset.initialAnalysisMode || '';
         const initialPriorMode = page?.dataset.initialPriorMode || '';
@@ -233,173 +151,6 @@
                     reason,
                 },
             }));
-        }
-
-        function guideStorageGet(key) {
-            try {
-                return window.localStorage.getItem(key);
-            } catch (error) {
-                return getCookie(key);
-            }
-        }
-
-        function guideStorageSet(key, value) {
-            try {
-                window.localStorage.setItem(key, value);
-            } catch (error) {
-                setCookie(key, value);
-            }
-        }
-
-        function hasSeenTour(phase = 'pre') {
-            return guideStorageGet(phase === 'post' ? TOUR_RESULTS_STORAGE_KEY : TOUR_STORAGE_KEY) === 'done';
-        }
-
-        function markTourSeen(phase = 'pre') {
-            guideStorageSet(phase === 'post' ? TOUR_RESULTS_STORAGE_KEY : TOUR_STORAGE_KEY, 'done');
-        }
-
-        function clearGuideHighlight() {
-            if (tourState.currentTarget) {
-                tourState.currentTarget.classList.remove('backtest-guide-target-active');
-            }
-            tourState.currentTarget = null;
-        }
-
-        function setTourVisibility(visible) {
-            if (!tourModal || !page) {
-                return;
-            }
-            tourModal.classList.toggle('hidden', !visible);
-            tourModal.setAttribute('aria-hidden', visible ? 'false' : 'true');
-            page.classList.toggle('is-guide-active', visible);
-            if (!visible) {
-                clearGuideHighlight();
-            }
-        }
-
-        function currentGuideSteps() {
-            return tourSteps[tourState.phase] || [];
-        }
-
-        function findGuideTarget(step) {
-            if (!step?.target) {
-                return null;
-            }
-            return document.querySelector(step.target);
-        }
-
-        function applyGuideHighlight(target) {
-            clearGuideHighlight();
-            if (!target) {
-                return;
-            }
-            target.classList.add('backtest-guide-target-active');
-            tourState.currentTarget = target;
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-                inline: 'nearest',
-            });
-        }
-
-        function renderTourStep() {
-            if (!tourTitle || !tourCopy || !tourHint || !tourStepPill) {
-                return;
-            }
-
-            const steps = currentGuideSteps();
-            const step = steps[tourState.stepIndex];
-            if (!step) {
-                finishTour(true);
-                return;
-            }
-
-            const target = findGuideTarget(step);
-            if (!target) {
-                advanceTour();
-                return;
-            }
-
-            tourStepPill.textContent = `${tourState.phase === 'pre' ? 'Setup' : 'Results'} ${tourState.stepIndex + 1} of ${steps.length}`;
-            tourTitle.textContent = step.title;
-            tourCopy.textContent = step.copy;
-            tourHint.textContent = step.hint || 'Tap the highlighted area to continue.';
-            applyGuideHighlight(target);
-        }
-
-        function finishTour(markSeen = true) {
-            if (markSeen) {
-                markTourSeen(tourState.phase);
-            }
-            tourState.active = false;
-            setTourVisibility(false);
-            replayGuideButton?.focus();
-        }
-
-        function advanceTour() {
-            const steps = currentGuideSteps();
-            const step = steps[tourState.stepIndex];
-            if (typeof step?.afterAdvance === 'function') {
-                step.afterAdvance();
-            }
-
-            if (tourState.stepIndex >= steps.length - 1) {
-                finishTour(true);
-                return;
-            }
-
-            tourState.stepIndex += 1;
-            renderTourStep();
-        }
-
-        function openTour(phase = 'pre', force = false) {
-            if (!force && hasSeenTour(phase)) {
-                return;
-            }
-
-            tourState.phase = phase;
-            tourState.stepIndex = 0;
-            tourState.active = true;
-            setTourVisibility(true);
-            renderTourStep();
-        }
-
-        function renderResultGuide(result) {
-            if (!resultGuide) {
-                return;
-            }
-
-            if (!result) {
-                resultGuide.classList.remove('is-visible');
-                resultGuide.innerHTML = '';
-                return;
-            }
-
-            const hasTrades = Array.isArray(result.trade_log) && result.trade_log.length > 0;
-            const indicatorHint = window.rawChartData?.length
-                ? 'You can apply or reapply indicators under the chart tools section to compare overlays against the completed run.'
-                : 'Load chart data if you want to overlay indicators on top of the result.';
-            const markerHint = hasTrades
-                ? 'Entry and exit markers are now plotted on the chart, so compare them against the trade log below.'
-                : 'This run did not close any trades, so the chart will stay focused on price and configured indicators.';
-
-            resultGuide.innerHTML = `
-                <div class="backtest-guide-card">
-                    <div>
-                        <p class="backtest-section-kicker">Result Guide</p>
-                        <h3 class="backtest-section-title">What to inspect next</h3>
-                        <p class="backtest-section-subcopy">${markerHint} ${indicatorHint}</p>
-                    </div>
-                    <div class="backtest-guide-actions">
-                        <a class="backtest-secondary-btn" href="#chart-section">Chart & markers</a>
-                        <a class="backtest-secondary-btn" href="#indicator-panels">Indicators</a>
-                        <a class="backtest-secondary-btn" href="#evidence-panel">Evidence chain</a>
-                        <a class="backtest-secondary-btn" href="#trade-log-golden-cross">Trade log</a>
-                    </div>
-                </div>
-            `;
-            resultGuide.classList.add('is-visible');
         }
 
         function setRunButtonLabel() {
@@ -427,7 +178,6 @@
             state.lastResult = null;
             statusPill.textContent = message || 'Waiting for posterior';
             window.BayesBacktestUI.resetResults(targets);
-            renderResultGuide(null);
             dispatchBayesRunEvent(null, message || 'Waiting for posterior');
             renderStrategyPanels();
             updateWorkflowMessage();
@@ -760,17 +510,10 @@
 
                 state.lastResult = payload;
                 window.BayesBacktestUI.renderRunResult(targets, payload);
-                renderResultGuide(payload);
                 dispatchBayesRunEvent(payload, 'Run completed');
                 renderStrategyPanels();
                 updateWorkflowMessage();
                 setRunButtonLabel();
-
-                if (!hasSeenTour('post')) {
-                    window.setTimeout(function () {
-                        openTour('post');
-                    }, 200);
-                }
             } catch (error) {
                 statusPill.textContent = 'Run failed';
                 alert(error.message || 'Unable to run Bayesian analysis.');
@@ -915,50 +658,9 @@
             }
         });
 
-        replayGuideButton?.addEventListener('click', function () {
-            guideStorageSet(TOUR_STORAGE_KEY, '');
-            guideStorageSet(TOUR_RESULTS_STORAGE_KEY, '');
-            openTour('pre', true);
-        });
-
-        tourSkip?.addEventListener('click', function () {
-            finishTour(true);
-        });
-
-        tourModal?.addEventListener('click', function (event) {
-            if (event.target === tourModal) {
-                event.preventDefault();
-            }
-        });
-
-        document.addEventListener('click', function (event) {
-            if (!tourState.active || !tourState.currentTarget) {
-                return;
-            }
-
-            const target = tourState.currentTarget;
-            const isTargetClick = target === event.target || target.contains(event.target);
-            if (!isTargetClick) {
-                return;
-            }
-
-            window.setTimeout(function () {
-                const currentStep = currentGuideSteps()[tourState.stepIndex];
-                if (tourState.phase === 'pre' && currentStep?.target === '#run-bayes-button') {
-                    finishTour(true);
-                    return;
-                }
-                advanceTour();
-            }, 0);
-        }, true);
-
         renderStrategyPanels();
         updateWorkflowMessage();
         setRunButtonLabel();
         loadDefinitions();
-
-        if (!hasSeenTour()) {
-            window.requestAnimationFrame(() => openTour('pre'));
-        }
     });
 })();

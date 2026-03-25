@@ -1350,138 +1350,6 @@
             display: grid;
         }
 
-        .backtest-guide-banner {
-            display: none;
-        }
-
-        .backtest-guide-banner.is-visible {
-            display: block;
-        }
-
-        .backtest-guide-card {
-            display: flex;
-            flex-direction: column;
-            gap: 0.85rem;
-        }
-
-        .backtest-guide-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.7rem;
-        }
-
-        .backtest-tour {
-            position: fixed;
-            inset: 0;
-            z-index: 1200;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1.25rem;
-            background: rgba(15, 23, 42, 0.68);
-        }
-
-        .backtest-tour.hidden {
-            display: none;
-        }
-
-        .backtest-tour-card {
-            width: min(720px, 100%);
-            border-radius: 28px;
-            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-            border: 1px solid #dbe4f0;
-            box-shadow: 0 28px 70px rgba(15, 23, 42, 0.24);
-            padding: 1.45rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .backtest-tour-card strong {
-            color: #10213b;
-        }
-
-        .backtest-tour-progress {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.85rem;
-        }
-
-        .backtest-tour-step {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.42rem 0.8rem;
-            border-radius: 999px;
-            background: #dbeafe;
-            color: #1d4ed8;
-            font-size: 0.8rem;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-
-        .backtest-tour-card h3 {
-            margin: 0;
-            color: #10213b;
-            font-size: 1.55rem;
-            font-weight: 700;
-            font-family: var(--backtest-display-font);
-        }
-
-        .backtest-tour-card p,
-        .backtest-tour-card li {
-            color: var(--backtest-muted);
-            line-height: 1.7;
-        }
-
-        .backtest-tour-card ul {
-            margin: 0;
-            padding-left: 1.25rem;
-        }
-
-        .backtest-tour-actions {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.8rem;
-            flex-wrap: wrap;
-        }
-
-        .backtest-tour-hint {
-            margin: 0;
-            padding: 0.85rem 1rem;
-            border-radius: 18px;
-            background: #eff6ff;
-            color: #1d4ed8;
-            font-size: 0.95rem;
-            font-weight: 700;
-            line-height: 1.6;
-        }
-
-        .backtest-page.is-guide-active .backtest-sidebar,
-        .backtest-page.is-guide-active .backtest-main {
-            pointer-events: none;
-        }
-
-        .backtest-guide-target-active {
-            position: relative;
-            z-index: 1250;
-            pointer-events: auto !important;
-            box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.18), 0 0 0 9999px rgba(15, 23, 42, 0.42);
-            border-radius: 22px;
-        }
-
-        .backtest-guide-target-active.indicator-card-btn,
-        .backtest-guide-target-active.backtest-primary-btn,
-        .backtest-guide-target-active.backtest-secondary-btn,
-        .backtest-guide-target-active.btn-clickable,
-        .backtest-guide-target-active input,
-        .backtest-guide-target-active select {
-            border-radius: 18px;
-        }
-
         #chart-section {
             border: 1px solid #dbe4f0;
             background: #f8fafc !important;
@@ -1606,14 +1474,6 @@
                 max-width: none;
             }
 
-            .backtest-guide-actions > * {
-                width: 100%;
-            }
-
-            .backtest-tour-actions {
-                flex-direction: column;
-                align-items: stretch;
-            }
         }
     </style>
 {% endblock %}
@@ -1754,14 +1614,11 @@
                         </div>
 
                         <div class="backtest-toolbar-actions">
-                            <button id="backtest-tour-replay" class="backtest-secondary-btn" type="button">Replay Guide</button>
                             <button id="render-graph-button" class="backtest-secondary-btn" type="button">Load Chart</button>
                             <button id="run-bayes-button" class="backtest-primary-btn" type="button">Run Bayesian Analysis</button>
                         </div>
                     </div>
                 </section>
-
-                <section id="backtest-result-guide" class="backtest-section-card backtest-guide-banner" aria-live="polite"></section>
 
                 <section class="backtest-section-card bayes-workflow-card">
                     <div class="bayes-workflow-header">
@@ -1910,23 +1767,6 @@
                     </button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <div id="backtest-tour" class="backtest-tour hidden" aria-hidden="true">
-        <div class="backtest-tour-card" role="dialog" aria-modal="true" aria-labelledby="backtest-tour-title">
-            <div class="backtest-tour-progress">
-                <span id="backtest-tour-step" class="backtest-tour-step">Step 1</span>
-                <button type="button" id="backtest-tour-skip" class="indicator-card-btn">Skip guide</button>
-            </div>
-            <div>
-                <h3 id="backtest-tour-title">Backtest guide</h3>
-                <p id="backtest-tour-copy">Learn the backtest workflow.</p>
-            </div>
-            <p id="backtest-tour-hint" class="backtest-tour-hint">Tap the highlighted area to continue.</p>
-            <div class="backtest-tour-actions">
-                <span class="backtest-muted">Only the highlighted control is active while the guide is running.</span>
-            </div>
         </div>
     </div>
 
