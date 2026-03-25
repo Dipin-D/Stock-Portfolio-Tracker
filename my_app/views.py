@@ -849,6 +849,7 @@ def help(request):
 def contact_us(request):
     return render(request, 'contact_us.html')
 
+@ensure_csrf_cookie
 def pro_scan(request):
     return render(request, 'pro_scan.html', {
         'builtin_groups': BUILTIN_PRO_SCAN_GROUPS,
@@ -858,6 +859,7 @@ def pro_scan(request):
         'group_error': '',
     })
 
+@ensure_csrf_cookie
 def stock_list(request, group_name):
     stocks = list(_resolve_group_stocks(group_name))
     group_missing = (

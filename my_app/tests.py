@@ -855,6 +855,17 @@ class ProScanPortfolioApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Ticker Group')
 
+    def test_pro_scan_pages_set_csrf_cookie_for_scan_requests(self):
+        csrf_client = Client(enforce_csrf_checks=True)
+
+        response = csrf_client.get(reverse('pro_scan'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('csrftoken', csrf_client.cookies)
+
+        group_response = csrf_client.get(reverse('stock_list', args=['Dow-Jones-30']))
+        self.assertEqual(group_response.status_code, 200)
+        self.assertIn('csrftoken', csrf_client.cookies)
+
     @patch('my_app.views.get_weighted_golden_cross_snapshot')
     @patch('my_app.views.get_live_golden_cross_snapshot')
     @patch('my_app.views.download_n_clean_data')
@@ -927,3 +938,49 @@ class ProScanPortfolioApiTests(TestCase):
         self.assertNotIn('chartData', payload['results'][0])
         self.assertEqual(payload['results'][0]['golden_cross_live_score'], 55.0)
         self.assertEqual(payload['results'][0]['golden_cross_quality_score'], 81.25)
+
+    @patch('my_app.views.get_weighted_golden_cross_snapshot')
+    @patch('my_app.views.get_live_golden_cross_snapshot')
+    @patch('my_app.views.download_n_clean_data')
+    def test_pro_scan_run_group_accepts_csrf_secured_browser_flow(
+        self,
+        mock_download,
+        mock_live_snapshot,
+        mock_weighted_snapshot,
+    ):
+        mock_download.return_value = self.sample_feature_frame()
+        mock_live_snapshot.return_value = {'composite_score': 42.0}
+        mock_weighted_snapshot.return_value = {'quality_score': 73.0}
+
+        group = Stock_Group.objects.create(name='Secure Group')
+        stock = Stock.objects.create(name='Apple', symbol='AAPL', sector='Tech')
+        group.stocks.add(stock)
+
+        csrf_client = Client(enforce_csrf_checks=True)
+        page_response = csrf_client.get(reverse('stock_list', args=['Secure Group']))
+        self.assertEqual(page_response.status_code, 200)
+        self.assertIn('csrftoken', csrf_client.cookies)
+
+        response = csrf_client.post(
+            reverse('api_pro_scan_run_group'),
+            data=json.dumps({
+                'group_name': 'Secure Group',
+                'strategy_slug': 'golden_cross',
+                'start_date': '2020-01-01',
+                'end_date': '2020-03-31',
+                'strategy_params': {
+                    'fast_sma': 5,
+                    'slow_sma': 20,
+                    'order_percentage': 100,
+                    'starting_cash': 100000,
+                },
+            }),
+            content_type='application/json',
+            HTTP_X_CSRFTOKEN=csrf_client.cookies['csrftoken'].value,
+        )
+
+        payload = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(payload['valid'])
+        self.assertEqual(payload['results'][0]['symbol'], 'AAPL')

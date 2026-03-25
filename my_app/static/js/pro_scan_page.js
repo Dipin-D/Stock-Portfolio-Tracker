@@ -33,6 +33,27 @@
         return cookieValue ? decodeURIComponent(cookieValue.split('=').slice(1).join('=')) : '';
     }
 
+    async function ensureCsrfToken() {
+        let token = getCookie('csrftoken');
+        if (token) {
+            return token;
+        }
+
+        await fetch(window.location.pathname, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'text/html',
+            },
+        }).catch(function () {
+            return null;
+        });
+
+        token = getCookie('csrftoken');
+        return token;
+    }
+
     function strategyContextSummary(config, context) {
         if (context.type === 'portfolio') {
             return `Portfolio context: <strong>${escapeHtml(context.label)}</strong><br>Dates ${escapeHtml(config.startDate)} → ${escapeHtml(config.endDate)}<br>Capital comes from stored portfolio weights and notional balance.`;
@@ -288,6 +309,12 @@
                 resultsMeta.textContent = message;
             }
             refreshResponsiveTables();
+        }
+
+        function handleScanError(message) {
+            const finalMessage = message || 'Scan failed.';
+            scanStatusValue.textContent = finalMessage;
+            renderEmptyTable(finalMessage);
         }
 
         function updateTickerLink(row) {
@@ -710,7 +737,7 @@
 
         async function runScanForGroup(strategyDescriptor) {
             if (!state.context.groupName) {
-                alert('Select a ticker group first.');
+                handleScanError('Select a ticker group first.');
                 return;
             }
 
@@ -718,11 +745,17 @@
             currentStrategyValue.textContent = strategyDescriptor.label;
 
             try {
+                const csrfToken = await ensureCsrfToken();
+                if (!csrfToken) {
+                    throw new Error('Unable to secure the scan request. Refresh the page and try again.');
+                }
+
                 const response = await fetch('/api/pro-scan/run-group/', {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken'),
+                        'X-CSRFToken': csrfToken,
                     },
                     body: JSON.stringify({
                         group_name: state.context.groupName,
@@ -761,14 +794,13 @@
                 renderTableState();
             } catch (error) {
                 console.error(error);
-                scanStatusValue.textContent = `Scan failed: ${error.message}`;
-                alert(error.message);
+                handleScanError(error.message);
             }
         }
 
         async function runPortfolioScan(strategyDescriptor) {
             if (state.context.type !== 'portfolio' || !state.context.selectionType || !state.context.selectionKey) {
-                alert('Choose a preset or saved portfolio first.');
+                handleScanError('Choose a preset or saved portfolio first.');
                 return;
             }
 
@@ -776,11 +808,17 @@
             currentStrategyValue.textContent = `${strategyDescriptor.label} (portfolio mode)`;
 
             try {
+                const csrfToken = await ensureCsrfToken();
+                if (!csrfToken) {
+                    throw new Error('Unable to secure the scan request. Refresh the page and try again.');
+                }
+
                 const response = await fetch('/api/pro-scan/run-portfolio/', {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken'),
+                        'X-CSRFToken': csrfToken,
                     },
                     body: JSON.stringify({
                         selection_type: state.context.selectionType,
@@ -812,8 +850,7 @@
                 renderTableState();
             } catch (error) {
                 console.error(error);
-                scanStatusValue.textContent = `Scan failed: ${error.message}`;
-                alert(error.message);
+                handleScanError(error.message);
             }
         }
 
@@ -903,7 +940,9 @@
 
         async function loadPortfolioOptions() {
             try {
-                const response = await fetch('/api/pro-scan/portfolio-options/');
+                const response = await fetch('/api/pro-scan/portfolio-options/', {
+                    credentials: 'same-origin',
+                });
                 const payload = await response.json();
                 if (!response.ok || !payload.valid) {
                     throw new Error(payload.error || 'Unable to load portfolio options.');

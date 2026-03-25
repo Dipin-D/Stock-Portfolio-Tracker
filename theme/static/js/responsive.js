@@ -1,6 +1,15 @@
 (function () {
-    const phoneMedia = window.matchMedia('(max-width: 768px)');
     let tableCounter = 0;
+
+    function getCollapseMaxWidth(trigger) {
+        const value = Number.parseInt(trigger?.dataset?.collapsibleMaxWidth || '', 10);
+        return Number.isFinite(value) ? value : 768;
+    }
+
+    function shouldCollapse(trigger) {
+        const maxWidth = getCollapseMaxWidth(trigger);
+        return window.innerWidth <= maxWidth;
+    }
 
     function escapeHtml(value) {
         return String(value ?? '')
@@ -21,7 +30,7 @@
     }
 
     function applyCollapsibleState(trigger, panel, expanded) {
-        if (!phoneMedia.matches) {
+        if (!shouldCollapse(trigger)) {
             panel.hidden = false;
             panel.classList.add('is-open');
             trigger.setAttribute('aria-expanded', 'true');
@@ -51,7 +60,7 @@
             if (!trigger.dataset.collapsibleBound) {
                 trigger.dataset.collapsibleBound = '1';
                 trigger.addEventListener('click', function () {
-                    if (!phoneMedia.matches) {
+                    if (!shouldCollapse(trigger)) {
                         return;
                     }
 
@@ -178,14 +187,8 @@
         refreshResponsiveTables();
     };
 
-    if (typeof phoneMedia.addEventListener === 'function') {
-        phoneMedia.addEventListener('change', mediaHandler);
-    } else if (typeof phoneMedia.addListener === 'function') {
-        phoneMedia.addListener(mediaHandler);
-    }
-
     window.addEventListener('resize', function () {
-        initCollapsibles();
+        mediaHandler();
     });
 
     window.TradingProResponsive = {
