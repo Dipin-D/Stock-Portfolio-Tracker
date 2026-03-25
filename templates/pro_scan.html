@@ -51,6 +51,30 @@
             padding: 0.25rem 0.25rem 0;
         }
 
+        .proscan-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .proscan-controls-toggle {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            min-width: 180px;
+        }
+
+        .proscan-controls-toggle::after {
+            content: 'Open setup';
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: inherit;
+            opacity: 0.78;
+        }
+
         .proscan-header h1,
         .proscan-section-title {
             margin: 0;
@@ -253,6 +277,18 @@
             color: #b91c1c;
         }
 
+        .proscan-controls-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 1190;
+            background: rgba(15, 23, 42, 0.5);
+            display: none;
+        }
+
+        .proscan-controls-backdrop.is-open {
+            display: block;
+        }
+
         .btn-option {
             width: 100%;
             border: 1px solid #dbe4f0;
@@ -297,12 +333,13 @@
 
         .proscan-card-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 460px));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 1rem;
             align-items: start;
             min-width: 0;
-            justify-content: start;
+            justify-content: stretch;
             grid-auto-rows: auto;
+            margin-top: 1rem;
         }
 
         .proscan-strategy-card {
@@ -316,8 +353,11 @@
             min-height: 0;
             height: auto;
             min-width: 0;
-            width: min(100%, 460px);
-            justify-self: start;
+            width: 100%;
+            max-width: 100%;
+            justify-self: stretch;
+            align-self: start;
+            box-sizing: border-box;
             overflow: hidden;
         }
 
@@ -683,9 +723,10 @@
             margin-top: 0.5rem;
         }
 
-        @media (max-width: 1366px) {
+        @media (max-width: 1440px) {
             .proscan-shell {
-                grid-template-columns: 1fr;
+                grid-template-columns: minmax(0, 1fr) 280px;
+                align-items: start;
             }
 
             .proscan-main {
@@ -693,37 +734,61 @@
             }
 
             .proscan-controls-toggle {
-                order: 2;
-                display: flex;
-                margin-top: 0.5rem;
+                display: inline-flex;
+                width: auto;
+                margin: 0;
+                align-self: flex-start;
             }
 
             .proscan-sidebar {
                 order: 3;
+                position: fixed !important;
+                top: 92px;
+                left: 1rem;
+                width: min(380px, calc(100vw - 2rem));
+                max-height: calc(100vh - 108px);
+                z-index: 1210;
+                overflow: auto !important;
+                padding: 1.25rem !important;
+                border-radius: 26px;
+                box-shadow: 0 28px 70px rgba(15, 23, 42, 0.25);
+                transform: translateX(calc(-100% - 2rem));
+                opacity: 0;
+                pointer-events: none;
+                transition: transform 180ms ease, opacity 180ms ease;
             }
 
-            .proscan-context-toggle {
-                order: 4;
-                display: flex;
+            .proscan-page.proscan-controls-open .proscan-sidebar {
+                transform: translateX(0);
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .proscan-page.proscan-controls-open .proscan-controls-backdrop {
+                display: block;
             }
 
             .proscan-aside {
-                order: 5;
-            }
-
-            .proscan-sidebar,
-            .proscan-aside {
-                position: static !important;
+                order: 2;
+                position: sticky;
+                top: 92px;
+                align-self: start;
                 overflow: visible !important;
             }
 
             .proscan-card-grid {
                 grid-template-columns: 1fr;
             }
+        }
 
-            .proscan-strategy-card {
-                width: 100%;
-                max-width: none;
+        @media (max-width: 1100px) {
+            .proscan-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .proscan-aside {
+                position: static;
+                top: auto;
             }
         }
 
@@ -735,6 +800,20 @@
             .proscan-shell {
                 grid-template-columns: 1fr;
             }
+
+            .proscan-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .proscan-header-actions {
+                width: 100%;
+            }
+
+            .proscan-controls-toggle {
+                width: 100%;
+                justify-content: space-between;
+            }
         }
     </style>
 {% endblock %}
@@ -744,19 +823,7 @@
 {% block content %}
 <main class="proscan-page" data-pro-scan-page data-initial-group-name="{{ initial_group_name|default:'' }}">
     <div class="proscan-shell">
-        <button
-            type="button"
-            class="responsive-panel-toggle proscan-controls-toggle"
-            data-collapsible-trigger
-            data-collapsible-max-width="1366"
-            data-default-state="closed"
-            aria-expanded="false"
-            aria-controls="proscan-controls-panel"
-        >
-            Scan controls
-        </button>
-
-        <aside id="proscan-controls-panel" class="proscan-sidebar" data-collapsible-panel>
+        <aside id="proscan-controls-panel" class="proscan-sidebar" aria-hidden="false">
             <div class="proscan-option-group" data-option-group="ticker-group">
                 <h3>Ticker Group</h3>
                 <div class="proscan-option-list">
@@ -843,6 +910,7 @@
                 </div>
             </div>
         </aside>
+        <div id="proscan-controls-backdrop" class="proscan-controls-backdrop" hidden></div>
 
         <section class="proscan-main">
             <div class="proscan-header">
@@ -850,6 +918,16 @@
                     <span class="proscan-badge">Pro Scan</span>
                     <h1>Run strategy scans across saved ticker groups</h1>
                     <p>Choose a group, configure a strategy card, and push the results directly into the stock table.</p>
+                </div>
+                <div class="proscan-header-actions">
+                    <button
+                        type="button"
+                        class="responsive-panel-toggle proscan-controls-toggle"
+                        aria-expanded="false"
+                        aria-controls="proscan-controls-panel"
+                    >
+                        Scan setup
+                    </button>
                 </div>
             </div>
 
@@ -860,7 +938,7 @@
             <section class="proscan-board">
                 <h2 class="proscan-section-title">Active Strategy Cards</h2>
                 <p class="proscan-muted">Each card stores its own scan settings. Edit, rerun, or remove them at any time.</p>
-                <div id="strategy-panel-container" class="proscan-card-grid" style="margin-top: 1rem;"></div>
+                <div id="strategy-panel-container" class="proscan-card-grid"></div>
             </section>
 
             <section class="proscan-table-card">
@@ -934,19 +1012,7 @@
             </section>
         </section>
 
-        <button
-            type="button"
-            class="responsive-panel-toggle proscan-context-toggle"
-            data-collapsible-trigger
-            data-collapsible-max-width="1366"
-            data-default-state="closed"
-            aria-expanded="false"
-            aria-controls="proscan-context-panel"
-        >
-            Scan context
-        </button>
-
-        <aside id="proscan-context-panel" class="proscan-aside" data-collapsible-panel>
+        <aside id="proscan-context-panel" class="proscan-aside">
             <section class="proscan-status-card">
                 <h3>Current Context</h3>
                     <div class="proscan-status-list">

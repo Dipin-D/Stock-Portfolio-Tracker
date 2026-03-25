@@ -942,6 +942,47 @@ class ProScanPortfolioApiTests(TestCase):
     @patch('my_app.views.get_weighted_golden_cross_snapshot')
     @patch('my_app.views.get_live_golden_cross_snapshot')
     @patch('my_app.views.download_n_clean_data')
+    def test_pro_scan_run_group_normalizes_live_frames_missing_date_dt(
+        self,
+        mock_download,
+        mock_live_snapshot,
+        mock_weighted_snapshot,
+    ):
+        frame = self.sample_feature_frame().drop(columns=['Date_dt']).copy()
+        mock_download.return_value = frame
+        mock_live_snapshot.return_value = {'composite_score': 55.0}
+        mock_weighted_snapshot.return_value = {'quality_score': 81.25}
+
+        group = Stock_Group.objects.create(name='Live Group')
+        stock = Stock.objects.create(name='Apple', symbol='AAPL', sector='Tech')
+        group.stocks.add(stock)
+
+        response = self.client.post(
+            reverse('api_pro_scan_run_group'),
+            data=json.dumps({
+                'group_name': 'Live Group',
+                'strategy_slug': 'golden_cross',
+                'start_date': '2020-01-01',
+                'end_date': '2020-03-31',
+                'strategy_params': {
+                    'fast_sma': 5,
+                    'slow_sma': 20,
+                    'order_percentage': 100,
+                    'starting_cash': 100000,
+                },
+            }),
+            content_type='application/json',
+        )
+        payload = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(payload['valid'])
+        self.assertEqual(payload['results'][0]['status'], 'ok')
+        self.assertEqual(payload['results'][0]['symbol'], 'AAPL')
+
+    @patch('my_app.views.get_weighted_golden_cross_snapshot')
+    @patch('my_app.views.get_live_golden_cross_snapshot')
+    @patch('my_app.views.download_n_clean_data')
     def test_pro_scan_run_group_accepts_csrf_secured_browser_flow(
         self,
         mock_download,

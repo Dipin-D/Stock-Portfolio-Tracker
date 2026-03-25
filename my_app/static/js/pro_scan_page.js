@@ -97,6 +97,9 @@
         const currentStrategyValue = document.getElementById('current-strategy-value');
         const scanStatusValue = document.getElementById('scan-status-value');
         const strategyPanelContainer = document.getElementById('strategy-panel-container');
+        const controlsPanel = document.getElementById('proscan-controls-panel');
+        const controlsBackdrop = document.getElementById('proscan-controls-backdrop');
+        const controlsToggle = document.querySelector('.proscan-controls-toggle');
         const queryFilter = document.getElementById('proscan-filter-query');
         const performanceFilter = document.getElementById('proscan-filter-performance');
         const minTradesFilter = document.getElementById('proscan-filter-min-trades');
@@ -141,6 +144,7 @@
         }
 
         const initialGroupName = (page.dataset.initialGroupName || '').trim();
+        const CONTROLS_DRAWER_BREAKPOINT = 1440;
 
         const state = {
             context: {
@@ -156,7 +160,54 @@
                 saved: [],
             },
             currentSort: { key: 'gcQuality', direction: 'desc' },
+            controlsOpen: false,
         };
+
+        function isControlsDrawerMode() {
+            return window.innerWidth <= CONTROLS_DRAWER_BREAKPOINT;
+        }
+
+        function syncControlsDrawer() {
+            if (!controlsPanel || !controlsToggle || !controlsBackdrop) {
+                return;
+            }
+
+            if (!isControlsDrawerMode()) {
+                controlsPanel.hidden = false;
+                controlsPanel.setAttribute('aria-hidden', 'false');
+                controlsToggle.hidden = true;
+                controlsToggle.setAttribute('aria-expanded', 'true');
+                controlsBackdrop.hidden = true;
+                page.classList.remove('proscan-controls-open');
+                state.controlsOpen = false;
+                return;
+            }
+
+            controlsToggle.hidden = false;
+            controlsToggle.setAttribute('aria-expanded', state.controlsOpen ? 'true' : 'false');
+            controlsPanel.hidden = !state.controlsOpen;
+            controlsPanel.setAttribute('aria-hidden', state.controlsOpen ? 'false' : 'true');
+            controlsBackdrop.hidden = !state.controlsOpen;
+            page.classList.toggle('proscan-controls-open', state.controlsOpen);
+        }
+
+        function closeControlsDrawer() {
+            if (!isControlsDrawerMode()) {
+                return;
+            }
+
+            state.controlsOpen = false;
+            syncControlsDrawer();
+        }
+
+        function toggleControlsDrawer(forceOpen) {
+            if (!isControlsDrawerMode()) {
+                return;
+            }
+
+            state.controlsOpen = typeof forceOpen === 'boolean' ? forceOpen : !state.controlsOpen;
+            syncControlsDrawer();
+        }
 
         function syncBrowserLocation(context) {
             if (!window.history || typeof window.history.replaceState !== 'function') {
@@ -315,6 +366,46 @@
             const finalMessage = message || 'Scan failed.';
             scanStatusValue.textContent = finalMessage;
             renderEmptyTable(finalMessage);
+        }
+
+        async function postJsonWithCsrf(url, payload, fallbackErrorMessage) {
+            let csrfToken = await ensureCsrfToken();
+            if (!csrfToken) {
+                throw new Error('Unable to secure the scan request. Refresh the page and try again.');
+            }
+
+            const send = function (token) {
+                return fetch(url, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': token,
+                    },
+                    body: JSON.stringify(payload),
+                });
+            };
+
+            let response = await send(csrfToken);
+            if (response.status === 403) {
+                csrfToken = await ensureCsrfToken();
+                if (csrfToken) {
+                    response = await send(csrfToken);
+                }
+            }
+
+            const data = await response.json().catch(function () {
+                return {
+                    valid: false,
+                    error: fallbackErrorMessage || `Request returned HTTP ${response.status}.`,
+                };
+            });
+
+            if (!response.ok || !data.valid) {
+                throw new Error(data.error || fallbackErrorMessage || 'Request failed.');
+            }
+
+            return data;
         }
 
         function updateTickerLink(row) {
@@ -745,36 +836,13 @@
             currentStrategyValue.textContent = strategyDescriptor.label;
 
             try {
-                const csrfToken = await ensureCsrfToken();
-                if (!csrfToken) {
-                    throw new Error('Unable to secure the scan request. Refresh the page and try again.');
-                }
-
-                const response = await fetch('/api/pro-scan/run-group/', {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken,
-                    },
-                    body: JSON.stringify({
-                        group_name: state.context.groupName,
-                        strategy_slug: strategyDescriptor.slug,
-                        start_date: strategyDescriptor.config.startDate,
-                        end_date: strategyDescriptor.config.endDate,
-                        strategy_params: strategyDescriptor.groupParams(strategyDescriptor.config),
-                    }),
-                });
-                const data = await response.json().catch(function () {
-                    return {
-                        valid: false,
-                        error: `Group scan returned HTTP ${response.status}.`,
-                    };
-                });
-
-                if (!response.ok || !data.valid) {
-                    throw new Error(data.error || 'Unable to load group data.');
-                }
+                const data = await postJsonWithCsrf('/api/pro-scan/run-group/', {
+                    group_name: state.context.groupName,
+                    strategy_slug: strategyDescriptor.slug,
+                    start_date: strategyDescriptor.config.startDate,
+                    end_date: strategyDescriptor.config.endDate,
+                    strategy_params: strategyDescriptor.groupParams(strategyDescriptor.config),
+                }, 'Unable to load group data.');
 
                 tableBody.innerHTML = '';
                 (data.results || []).forEach((result) => {
@@ -808,32 +876,14 @@
             currentStrategyValue.textContent = `${strategyDescriptor.label} (portfolio mode)`;
 
             try {
-                const csrfToken = await ensureCsrfToken();
-                if (!csrfToken) {
-                    throw new Error('Unable to secure the scan request. Refresh the page and try again.');
-                }
-
-                const response = await fetch('/api/pro-scan/run-portfolio/', {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken,
-                    },
-                    body: JSON.stringify({
-                        selection_type: state.context.selectionType,
-                        selection_key: state.context.selectionKey,
-                        strategy_slug: strategyDescriptor.slug,
-                        start_date: strategyDescriptor.config.startDate,
-                        end_date: strategyDescriptor.config.endDate,
-                        strategy_params: strategyDescriptor.portfolioParams(strategyDescriptor.config),
-                    }),
-                });
-                const payload = await response.json();
-
-                if (!response.ok || !payload.valid) {
-                    throw new Error(payload.error || 'Portfolio scan failed.');
-                }
+                const payload = await postJsonWithCsrf('/api/pro-scan/run-portfolio/', {
+                    selection_type: state.context.selectionType,
+                    selection_key: state.context.selectionKey,
+                    strategy_slug: strategyDescriptor.slug,
+                    start_date: strategyDescriptor.config.startDate,
+                    end_date: strategyDescriptor.config.endDate,
+                    strategy_params: strategyDescriptor.portfolioParams(strategyDescriptor.config),
+                }, 'Portfolio scan failed.');
 
                 tableBody.innerHTML = '';
                 (payload.results || []).forEach((result) => {
@@ -911,6 +961,7 @@
                 collapsePortfolioAccordions(option.type);
                 renderEmptyTable(`Portfolio mode ready for ${option.name}. Run a strategy card to generate aggregated portfolio results.`);
                 Array.from(strategyPanelContainer.children).forEach(syncStrategyCardSummary);
+                closeControlsDrawer();
             });
             return button;
         }
@@ -970,6 +1021,7 @@
                 });
                 renderEmptyTable(`${groupName} selected. Run a strategy card to populate group results.`);
                 Array.from(strategyPanelContainer.children).forEach(syncStrategyCardSummary);
+                closeControlsDrawer();
             });
         });
 
@@ -1005,11 +1057,13 @@
         gcOpenButton?.addEventListener('click', function () {
             syncStrategyModalContext(STRATEGIES.golden_cross);
             openModal(gcModal);
+            closeControlsDrawer();
         });
 
         momentumOpenButton?.addEventListener('click', function () {
             syncStrategyModalContext(STRATEGIES.momentum_12m);
             openModal(momentumModal);
+            closeControlsDrawer();
         });
 
         gcCancel?.addEventListener('click', function () { closeModal(gcModal); });
@@ -1039,6 +1093,21 @@
             createConfiguredStrategyCard('momentum_12m', STRATEGIES.momentum_12m.buildConfig());
         });
 
+        controlsToggle?.addEventListener('click', function () {
+            toggleControlsDrawer();
+        });
+
+        controlsBackdrop?.addEventListener('click', function () {
+            closeControlsDrawer();
+        });
+
+        window.addEventListener('resize', syncControlsDrawer);
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeControlsDrawer();
+            }
+        });
+
         Array.from(tableBody?.querySelectorAll('tr') || []).forEach((row) => {
             if (row.dataset.placeholder === '1') {
                 return;
@@ -1050,6 +1119,7 @@
         });
 
         setContext(state.context);
+        syncControlsDrawer();
         if (!getDataRows().length) {
             renderEmptyTable('Choose a ticker group or portfolio, then run a strategy card to populate results.');
         } else {

@@ -179,6 +179,25 @@ def _serialize_group_scan_result(
     return payload
 
 
+def _ensure_scan_frame_dates(frame: pd.DataFrame) -> pd.DataFrame:
+    normalized = frame.copy()
+    if "Date_dt" not in normalized.columns:
+        if "Date" not in normalized.columns:
+            raise ValueError("Price frame is missing a usable Date column.")
+
+        if pd.api.types.is_numeric_dtype(normalized["Date"]):
+            normalized["Date_dt"] = pd.to_datetime(normalized["Date"], unit="s", errors="coerce")
+        else:
+            normalized["Date_dt"] = pd.to_datetime(normalized["Date"], errors="coerce")
+
+    normalized = normalized.dropna(subset=["Date_dt"]).sort_values("Date_dt").reset_index(drop=True)
+
+    if "Date" not in normalized.columns or not pd.api.types.is_numeric_dtype(normalized["Date"]):
+        normalized["Date"] = normalized["Date_dt"].apply(lambda value: value.timestamp())
+
+    return normalized
+
+
 class CustomLoginView(LoginView):
     template_name='home.html'
     authentication_form= CustomLoginForm
@@ -962,6 +981,7 @@ def api_pro_scan_run_group(request):
         stock_name = str(stock_record.get('name') or symbol).strip()
         try:
             price_frame = download_n_clean_data(symbol.replace('.', '-'), start_date, end_date, compute_sma=False)
+            price_frame = _ensure_scan_frame_dates(price_frame)
             feature_frame = strategy.compute_features(price_frame.copy(), normalized_params)
             backtest_result = strategy.backtest(feature_frame, normalized_params)
             metrics = backtest_result.get('metrics', {})
@@ -1052,6 +1072,7 @@ def api_pro_scan_run_portfolio(request):
 
         try:
             price_frame = download_n_clean_data(symbol.replace('.', '-'), start_date, end_date, compute_sma=True)
+            price_frame = _ensure_scan_frame_dates(price_frame)
             feature_frame = strategy.compute_features(price_frame.copy(), holding_params)
             backtest_result = strategy.backtest(feature_frame, holding_params)
             metrics = backtest_result.get('metrics', {})
