@@ -386,11 +386,22 @@
                 });
             };
 
-            let response = await send(csrfToken);
+            let response;
+            try {
+                response = await send(csrfToken);
+            } catch (networkError) {
+                console.error(networkError);
+                throw new Error('Scan request failed before the server responded. Check connection and try again.');
+            }
             if (response.status === 403) {
                 csrfToken = await ensureCsrfToken();
                 if (csrfToken) {
-                    response = await send(csrfToken);
+                    try {
+                        response = await send(csrfToken);
+                    } catch (networkError) {
+                        console.error(networkError);
+                        throw new Error('Scan request failed before the server responded. Check connection and try again.');
+                    }
                 }
             }
 
