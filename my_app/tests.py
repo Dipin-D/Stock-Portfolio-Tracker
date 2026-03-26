@@ -498,6 +498,9 @@ class WatchlistAndResearchTests(TestCase):
         self.assertContains(category_response, 'Indicators')
         self.assertContains(category_response, 'Bollinger Bands')
         self.assertContains(category_response, 'Relative Strength Index')
+        self.assertContains(category_response, 'Research Papers + Abstracts')
+        self.assertContains(category_response, 'Math / Philosophy Papers')
+        self.assertContains(category_response, 'YouTube Tutorials')
 
 
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])

@@ -273,6 +273,121 @@
             border-color: #cfe2d2;
         }
 
+        .ency-article-research {
+            margin-top: 0.78rem;
+            border-top: 1px solid #d8e6dc;
+            padding-top: 0.78rem;
+            display: grid;
+            gap: 0.65rem;
+        }
+
+        .ency-article-section-title {
+            margin: 0;
+            color: #1f3e30;
+            font-size: 0.84rem;
+            font-weight: 800;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+        }
+
+        .ency-article-list {
+            margin: 0.5rem 0 0;
+            padding-left: 1rem;
+            color: #436154;
+            display: grid;
+            gap: 0.3rem;
+            line-height: 1.48;
+            font-size: 0.87rem;
+        }
+
+        .ency-article-details {
+            border: 1px solid #d4e2d8;
+            border-radius: 14px;
+            background: #f7fbf8;
+            padding: 0.55rem 0.62rem;
+        }
+
+        .ency-article-details summary {
+            cursor: pointer;
+            color: #204133;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .ency-detail-stack {
+            margin-top: 0.62rem;
+            display: grid;
+            gap: 0.55rem;
+        }
+
+        .ency-research-card {
+            border: 1px solid #d4e2d8;
+            border-radius: 12px;
+            background: #ffffff;
+            padding: 0.58rem;
+        }
+
+        .ency-research-card h4 {
+            margin: 0;
+            color: #173728;
+            font-size: 0.9rem;
+            line-height: 1.35;
+        }
+
+        .ency-research-card p {
+            margin: 0.4rem 0 0;
+            color: #4b6a5b;
+            font-size: 0.83rem;
+            line-height: 1.48;
+        }
+
+        .ency-research-card a {
+            display: inline-flex;
+            margin-top: 0.42rem;
+            color: #0f6b49;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .ency-research-card a:hover {
+            text-decoration: underline;
+        }
+
+        .ency-video-link-list {
+            margin-top: 0.55rem;
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .ency-video-link {
+            border: 1px solid #d4e3d9;
+            border-radius: 12px;
+            background: #ffffff;
+            padding: 0.52rem 0.58rem;
+            text-decoration: none;
+            color: inherit;
+            display: grid;
+            gap: 0.2rem;
+        }
+
+        .ency-video-link strong {
+            color: #173829;
+            font-size: 0.84rem;
+        }
+
+        .ency-video-link span {
+            color: #49685a;
+            font-size: 0.79rem;
+            line-height: 1.4;
+        }
+
+        .ency-video-link:hover {
+            border-color: #9ac0aa;
+        }
+
         .ency-no-results {
             border: 1px dashed #b8cdbf;
             border-radius: 16px;
@@ -510,6 +625,72 @@
                                             <span class="ency-pill">{{ tag }}</span>
                                         {% endfor %}
                                     </div>
+
+                                    {% if article.research_stats or article.research_papers or article.math_philosophy_papers or article.youtube_tutorials %}
+                                        <section class="ency-article-research">
+                                            {% if article.research_stats %}
+                                                <div>
+                                                    <h4 class="ency-article-section-title">Research Stats</h4>
+                                                    <ul class="ency-article-list">
+                                                        {% for stat in article.research_stats %}
+                                                            <li>{{ stat }}</li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
+                                            {% endif %}
+
+                                            {% if article.research_papers %}
+                                                <details class="ency-article-details">
+                                                    <summary>Research Papers + Abstracts</summary>
+                                                    <div class="ency-detail-stack">
+                                                        {% for paper in article.research_papers %}
+                                                            <article class="ency-research-card">
+                                                                <h4>{{ paper.title }}</h4>
+                                                                <p>{{ paper.abstract }}</p>
+                                                                {% if paper.key_stat %}
+                                                                    <p><strong>Key stat:</strong> {{ paper.key_stat }}</p>
+                                                                {% endif %}
+                                                                {% if paper.url %}
+                                                                    <a href="{{ paper.url }}" target="_blank" rel="noopener noreferrer">Open paper reference</a>
+                                                                {% endif %}
+                                                            </article>
+                                                        {% endfor %}
+                                                    </div>
+                                                </details>
+                                            {% endif %}
+
+                                            {% if article.math_philosophy_papers %}
+                                                <details class="ency-article-details">
+                                                    <summary>Math / Philosophy Papers</summary>
+                                                    <div class="ency-detail-stack">
+                                                        {% for paper in article.math_philosophy_papers %}
+                                                            <article class="ency-research-card">
+                                                                <h4>{{ paper.title }}</h4>
+                                                                <p>{{ paper.summary }}</p>
+                                                                {% if paper.url %}
+                                                                    <a href="{{ paper.url }}" target="_blank" rel="noopener noreferrer">Open reference</a>
+                                                                {% endif %}
+                                                            </article>
+                                                        {% endfor %}
+                                                    </div>
+                                                </details>
+                                            {% endif %}
+
+                                            {% if article.youtube_tutorials %}
+                                                <div>
+                                                    <h4 class="ency-article-section-title">YouTube Tutorials</h4>
+                                                    <div class="ency-video-link-list">
+                                                        {% for tutorial in article.youtube_tutorials %}
+                                                            <a class="ency-video-link" href="{{ tutorial.url }}" target="_blank" rel="noopener noreferrer">
+                                                                <strong>{{ tutorial.title }}</strong>
+                                                                <span>{{ tutorial.focus }}</span>
+                                                            </a>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </section>
+                                    {% endif %}
                                 </article>
                             {% endfor %}
                         </div>

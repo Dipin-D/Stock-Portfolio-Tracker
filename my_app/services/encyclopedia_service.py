@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from collections import Counter
+from copy import deepcopy
 from datetime import date
 from typing import Iterable
 
 from .indicator_library import get_indicator_library
+from .indicator_research_library import get_indicator_research_library
 
 
 DOMAIN_TAXONOMY = [
@@ -544,28 +546,34 @@ INDICATOR_META = {
 
 def _build_indicator_entries() -> list[dict]:
     entries = []
+    research_map = get_indicator_research_library()
     for indicator in get_indicator_library():
         slug = str(indicator.get("slug") or "").strip()
         meta = INDICATOR_META.get(slug)
         if not meta:
             continue
 
-        entries.append(
-            _entry(
-                slug=meta["slug"],
-                title=indicator.get("name", "").strip(),
-                summary=indicator.get("preview", "").strip(),
-                domain_slug="indicators",
-                subcategory=meta["subcategory"],
-                difficulty=meta["difficulty"],
-                content_type=meta["content_type"],
-                read_time=meta["read_time"],
-                last_updated=meta["last_updated"],
-                tags=[indicator.get("short_name", "").strip(), meta["subcategory"], "indicator"],
-                views=meta["views"],
-                featured=meta["featured"],
-            )
+        indicator_entry = _entry(
+            slug=meta["slug"],
+            title=indicator.get("name", "").strip(),
+            summary=indicator.get("preview", "").strip(),
+            domain_slug="indicators",
+            subcategory=meta["subcategory"],
+            difficulty=meta["difficulty"],
+            content_type=meta["content_type"],
+            read_time=meta["read_time"],
+            last_updated=meta["last_updated"],
+            tags=[indicator.get("short_name", "").strip(), meta["subcategory"], "indicator"],
+            views=meta["views"],
+            featured=meta["featured"],
         )
+
+        indicator_research = research_map.get(slug, {})
+        indicator_entry["research_stats"] = list(indicator_research.get("research_stats", []))
+        indicator_entry["research_papers"] = list(indicator_research.get("research_papers", []))
+        indicator_entry["math_philosophy_papers"] = list(indicator_research.get("math_philosophy_papers", []))
+        indicator_entry["youtube_tutorials"] = list(indicator_research.get("youtube_tutorials", []))
+        entries.append(indicator_entry)
     return entries
 
 
@@ -651,6 +659,10 @@ def _clone_article(article: dict, domain_name: str) -> dict:
     payload["domain_name"] = domain_name
     payload["url"] = _article_url(article)
     payload["tags"] = list(article.get("tags", []))
+    payload["research_stats"] = list(article.get("research_stats", []))
+    payload["research_papers"] = deepcopy(article.get("research_papers", []))
+    payload["math_philosophy_papers"] = deepcopy(article.get("math_philosophy_papers", []))
+    payload["youtube_tutorials"] = deepcopy(article.get("youtube_tutorials", []))
     return payload
 
 
