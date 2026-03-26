@@ -740,6 +740,8 @@ class BayesianBacktestApiTests(TestCase):
         self.assertIn('earnings', body)
         self.assertEqual(body['earnings']['mode'], 'never_trade')
         self.assertEqual(body['earnings']['earnings_dates'], ['2020-03-16'])
+        self.assertEqual(body['earnings']['dates_count'], 1)
+        self.assertIn('blocked_entry_signals_total', body['earnings'])
 
         persisted_run = BacktestRun.objects.get(id=body['run_id'])
         self.assertEqual(persisted_run.request_payload['earnings']['mode'], 'never_trade')

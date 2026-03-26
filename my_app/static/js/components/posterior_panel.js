@@ -95,6 +95,32 @@
         `;
     }
 
+    function earningsModeLabel(mode) {
+        switch (String(mode || '').toLowerCase()) {
+            case 'never_trade':
+                return 'Never Trade Earnings';
+            case 'only_trade':
+                return 'Only Trade Earnings';
+            case 'custom':
+                return 'Custom Earnings';
+            default:
+                return 'Nothing Special';
+        }
+    }
+
+    function buildEarningsSummary(result) {
+        const earnings = result?.earnings || {};
+        const mode = earningsModeLabel(earnings.mode);
+        const datesCount = Number(earnings.dates_count || 0);
+        const blocked = Number(earnings.blocked_entry_signals_total || 0);
+        return {
+            mode,
+            datesCount,
+            blocked,
+            text: `${mode} · ${datesCount} dates · ${blocked} entries blocked`,
+        };
+    }
+
     function renderPosteriorPanel(result) {
         const lift = Number(result.posterior_probability || 0) - Number(result.prior_probability || 0);
         const mathUrl = buildMathUrl(result);
@@ -466,6 +492,7 @@
 
     function renderChainPanel(result) {
         const mathUrl = buildMathUrl(result);
+        const earningsSummary = buildEarningsSummary(result);
         const notes = ((result.explanation || {}).notes || [])
             .map((note) => `<li>${escapeHtml(note)}</li>`)
             .join('');
@@ -490,6 +517,7 @@
                         ${renderMathLink(mathUrl, 'Open run math')}
                     </div>
                     <p class="strategy-panel-note">${escapeHtml(result.ui?.workflow_note || 'Run a strategy to establish a posterior.')}</p>
+                    <p class="strategy-panel-note">${escapeHtml(`Earnings filter: ${earningsSummary.text}`)}</p>
                     <ul class="strategy-parameter-list bayes-chain-list">${strategies || '<li>No strategy chain has been executed yet.</li>'}</ul>
                 </div>
                 <div class="bayes-note-card">
@@ -585,7 +613,8 @@
             targets.chainPanel.innerHTML = renderChainPanel(result);
         }
         if (targets.statusPill) {
-            targets.statusPill.textContent = `${result.confidence_label || 'Posterior'} · ${formatPercent(result.posterior_probability)}`;
+            const earningsSummary = buildEarningsSummary(result);
+            targets.statusPill.textContent = `${result.confidence_label || 'Posterior'} · ${formatPercent(result.posterior_probability)} · ${earningsSummary.mode}`;
         }
 
         window.TradingProResponsive?.refreshResponsiveTables();

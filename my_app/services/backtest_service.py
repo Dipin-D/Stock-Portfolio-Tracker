@@ -180,6 +180,7 @@ def _serialize_trade_model(trade: TradeLog) -> dict:
 
 
 def _serialize_strategy_run(strategy_run: StrategyRun) -> dict:
+    evidence_payload = strategy_run.evidence_json or {}
     return {
         "slug": strategy_run.strategy.slug,
         "name": strategy_run.strategy.name,
@@ -192,7 +193,8 @@ def _serialize_strategy_run(strategy_run: StrategyRun) -> dict:
         "weighted_log_lr": float(strategy_run.weighted_log_lr or 0.0),
         "posterior_after": float(strategy_run.posterior_after or 0.0),
         "metrics": strategy_run.metrics,
-        "evidence": strategy_run.evidence_json,
+        "blocked_entry_signals": int(evidence_payload.get("earnings_blocked_entries", 0)),
+        "evidence": evidence_payload,
     }
 
 
@@ -286,6 +288,13 @@ def serialize_backtest_run(backtest_run: BacktestRun) -> dict:
     evidence_payload = snapshot.evidence_json if snapshot else {}
     equity_curve = evidence_payload.get("equity_curve", []) if snapshot else []
 
+    earnings_payload = dict(backtest_run.request_payload.get("earnings") or {})
+    earnings_payload["dates_count"] = len(earnings_payload.get("earnings_dates") or [])
+    earnings_payload["blocked_entry_signals_total"] = sum(
+        int((strategy_run.evidence_json or {}).get("earnings_blocked_entries", 0))
+        for strategy_run in strategy_runs
+    )
+
     return {
         "run_id": backtest_run.id,
         "ticker": backtest_run.ticker,
@@ -304,7 +313,7 @@ def serialize_backtest_run(backtest_run: BacktestRun) -> dict:
         "evidence": evidence_payload if snapshot else {},
         "math": evidence_payload.get("math", {}) if snapshot else {},
         "equity_curve": equity_curve,
-        "earnings": backtest_run.request_payload.get("earnings", {}),
+        "earnings": earnings_payload,
         "ui": {
             "can_add_another_strategy": backtest_run.analysis_mode == BacktestRun.ANALYSIS_MODE_MULTI
             and len(strategy_runs) < len(get_supported_strategies()),
@@ -411,9 +420,10 @@ def run_bayesian_backtest(payload: dict, user=None) -> dict:
             strategy = get_strategy(chain_entry["slug"])
             params = strategy.normalize_params(chain_entry["params"])
             strategy_frame = strategy.compute_features(feature_frame.copy(), params)
-            signal_series = strategy.generate_signal(strategy_frame, params)
+            signal_series = strategy.generate_signal(strategy_frame, params).fillna(False).astype(bool)
             entry_allowed_mask = strategy.entry_allowed_mask(strategy_frame, runtime_context)
-            filtered_signal_series = signal_series.fillna(False).astype(bool) & entry_allowed_mask
+            filtered_signal_series = signal_series & entry_allowed_mask
+            blocked_entry_signals = int((signal_series & (~entry_allowed_mask)).sum())
             strength_series = strategy.signal_strength(strategy_frame, params)
             observed_event = strategy.latest_boolean(filtered_signal_series)
             likelihood = estimate_binary_likelihood(filtered_signal_series, strategy_frame["target_success"], observed_event)
@@ -479,6 +489,7 @@ def run_bayesian_backtest(payload: dict, user=None) -> dict:
                 "support": likelihood["support"],
                 "observed_event": likelihood["observed_event"],
                 "metrics": backtest_result["metrics"],
+                "earnings_blocked_entries": blocked_entry_signals,
                 "signal_math": signal_math,
             }
             evidence_items.append(evidence_item)
@@ -506,6 +517,7 @@ def run_bayesian_backtest(payload: dict, user=None) -> dict:
                     "prior_before": prior_before,
                     "prior_log_odds": prior_log_odds,
                     "posterior_log_odds": posterior_log_odds,
+                    "earnings_blocked_entries": blocked_entry_signals,
                     "signal_math": signal_math,
                 },
             )
@@ -553,9 +565,17 @@ def run_bayesian_backtest(payload: dict, user=None) -> dict:
         backtest_run.posterior_value = current_probability
         backtest_run.save(update_fields=["posterior_value"])
 
+    earnings_response = dict(earnings_config)
+    earnings_response["dates_count"] = len(earnings_response.get("earnings_dates") or [])
+    earnings_response["blocked_entry_signals_total"] = sum(
+        int(item.get("earnings_blocked_entries", 0))
+        for item in evidence_items
+    )
+
     return {
         **serialize_backtest_run(backtest_run),
         "equity_curve": aggregated_equity_curve,
+        "earnings": earnings_response,
         "ui": {
             "can_add_another_strategy": analysis_mode == BacktestRun.ANALYSIS_MODE_MULTI
             and len(strategy_chain) < len(get_supported_strategies()),
