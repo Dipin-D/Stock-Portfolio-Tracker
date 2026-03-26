@@ -1321,9 +1321,13 @@
                     <div class="portfolio-menu">
                         <button id="preset-toggle" type="button" class="portfolio-btn portfolio-btn-accent">Add Preset</button>
                         <div id="preset-menu" class="portfolio-menu-popover hidden">
-                            <button type="button" class="portfolio-menu-item preset-portfolio-btn" data-preset-name="permanent">Permanent Portfolio</button>
-                            <button type="button" class="portfolio-menu-item preset-portfolio-btn" data-preset-name="snp500">S&amp;P 500</button>
-                            <button type="button" class="portfolio-menu-item preset-portfolio-btn" data-preset-name="threefund">Three Fund Portfolio</button>
+                            {% for preset in preset_portfolios %}
+                                <button type="button" class="portfolio-menu-item preset-portfolio-btn" data-preset-name="{{ preset.key }}">
+                                    {{ preset.name }}
+                                </button>
+                            {% empty %}
+                                <div class="portfolio-menu-item" style="cursor: default; color: #64748b;">No presets available</div>
+                            {% endfor %}
                         </div>
                     </div>
 

@@ -536,6 +536,18 @@ class PortfolioViewTests(TestCase):
         self.assertContains(response, 'data-portfolio-limit="7"')
         self.assertContains(response, '$35,000.00')
 
+    def test_portfolio_view_exposes_full_preset_menu_items(self):
+        response = self.client.get(reverse('portfolio'))
+
+        self.assertEqual(response.status_code, 200)
+        preset_keys = {item['key'] for item in response.context['preset_portfolios']}
+        self.assertIn('rick_ferri_core_four', preset_keys)
+        self.assertIn('marc_faber', preset_keys)
+        self.assertIn('ivy', preset_keys)
+        self.assertContains(response, 'data-preset-name="rick_ferri_core_four"')
+        self.assertContains(response, 'data-preset-name="marc_faber"')
+        self.assertContains(response, 'data-preset-name="ivy"')
+
 
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
 class AppSettingsViewTests(TestCase):
@@ -991,6 +1003,9 @@ class ProScanPortfolioApiTests(TestCase):
         self.assertTrue(payload['valid'])
         self.assertTrue(any(item['type'] == 'saved' and item['name'] == 'Income Sleeve' for item in payload['saved_portfolios']))
         self.assertTrue(any(item['type'] == 'preset' and item['key'] == 'threefund' for item in payload['preset_portfolios']))
+        self.assertTrue(any(item['type'] == 'preset' and item['key'] == 'rick_ferri_core_four' for item in payload['preset_portfolios']))
+        self.assertTrue(any(item['type'] == 'preset' and item['key'] == 'marc_faber' for item in payload['preset_portfolios']))
+        self.assertTrue(any(item['type'] == 'preset' and item['key'] == 'ivy' for item in payload['preset_portfolios']))
         saved_default = next(item for item in payload['saved_portfolios'] if item['name'] == 'Income Sleeve')
         self.assertTrue(saved_default['is_default'])
 

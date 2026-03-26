@@ -386,6 +386,7 @@ def portfolio(request):
     context = {
         'form': form,
         'saved_forms': saved_forms,
+        'preset_portfolios': _preset_portfolio_menu_items(),
     }
     context.update(_build_portfolio_context(default_portfolio, app_settings))
 
@@ -396,8 +397,26 @@ def get_portfolio_form(request, portfolio_id):
     form = PortfolioForm(instance=portfolio)
     return render(request, 'partials/portfolio_form_partial.html', {'form': form, 'portfolio': portfolio})
 
-# Dummy preset data templates
+# Preset portfolio templates
 PRESET_PORTFOLIOS = {
+    'sixty_forty': {
+        'name': '60/40',
+        'drag_percentage': 0.0,
+        'rebalance_frequency': 'Yearly',
+        'total_return': True,
+        'rebalance_bands': False,
+        'ticker': 'VTI,BND',
+        'allocation': '60,40',
+    },
+    'hfea': {
+        'name': 'HFEA',
+        'drag_percentage': 0.0,
+        'rebalance_frequency': 'Quarterly',
+        'total_return': True,
+        'rebalance_bands': False,
+        'ticker': 'UPRO,TMF',
+        'allocation': '55,45',
+    },
     'permanent': {
         'name': 'Permanent Portfolio',
         'drag_percentage': 0.5,
@@ -407,14 +426,32 @@ PRESET_PORTFOLIOS = {
         'ticker': 'VTI,TLT,GLD,CASH',
         'allocation': '25,25,25,25',
     },
-    'snp500': {
-        'name': 'S&P 500',
-        'drag_percentage': 0.15,
-        'rebalance_frequency': 'Quarterly',
+    'golden_butterfly': {
+        'name': 'Golden Butterfly',
+        'drag_percentage': 0.0,
+        'rebalance_frequency': 'Yearly',
         'total_return': True,
-        'rebalance_bands': True,
-        'ticker': 'SPY',
-        'allocation': '100',
+        'rebalance_bands': False,
+        'ticker': 'VTI,VBR,SHY,TLT,GLD',
+        'allocation': '20,20,20,20,20',
+    },
+    'golden_ratio': {
+        'name': 'Golden Ratio',
+        'drag_percentage': 0.0,
+        'rebalance_frequency': 'Yearly',
+        'total_return': True,
+        'rebalance_bands': False,
+        'ticker': 'VTI,VBR,VEA,VWO,VNQ,TLT,IEF,GLD,SHY',
+        'allocation': '15,15,10,10,10,15,10,10,5',
+    },
+    'all_weather': {
+        'name': 'Ray Dalio All Weather Portfolio',
+        'drag_percentage': 0.0,
+        'rebalance_frequency': 'Yearly',
+        'total_return': True,
+        'rebalance_bands': False,
+        'ticker': 'VTI,TLT,IEF,GLD,GSG',
+        'allocation': '30,40,15,7.5,7.5',
     },
     'threefund': {
         'name': 'Three Fund Portfolio',
@@ -425,7 +462,89 @@ PRESET_PORTFOLIOS = {
         'ticker': 'VTI, VXUS, BND',
         'allocation': '20,30,50',
     },
+    'marc_faber': {
+        'name': 'Marc Faber Portfolio',
+        'drag_percentage': 0.0,
+        'rebalance_frequency': 'Yearly',
+        'total_return': True,
+        'rebalance_bands': False,
+        'ticker': 'VV,VEA,VWO,VNQ,BND,GLD',
+        'allocation': '13,8,4,25,25,25',
+    },
+    'coffeehouse': {
+        'name': 'Bill Schultheis Coffeehouse',
+        'drag_percentage': 0.0,
+        'rebalance_frequency': 'Yearly',
+        'total_return': True,
+        'rebalance_bands': False,
+        'ticker': 'SPY,IWD,IWM,EFA,VNQ,IEF,GLD',
+        'allocation': '10,10,10,10,10,40,10',
+    },
+    'no_brainer': {
+        'name': 'Bill Bernstein No Brainer',
+        'drag_percentage': 0.0,
+        'rebalance_frequency': 'Yearly',
+        'total_return': True,
+        'rebalance_bands': False,
+        'ticker': 'SPY,IJR,EFA,BND',
+        'allocation': '25,25,25,25',
+    },
+    'rick_ferri_core_four': {
+        'name': 'Rick Ferri Core Four',
+        'drag_percentage': 0.0,
+        'rebalance_frequency': 'Yearly',
+        'total_return': True,
+        'rebalance_bands': False,
+        'ticker': 'VTI,VNQ,VXUS,BND',
+        'allocation': '48,8,24,20',
+    },
+    'david_swensen_lazy': {
+        'name': 'David Swensen Lazy Portfolio',
+        'drag_percentage': 0.0,
+        'rebalance_frequency': 'Yearly',
+        'total_return': True,
+        'rebalance_bands': False,
+        'ticker': 'VTI,VEA,VWO,VNQ,TLT,TIP',
+        'allocation': '30,15,5,20,15,15',
+    },
+    'david_swensen_yale': {
+        'name': 'David Swensen Yale Endowment',
+        'drag_percentage': 0.0,
+        'rebalance_frequency': 'Yearly',
+        'total_return': True,
+        'rebalance_bands': False,
+        'ticker': 'VTI,VEA,VWO,VNQ,TLT,GLD',
+        'allocation': '30,15,10,20,15,10',
+    },
+    'ivy': {
+        'name': 'Ivy Portfolio',
+        'drag_percentage': 0.0,
+        'rebalance_frequency': 'Yearly',
+        'total_return': True,
+        'rebalance_bands': False,
+        'ticker': 'VTI,VXUS,VNQ,BND,GSG',
+        'allocation': '20,20,20,20,20',
+    },
+    'snp500': {
+        'name': 'S&P 500',
+        'drag_percentage': 0.15,
+        'rebalance_frequency': 'Quarterly',
+        'total_return': True,
+        'rebalance_bands': True,
+        'ticker': 'SPY',
+        'allocation': '100',
+    },
 }
+
+
+def _preset_portfolio_menu_items():
+    return [
+        {
+            'key': key,
+            'name': str(data.get('name') or key).strip(),
+        }
+        for key, data in PRESET_PORTFOLIOS.items()
+    ]
 
 def get_preset_form(request, preset_name):
     data = PRESET_PORTFOLIOS.get(preset_name)
