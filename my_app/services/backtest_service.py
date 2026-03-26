@@ -5,7 +5,10 @@ from datetime import date, datetime
 from django.db import transaction
 
 from my_app.backtesting.earnings import (
+    MODE_CUSTOM,
+    MODE_NEVER_TRADE,
     MODE_NOTHING_SPECIAL,
+    MODE_ONLY_TRADE,
     normalize_earnings_config,
     resolve_earnings_config,
 )
@@ -52,6 +55,54 @@ BAYES_GLOSSARY = [
         "definition": "The updated belief after folding the current strategy evidence into the prior.",
     },
 ]
+
+
+def _earnings_mode_label(mode: str, custom_mode: str = MODE_NEVER_TRADE) -> str:
+    normalized_mode = (mode or MODE_NOTHING_SPECIAL).strip().lower()
+    if normalized_mode == MODE_NEVER_TRADE:
+        return "Never Trade Earnings"
+    if normalized_mode == MODE_ONLY_TRADE:
+        return "Only Trade Earnings"
+    if normalized_mode == MODE_CUSTOM:
+        if (custom_mode or "").strip().lower() == MODE_ONLY_TRADE:
+            return "Custom Earnings (Only Trade)"
+        return "Custom Earnings (Never Trade)"
+    return "Nothing Special"
+
+
+def _enrich_earnings_payload(raw_payload: dict, blocked_entries_total: int) -> dict:
+    payload = dict(raw_payload or {})
+    dates_count = len(payload.get("earnings_dates") or [])
+    before_days = int(payload.get("blackout_before_days") or 0)
+    after_days = int(payload.get("blackout_after_days") or 0)
+    mode = (payload.get("mode") or MODE_NOTHING_SPECIAL).strip().lower()
+    custom_mode = (payload.get("custom_mode") or MODE_NEVER_TRADE).strip().lower()
+    mode_label = _earnings_mode_label(mode, custom_mode=custom_mode)
+    blocked_total = int(blocked_entries_total or 0)
+
+    if mode == MODE_NOTHING_SPECIAL:
+        effective = False
+        note = "Nothing Special selected: earnings filter is inactive for this run."
+    elif dates_count == 0:
+        effective = False
+        note = "No earnings dates returned by Yahoo for this ticker/date window, so earnings filtering could not be applied."
+    elif blocked_total > 0:
+        effective = True
+        suffix = "signal" if blocked_total == 1 else "signals"
+        note = f"Earnings filter active: blocked {blocked_total} candidate entry {suffix}."
+    else:
+        effective = True
+        note = "Earnings filter active, but no strategy entry signals landed inside the blackout windows."
+
+    payload.update({
+        "mode_label": mode_label,
+        "dates_count": dates_count,
+        "blocked_entry_signals_total": blocked_total,
+        "window_label": f"{before_days}d before / {after_days}d after",
+        "effective": effective,
+        "note": note,
+    })
+    return payload
 
 
 def ensure_strategy_definitions() -> list[StrategyDefinition]:
@@ -288,11 +339,12 @@ def serialize_backtest_run(backtest_run: BacktestRun) -> dict:
     evidence_payload = snapshot.evidence_json if snapshot else {}
     equity_curve = evidence_payload.get("equity_curve", []) if snapshot else []
 
-    earnings_payload = dict(backtest_run.request_payload.get("earnings") or {})
-    earnings_payload["dates_count"] = len(earnings_payload.get("earnings_dates") or [])
-    earnings_payload["blocked_entry_signals_total"] = sum(
+    earnings_payload = _enrich_earnings_payload(
+        backtest_run.request_payload.get("earnings") or {},
+        sum(
         int((strategy_run.evidence_json or {}).get("earnings_blocked_entries", 0))
         for strategy_run in strategy_runs
+        ),
     )
 
     return {
@@ -565,11 +617,12 @@ def run_bayesian_backtest(payload: dict, user=None) -> dict:
         backtest_run.posterior_value = current_probability
         backtest_run.save(update_fields=["posterior_value"])
 
-    earnings_response = dict(earnings_config)
-    earnings_response["dates_count"] = len(earnings_response.get("earnings_dates") or [])
-    earnings_response["blocked_entry_signals_total"] = sum(
+    earnings_response = _enrich_earnings_payload(
+        earnings_config,
+        sum(
         int(item.get("earnings_blocked_entries", 0))
         for item in evidence_items
+        ),
     )
 
     return {

@@ -76,13 +76,15 @@
         return `<a class="bayes-text-link ${extraClass}" href="${href}">${escapeHtml(label)}</a>`;
     }
 
-    function renderMetricCard(label, value, href, accentClass = '') {
+    function renderMetricCard(label, value, href, accentClass = '', staticCta = 'Run required') {
         const tagName = href ? 'a' : 'div';
         const hrefAttr = href ? ` href="${href}"` : '';
         const interactiveClass = href ? ' is-clickable' : '';
         const cta = href
             ? '<span class="bayes-metric-cta">Open Math</span>'
-            : '<span class="bayes-metric-cta bayes-metric-cta-muted">Run required</span>';
+            : (staticCta
+                ? `<span class="bayes-metric-cta bayes-metric-cta-muted">${escapeHtml(staticCta)}</span>`
+                : '');
 
         return `
             <${tagName} class="bayes-metric-card${interactiveClass}${accentClass ? ` ${accentClass}` : ''}"${hrefAttr}>
@@ -110,13 +112,20 @@
 
     function buildEarningsSummary(result) {
         const earnings = result?.earnings || {};
-        const mode = earningsModeLabel(earnings.mode);
+        const mode = String(earnings.mode_label || earningsModeLabel(earnings.mode));
         const datesCount = Number(earnings.dates_count || 0);
         const blocked = Number(earnings.blocked_entry_signals_total || 0);
+        const windowLabel = String(
+            earnings.window_label
+            || `${Number(earnings.blackout_before_days || 0)}d before / ${Number(earnings.blackout_after_days || 0)}d after`
+        );
+        const note = String(earnings.note || '');
         return {
             mode,
             datesCount,
             blocked,
+            windowLabel,
+            note,
             text: `${mode} · ${datesCount} dates · ${blocked} entries blocked`,
         };
     }
@@ -124,6 +133,7 @@
     function renderPosteriorPanel(result) {
         const lift = Number(result.posterior_probability || 0) - Number(result.prior_probability || 0);
         const mathUrl = buildMathUrl(result);
+        const earningsSummary = buildEarningsSummary(result);
 
         return `
             <div class="bayes-summary-shell">
@@ -141,6 +151,21 @@
                     ${renderMetricCard('Posterior Probability', formatPercent(result.posterior_probability), mathUrl, 'bayes-metric-card-emphasis')}
                     ${renderMetricCard('Bayesian Lift', formatSignedPercent(lift), mathUrl)}
                     ${renderMetricCard('Confidence', escapeHtml(result.confidence_label || 'Unknown'), mathUrl)}
+                </div>
+                <div class="bayes-note-card">
+                    <div class="bayes-panel-header">
+                        <div>
+                            <p class="bayes-summary-eyebrow">Earnings handling</p>
+                            <h4 class="indicator-card-title">Trade-window filter status</h4>
+                        </div>
+                    </div>
+                    <div class="bayes-metric-grid bayes-metric-grid-wide">
+                        ${renderMetricCard('Mode', escapeHtml(earningsSummary.mode), '', '', 'Earnings')}
+                        ${renderMetricCard('Blackout Window', escapeHtml(earningsSummary.windowLabel), '', '', 'Window')}
+                        ${renderMetricCard('Earnings Dates Loaded', String(earningsSummary.datesCount), '', '', 'Yahoo')}
+                        ${renderMetricCard('Entry Signals Blocked', String(earningsSummary.blocked), '', '', 'Filter')}
+                    </div>
+                    <p class="bayes-workflow-footnote">${escapeHtml(earningsSummary.note || 'No earnings filter note available.')}</p>
                 </div>
                 <div class="bayes-summary-footer">
                     <p class="bayes-workflow-footnote">Click any probability card to inspect the exact prior, LR, weighted log-LR, and posterior math for this run.</p>
@@ -180,6 +205,10 @@
                 <div class="bayes-evidence-detail-metric">
                     <span>Posterior After</span>
                     <strong>${formatPercent(strategy.posterior_after || 0)}</strong>
+                </div>
+                <div class="bayes-evidence-detail-metric">
+                    <span>Blocked entries</span>
+                    <strong>${Number(strategy.blocked_entry_signals || 0)}</strong>
                 </div>
             </div>
         `;
@@ -223,6 +252,10 @@
                         <span>Signal State</span>
                         <strong>${strategy.active ? 'Active' : 'Inactive'}</strong>
                     </div>
+                    <div class="bayes-evidence-mobile-detail-item">
+                        <span>Blocked entries</span>
+                        <strong>${Number(strategy.blocked_entry_signals || 0)}</strong>
+                    </div>
                 </div>
             </article>
         `;
@@ -242,6 +275,7 @@
                 <td>${formatDecimal(strategy.strength, 2)}</td>
                 <td>${formatDecimal(strategy.likelihood_ratio, 2)}</td>
                 <td>${formatDecimal(strategy.weighted_log_lr, 3)}</td>
+                <td>${Number(strategy.blocked_entry_signals || 0)}</td>
                 <td>${formatPercent(strategy.posterior_after || 0)}</td>
             </tr>
         `).join('');
@@ -272,6 +306,7 @@
                                     <th class="px-3 py-2 text-left">Strength</th>
                                     <th class="px-3 py-2 text-left">LR</th>
                                     <th class="px-3 py-2 text-left">Weighted Log-LR</th>
+                                    <th class="px-3 py-2 text-left">Blocked Entries</th>
                                     <th class="px-3 py-2 text-left">Posterior After</th>
                                 </tr>
                             </thead>
@@ -518,6 +553,7 @@
                     </div>
                     <p class="strategy-panel-note">${escapeHtml(result.ui?.workflow_note || 'Run a strategy to establish a posterior.')}</p>
                     <p class="strategy-panel-note">${escapeHtml(`Earnings filter: ${earningsSummary.text}`)}</p>
+                    <p class="strategy-panel-note">${escapeHtml(earningsSummary.note || '')}</p>
                     <ul class="strategy-parameter-list bayes-chain-list">${strategies || '<li>No strategy chain has been executed yet.</li>'}</ul>
                 </div>
                 <div class="bayes-note-card">
