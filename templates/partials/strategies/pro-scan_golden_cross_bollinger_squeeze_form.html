@@ -1,0 +1,70 @@
+<div id="proscan-gcbs-modal" class="proscan-modal hidden" aria-hidden="true">
+    <div class="proscan-modal-card">
+        <div class="proscan-modal-header">
+            <h3>Configure Golden Cross + Bollinger Squeeze</h3>
+            <p>Use a Golden Cross trend filter with a Bollinger squeeze expansion breakout above the middle band.</p>
+        </div>
+
+        <form id="proscan-gcbs-form" class="proscan-form-grid">
+            <label class="proscan-field">
+                <span>Start Date</span>
+                <input type="date" id="ps-gcbs-start-date" class="proscan-input" required>
+            </label>
+
+            <label class="proscan-field">
+                <span>End Date</span>
+                <input type="date" id="ps-gcbs-end-date" class="proscan-input" required>
+            </label>
+
+            <label class="proscan-field">
+                <span>Fast SMA</span>
+                <input type="number" id="ps-gcbs-fast-sma" value="50" min="1" class="proscan-input" required>
+            </label>
+
+            <label class="proscan-field">
+                <span>Slow SMA</span>
+                <input type="number" id="ps-gcbs-slow-sma" value="200" min="1" class="proscan-input" required>
+            </label>
+
+            <label class="proscan-field">
+                <span>Bollinger Period</span>
+                <input type="number" id="ps-gcbs-bb-period" value="20" min="2" class="proscan-input" required>
+            </label>
+
+            <label class="proscan-field">
+                <span>Bollinger Std Dev</span>
+                <input type="number" id="ps-gcbs-bb-std-dev" value="2" min="0.5" step="0.1" class="proscan-input" required>
+            </label>
+
+            <label class="proscan-field">
+                <span>Squeeze Lookback</span>
+                <input type="number" id="ps-gcbs-squeeze-lookback" value="20" min="5" class="proscan-input" required>
+            </label>
+
+            <label class="proscan-field">
+                <span>Squeeze Quantile</span>
+                <input type="number" id="ps-gcbs-squeeze-quantile" value="0.35" min="0.05" max="0.95" step="0.01" class="proscan-input" required>
+            </label>
+
+            <label class="proscan-field">
+                <span>Order Percentage (%)</span>
+                <input type="number" id="ps-gcbs-order-percentage" value="100" min="1" max="100" step="0.01" class="proscan-input" required>
+            </label>
+
+            <label class="proscan-field">
+                <span>Starting Cash ($)</span>
+                <input type="number" id="ps-gcbs-starting-cash" value="100000" min="1" step="0.01" class="proscan-input" required>
+            </label>
+
+            <label class="proscan-field proscan-field-full">
+                <span>Override Shares (optional)</span>
+                <input type="number" id="ps-gcbs-override-shares" min="1" step="1" class="proscan-input" placeholder="Leave blank to size automatically">
+            </label>
+
+            <div class="proscan-modal-actions proscan-field-full">
+                <button type="button" id="ps-gcbs-cancel" class="proscan-btn proscan-btn-ghost">Cancel</button>
+                <button type="submit" class="proscan-btn proscan-btn-primary">Create Strategy Card</button>
+            </div>
+        </form>
+    </div>
+</div>

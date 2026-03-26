@@ -115,6 +115,16 @@
         const gcCancel = document.getElementById('ps-gc-cancel');
         const gcOpenButton = document.getElementById('golden-cross-btn');
 
+        const gcBollingerSqueezeModal = document.getElementById('proscan-gcbs-modal');
+        const gcBollingerSqueezeForm = document.getElementById('proscan-gcbs-form');
+        const gcBollingerSqueezeCancel = document.getElementById('ps-gcbs-cancel');
+        const gcBollingerSqueezeOpenButton = document.getElementById('golden-cross-bollinger-squeeze-btn');
+
+        const gcBollingerBreakoutModal = document.getElementById('proscan-gcbc-modal');
+        const gcBollingerBreakoutForm = document.getElementById('proscan-gcbc-form');
+        const gcBollingerBreakoutCancel = document.getElementById('ps-gcbc-cancel');
+        const gcBollingerBreakoutOpenButton = document.getElementById('golden-cross-bollinger-breakout-btn');
+
         const momentumModal = document.getElementById('proscan-momentum-modal');
         const momentumForm = document.getElementById('proscan-momentum-form');
         const momentumCancel = document.getElementById('ps-mom-cancel');
@@ -123,16 +133,13 @@
         const COL = {
             name: 0,
             ticker: 1,
-            gcQuality: 2,
-            liveGc: 3,
-            consensus: 4,
-            wins: 5,
-            losses: 6,
-            winRate: 7,
-            avgTradeReturn: 8,
-            totalReturn: 9,
-            trades: 10,
-            math: 11,
+            wins: 2,
+            losses: 3,
+            winRate: 4,
+            avgTradeReturn: 5,
+            totalReturn: 6,
+            trades: 7,
+            math: 8,
         };
 
         function getGroupLabel(groupName) {
@@ -159,7 +166,7 @@
                 preset: [],
                 saved: [],
             },
-            currentSort: { key: 'gcQuality', direction: 'desc' },
+            currentSort: { key: 'totalReturn', direction: 'desc' },
             controlsOpen: false,
         };
 
@@ -287,6 +294,130 @@
                 modalFields: ['ps-gc-starting-cash', 'ps-gc-override-shares'],
                 modalContextTitle: 'Golden Cross',
             },
+            golden_cross_bollinger_squeeze: {
+                slug: 'golden_cross_bollinger_squeeze',
+                label: 'Golden Cross + Bollinger Squeeze',
+                modal: gcBollingerSqueezeModal,
+                openButton: gcBollingerSqueezeOpenButton,
+                buildConfig() {
+                    const startCash = parseFloat(document.getElementById('ps-gcbs-starting-cash').value);
+                    return {
+                        startDate: document.getElementById('ps-gcbs-start-date').value,
+                        endDate: document.getElementById('ps-gcbs-end-date').value,
+                        fastSma: parseInt(document.getElementById('ps-gcbs-fast-sma').value, 10),
+                        slowSma: parseInt(document.getElementById('ps-gcbs-slow-sma').value, 10),
+                        bbPeriod: parseInt(document.getElementById('ps-gcbs-bb-period').value, 10),
+                        bbStdDev: parseFloat(document.getElementById('ps-gcbs-bb-std-dev').value),
+                        squeezeLookback: parseInt(document.getElementById('ps-gcbs-squeeze-lookback').value, 10),
+                        squeezeQuantile: parseFloat(document.getElementById('ps-gcbs-squeeze-quantile').value),
+                        orderPct: parseFloat(document.getElementById('ps-gcbs-order-percentage').value),
+                        startCash,
+                        startCashDisplay: `$${Number.isFinite(startCash) ? startCash.toLocaleString() : '0'}`,
+                        overrideShares: document.getElementById('ps-gcbs-override-shares').value,
+                    };
+                },
+                groupParams(config) {
+                    return {
+                        fast_sma: config.fastSma,
+                        slow_sma: config.slowSma,
+                        bb_period: config.bbPeriod,
+                        bb_std_dev: config.bbStdDev,
+                        squeeze_lookback: config.squeezeLookback,
+                        squeeze_quantile: config.squeezeQuantile,
+                        order_percentage: config.orderPct,
+                        starting_cash: config.startCash,
+                        override_shares: config.overrideShares || null,
+                    };
+                },
+                fillConfig(config) {
+                    document.getElementById('ps-gcbs-start-date').value = config.startDate;
+                    document.getElementById('ps-gcbs-end-date').value = config.endDate;
+                    document.getElementById('ps-gcbs-fast-sma').value = config.fastSma;
+                    document.getElementById('ps-gcbs-slow-sma').value = config.slowSma;
+                    document.getElementById('ps-gcbs-bb-period').value = config.bbPeriod;
+                    document.getElementById('ps-gcbs-bb-std-dev').value = config.bbStdDev;
+                    document.getElementById('ps-gcbs-squeeze-lookback').value = config.squeezeLookback;
+                    document.getElementById('ps-gcbs-squeeze-quantile').value = config.squeezeQuantile;
+                    document.getElementById('ps-gcbs-order-percentage').value = config.orderPct;
+                    document.getElementById('ps-gcbs-starting-cash').value = config.startCash;
+                    document.getElementById('ps-gcbs-override-shares').value = config.overrideShares || '';
+                },
+                portfolioParams(config) {
+                    return {
+                        fast_sma: config.fastSma,
+                        slow_sma: config.slowSma,
+                        bb_period: config.bbPeriod,
+                        bb_std_dev: config.bbStdDev,
+                        squeeze_lookback: config.squeezeLookback,
+                        squeeze_quantile: config.squeezeQuantile,
+                        order_percentage: config.orderPct,
+                    };
+                },
+                modalFields: ['ps-gcbs-starting-cash', 'ps-gcbs-override-shares'],
+                modalContextTitle: 'Golden Cross + Bollinger Squeeze',
+            },
+            golden_cross_bollinger_breakout_confirm: {
+                slug: 'golden_cross_bollinger_breakout_confirm',
+                label: 'Golden Cross + Bollinger Breakout Confirm',
+                modal: gcBollingerBreakoutModal,
+                openButton: gcBollingerBreakoutOpenButton,
+                buildConfig() {
+                    const startCash = parseFloat(document.getElementById('ps-gcbc-starting-cash').value);
+                    return {
+                        startDate: document.getElementById('ps-gcbc-start-date').value,
+                        endDate: document.getElementById('ps-gcbc-end-date').value,
+                        fastSma: parseInt(document.getElementById('ps-gcbc-fast-sma').value, 10),
+                        slowSma: parseInt(document.getElementById('ps-gcbc-slow-sma').value, 10),
+                        bbPeriod: parseInt(document.getElementById('ps-gcbc-bb-period').value, 10),
+                        bbStdDev: parseFloat(document.getElementById('ps-gcbc-bb-std-dev').value),
+                        squeezeLookback: parseInt(document.getElementById('ps-gcbc-squeeze-lookback').value, 10),
+                        squeezeQuantile: parseFloat(document.getElementById('ps-gcbc-squeeze-quantile').value),
+                        orderPct: parseFloat(document.getElementById('ps-gcbc-order-percentage').value),
+                        startCash,
+                        startCashDisplay: `$${Number.isFinite(startCash) ? startCash.toLocaleString() : '0'}`,
+                        overrideShares: document.getElementById('ps-gcbc-override-shares').value,
+                    };
+                },
+                groupParams(config) {
+                    return {
+                        fast_sma: config.fastSma,
+                        slow_sma: config.slowSma,
+                        bb_period: config.bbPeriod,
+                        bb_std_dev: config.bbStdDev,
+                        squeeze_lookback: config.squeezeLookback,
+                        squeeze_quantile: config.squeezeQuantile,
+                        order_percentage: config.orderPct,
+                        starting_cash: config.startCash,
+                        override_shares: config.overrideShares || null,
+                    };
+                },
+                fillConfig(config) {
+                    document.getElementById('ps-gcbc-start-date').value = config.startDate;
+                    document.getElementById('ps-gcbc-end-date').value = config.endDate;
+                    document.getElementById('ps-gcbc-fast-sma').value = config.fastSma;
+                    document.getElementById('ps-gcbc-slow-sma').value = config.slowSma;
+                    document.getElementById('ps-gcbc-bb-period').value = config.bbPeriod;
+                    document.getElementById('ps-gcbc-bb-std-dev').value = config.bbStdDev;
+                    document.getElementById('ps-gcbc-squeeze-lookback').value = config.squeezeLookback;
+                    document.getElementById('ps-gcbc-squeeze-quantile').value = config.squeezeQuantile;
+                    document.getElementById('ps-gcbc-order-percentage').value = config.orderPct;
+                    document.getElementById('ps-gcbc-starting-cash').value = config.startCash;
+                    document.getElementById('ps-gcbc-override-shares').value = config.overrideShares || '';
+                },
+                portfolioParams(config) {
+                    return {
+                        fast_sma: config.fastSma,
+                        slow_sma: config.slowSma,
+                        bb_period: config.bbPeriod,
+                        bb_std_dev: config.bbStdDev,
+                        squeeze_lookback: config.squeezeLookback,
+                        squeeze_quantile: config.squeezeQuantile,
+                        order_percentage: config.orderPct,
+                    };
+                },
+                modalFields: ['ps-gcbc-starting-cash', 'ps-gcbc-override-shares'],
+                modalContextTitle: 'Golden Cross + Bollinger Breakout Confirm',
+            },
             momentum_12m: {
                 slug: 'momentum_12m',
                 label: 'Momentum',
@@ -353,7 +484,7 @@
             }
             tableBody.innerHTML = `
                 <tr data-placeholder="1">
-                    <td colspan="12" style="padding: 1.1rem; text-align: center; color: #64748b;">${escapeHtml(message)}</td>
+                    <td colspan="9" style="padding: 1.1rem; text-align: center; color: #64748b;">${escapeHtml(message)}</td>
                 </tr>
             `;
             if (resultsMeta) {
@@ -434,22 +565,6 @@
             row.cells[COL.math].innerHTML = mathUrl
                 ? `<a class="proscan-ticker-link" href="${escapeHtml(mathUrl)}" target="_blank" rel="noopener noreferrer">Math</a>`
                 : '-';
-        }
-
-        function updateSignalColumns(row, stock = {}) {
-            const gcQuality = numericValue(stock.golden_cross_quality_score);
-            const liveGc = numericValue(stock.golden_cross_live_score);
-            const consensus = stock.golden_cross_consensus_label || '-';
-            row.cells[COL.gcQuality].textContent = gcQuality !== null ? gcQuality.toFixed(2) : '-';
-            row.cells[COL.liveGc].textContent = liveGc !== null ? liveGc.toFixed(2) : '-';
-            row.cells[COL.consensus].textContent = consensus;
-            row.dataset.gcQuality = gcQuality !== null ? gcQuality : '';
-            row.dataset.liveGc = liveGc !== null ? liveGc : '';
-            row.dataset.consensus = consensus;
-            row.dataset.researchUrl = stock.research_url || row.dataset.researchUrl || '';
-            row.dataset.mathUrl = stock.golden_cross_math_url || row.dataset.mathUrl || '';
-            updateTickerLink(row);
-            updateMathLink(row);
         }
 
         function updateRowDataset(row, stats = {}) {
@@ -727,12 +842,11 @@
             row.dataset.rowMode = 'group';
             row.dataset.name = result.name || '-';
             row.dataset.ticker = result.symbol || '-';
+            row.dataset.researchUrl = result.research_url || '';
+            row.dataset.mathUrl = result.golden_cross_math_url || '';
             row.innerHTML = `
                 <td>${escapeHtml(result.name || '-')}</td>
                 <td>${escapeHtml(result.symbol || '-')}</td>
-                <td>-</td>
-                <td>-</td>
-                <td>-</td>
                 <td>${hasScanData ? escapeHtml(String(result.wins || 0)) : '-'}</td>
                 <td>${hasScanData ? escapeHtml(String(result.losses || 0)) : '-'}</td>
                 <td>${hasScanData ? formatPercent(Number(result.win_rate || 0) * 100, 1) : '-'}</td>
@@ -741,7 +855,8 @@
                 <td>${hasScanData ? escapeHtml(String(result.trade_count || 0)) : '-'}</td>
                 <td>-</td>
             `;
-            updateSignalColumns(row, result);
+            updateTickerLink(row);
+            updateMathLink(row);
             updateRowDataset(row, {
                 wins: Number(result.wins || 0),
                 losses: Number(result.losses || 0),
@@ -765,9 +880,6 @@
             row.innerHTML = `
                 <td>${escapeHtml(result.portfolio_name || '-')} ${result.is_default ? '<span class="proscan-default-marker">Default</span>' : ''}</td>
                 <td>${escapeHtml(result.selection_type === 'preset' ? 'Preset Portfolio' : 'Saved Portfolio')}</td>
-                <td>-</td>
-                <td>-</td>
-                <td>${result.is_default ? 'Default' : '-'}</td>
                 <td>${escapeHtml(String(result.wins || 0))}</td>
                 <td>${escapeHtml(String(result.losses || 0))}</td>
                 <td>${formatPercent(Number(result.win_rate || 0) * 100, 1)}</td>
@@ -785,9 +897,6 @@
                 trades: Number(result.trade_count || 0),
                 hasScanData: true,
             });
-            row.dataset.gcQuality = '';
-            row.dataset.liveGc = '';
-            row.dataset.consensus = result.is_default ? 'Default' : '-';
             row.classList.add(Number(result.total_return_pct || 0) >= 0 ? 'scan-positive' : 'scan-negative');
             return row;
         }
@@ -865,10 +974,7 @@
                     return;
                 }
 
-                state.currentSort = {
-                    key: strategyDescriptor.slug === 'golden_cross' ? 'gcQuality' : 'totalReturn',
-                    direction: 'desc',
-                };
+                state.currentSort = { key: 'totalReturn', direction: 'desc' };
                 scanStatusValue.textContent = `${strategyDescriptor.label} finished successfully`;
                 renderTableState();
             } catch (error) {
@@ -1071,6 +1177,18 @@
             closeControlsDrawer();
         });
 
+        gcBollingerSqueezeOpenButton?.addEventListener('click', function () {
+            syncStrategyModalContext(STRATEGIES.golden_cross_bollinger_squeeze);
+            openModal(gcBollingerSqueezeModal);
+            closeControlsDrawer();
+        });
+
+        gcBollingerBreakoutOpenButton?.addEventListener('click', function () {
+            syncStrategyModalContext(STRATEGIES.golden_cross_bollinger_breakout_confirm);
+            openModal(gcBollingerBreakoutModal);
+            closeControlsDrawer();
+        });
+
         momentumOpenButton?.addEventListener('click', function () {
             syncStrategyModalContext(STRATEGIES.momentum_12m);
             openModal(momentumModal);
@@ -1078,11 +1196,25 @@
         });
 
         gcCancel?.addEventListener('click', function () { closeModal(gcModal); });
+        gcBollingerSqueezeCancel?.addEventListener('click', function () { closeModal(gcBollingerSqueezeModal); });
+        gcBollingerBreakoutCancel?.addEventListener('click', function () { closeModal(gcBollingerBreakoutModal); });
         momentumCancel?.addEventListener('click', function () { closeModal(momentumModal); });
 
         gcModal?.addEventListener('click', function (event) {
             if (event.target === gcModal) {
                 closeModal(gcModal);
+            }
+        });
+
+        gcBollingerSqueezeModal?.addEventListener('click', function (event) {
+            if (event.target === gcBollingerSqueezeModal) {
+                closeModal(gcBollingerSqueezeModal);
+            }
+        });
+
+        gcBollingerBreakoutModal?.addEventListener('click', function (event) {
+            if (event.target === gcBollingerBreakoutModal) {
+                closeModal(gcBollingerBreakoutModal);
             }
         });
 
@@ -1096,6 +1228,24 @@
             event.preventDefault();
             closeModal(gcModal);
             createConfiguredStrategyCard('golden_cross', STRATEGIES.golden_cross.buildConfig());
+        });
+
+        gcBollingerSqueezeForm?.addEventListener('submit', function (event) {
+            event.preventDefault();
+            closeModal(gcBollingerSqueezeModal);
+            createConfiguredStrategyCard(
+                'golden_cross_bollinger_squeeze',
+                STRATEGIES.golden_cross_bollinger_squeeze.buildConfig(),
+            );
+        });
+
+        gcBollingerBreakoutForm?.addEventListener('submit', function (event) {
+            event.preventDefault();
+            closeModal(gcBollingerBreakoutModal);
+            createConfiguredStrategyCard(
+                'golden_cross_bollinger_breakout_confirm',
+                STRATEGIES.golden_cross_bollinger_breakout_confirm.buildConfig(),
+            );
         });
 
         momentumForm?.addEventListener('submit', function (event) {

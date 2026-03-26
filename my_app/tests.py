@@ -1071,6 +1071,94 @@ class ProScanPortfolioApiTests(TestCase):
     @patch('my_app.views.get_weighted_golden_cross_snapshot')
     @patch('my_app.views.get_live_golden_cross_snapshot')
     @patch('my_app.views.download_n_clean_data')
+    def test_pro_scan_run_group_supports_golden_cross_bollinger_squeeze(
+        self,
+        mock_download,
+        mock_live_snapshot,
+        mock_weighted_snapshot,
+    ):
+        mock_download.return_value = self.sample_feature_frame()
+        mock_live_snapshot.return_value = {'composite_score': 40.0}
+        mock_weighted_snapshot.return_value = {'quality_score': 70.0}
+
+        group = Stock_Group.objects.create(name='Variant Group')
+        stock = Stock.objects.create(name='Apple', symbol='AAPL', sector='Tech')
+        group.stocks.add(stock)
+
+        response = self.client.post(
+            reverse('api_pro_scan_run_group'),
+            data=json.dumps({
+                'group_name': 'Variant Group',
+                'strategy_slug': 'golden_cross_bollinger_squeeze',
+                'start_date': '2020-01-01',
+                'end_date': '2020-03-31',
+                'strategy_params': {
+                    'fast_sma': 5,
+                    'slow_sma': 20,
+                    'bb_period': 10,
+                    'bb_std_dev': 2.0,
+                    'squeeze_lookback': 10,
+                    'squeeze_quantile': 0.35,
+                    'order_percentage': 100,
+                    'starting_cash': 100000,
+                },
+            }),
+            content_type='application/json',
+        )
+        payload = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(payload['valid'])
+        self.assertEqual(payload['results'][0]['symbol'], 'AAPL')
+        self.assertEqual(payload['results'][0]['strategy_slug'], 'golden_cross_bollinger_squeeze')
+
+    @patch('my_app.views.get_weighted_golden_cross_snapshot')
+    @patch('my_app.views.get_live_golden_cross_snapshot')
+    @patch('my_app.views.download_n_clean_data')
+    def test_pro_scan_run_group_supports_golden_cross_bollinger_breakout_confirm(
+        self,
+        mock_download,
+        mock_live_snapshot,
+        mock_weighted_snapshot,
+    ):
+        mock_download.return_value = self.sample_feature_frame()
+        mock_live_snapshot.return_value = {'composite_score': 41.0}
+        mock_weighted_snapshot.return_value = {'quality_score': 71.0}
+
+        group = Stock_Group.objects.create(name='Variant Group 2')
+        stock = Stock.objects.create(name='Apple', symbol='AAPL', sector='Tech')
+        group.stocks.add(stock)
+
+        response = self.client.post(
+            reverse('api_pro_scan_run_group'),
+            data=json.dumps({
+                'group_name': 'Variant Group 2',
+                'strategy_slug': 'golden_cross_bollinger_breakout_confirm',
+                'start_date': '2020-01-01',
+                'end_date': '2020-03-31',
+                'strategy_params': {
+                    'fast_sma': 5,
+                    'slow_sma': 20,
+                    'bb_period': 10,
+                    'bb_std_dev': 2.0,
+                    'squeeze_lookback': 10,
+                    'squeeze_quantile': 0.35,
+                    'order_percentage': 100,
+                    'starting_cash': 100000,
+                },
+            }),
+            content_type='application/json',
+        )
+        payload = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(payload['valid'])
+        self.assertEqual(payload['results'][0]['symbol'], 'AAPL')
+        self.assertEqual(payload['results'][0]['strategy_slug'], 'golden_cross_bollinger_breakout_confirm')
+
+    @patch('my_app.views.get_weighted_golden_cross_snapshot')
+    @patch('my_app.views.get_live_golden_cross_snapshot')
+    @patch('my_app.views.download_n_clean_data')
     def test_pro_scan_run_group_accepts_csrf_secured_browser_flow(
         self,
         mock_download,
