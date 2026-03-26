@@ -1532,10 +1532,10 @@
                     </div>
                 </section>
 
-                <section class="backtest-filter-group space-y-3">
+                <section id="earnings-handling" class="backtest-filter-group space-y-3">
                     <h3>Earnings Handling</h3>
                     <div class="space-y-2">
-                        <button class="btn-clickable" data-option="Nothing Special">Nothing Special</button>
+                        <button class="btn-clickable btn-clickable-active" data-option="Nothing Special">Nothing Special</button>
                         <button class="btn-clickable" data-option="Never Trade Earnings">Never Trade Earnings</button>
                         <button class="btn-clickable" data-option="Only Trade Earnings">Only Trade Earnings</button>
                         <button class="btn-clickable" data-option="Custom Earnings">Custom Earnings</button>
@@ -1777,14 +1777,14 @@
                     return;
                 }
 
-                const inPositionGroup = this.closest('#position');
-                if (!inPositionGroup) {
+                const exclusiveGroup = this.closest('#position, #earnings-handling');
+                if (!exclusiveGroup) {
                     this.classList.toggle('btn-clickable-active');
                     return;
                 }
 
                 document
-                    .querySelectorAll('#position .btn-clickable-active')
+                    .querySelectorAll(`#${exclusiveGroup.id} .btn-clickable-active`)
                     .forEach((activeButton) => activeButton.classList.remove('btn-clickable-active'));
                 this.classList.add('btn-clickable-active');
             });

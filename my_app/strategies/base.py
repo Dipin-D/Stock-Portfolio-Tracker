@@ -4,6 +4,8 @@ from copy import deepcopy
 
 import pandas as pd
 
+from my_app.backtesting.earnings import build_entry_permission_mask
+
 
 class BaseStrategy:
     slug = ""
@@ -29,7 +31,7 @@ class BaseStrategy:
     def signal_strength(self, df: pd.DataFrame, params: dict) -> pd.Series:
         raise NotImplementedError
 
-    def backtest(self, df: pd.DataFrame, params: dict) -> dict:
+    def backtest(self, df: pd.DataFrame, params: dict, runtime_context: dict | None = None) -> dict:
         raise NotImplementedError
 
     def describe_signal_math(
@@ -56,3 +58,10 @@ class BaseStrategy:
     def latest_float(series: pd.Series, default: float = 0.0) -> float:
         cleaned = pd.to_numeric(series, errors="coerce").dropna()
         return float(cleaned.iloc[-1]) if not cleaned.empty else float(default)
+
+    def entry_allowed_mask(self, df: pd.DataFrame, runtime_context: dict | None = None) -> pd.Series:
+        context = runtime_context or {}
+        precomputed = context.get("entry_allowed_mask")
+        if isinstance(precomputed, pd.Series):
+            return precomputed.reindex(df.index).fillna(True).astype(bool)
+        return build_entry_permission_mask(df, context.get("earnings_filter"))

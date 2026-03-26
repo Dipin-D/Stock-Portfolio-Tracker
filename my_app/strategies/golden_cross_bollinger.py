@@ -166,13 +166,14 @@ class _GoldenCrossBollingerBaseStrategy(BaseStrategy):
             ],
         }
 
-    def backtest(self, df: pd.DataFrame, params: dict) -> dict:
+    def backtest(self, df: pd.DataFrame, params: dict, runtime_context: dict | None = None) -> dict:
         configured = self.normalize_params(params)
         entry_signal = self._entry_signal(df)
         exit_signal = (
             (df["Close"] < df["bb_mid"]) |
             (~df["gc_active"])
         ).fillna(False)
+        entry_allowed = self.entry_allowed_mask(df, runtime_context)
 
         buy_signal = (~entry_signal.shift(1).fillna(False)) & entry_signal.fillna(False)
         sell_signal = (~exit_signal.shift(1).fillna(False)) & exit_signal.fillna(False)
@@ -193,7 +194,7 @@ class _GoldenCrossBollingerBaseStrategy(BaseStrategy):
             timestamp = int(row["Date"])
             date_text = row["Date_dt"].date().isoformat()
 
-            if shares == 0 and bool(buy_signal.loc[row.name]):
+            if shares == 0 and bool(buy_signal.loc[row.name]) and bool(entry_allowed.loc[row.name]):
                 cash_before_last_buy = cash
                 requested_shares = int(override_shares) if override_shares not in (None, "", "Auto") else int((cash * order_percentage) // price)
                 if requested_shares > 0:

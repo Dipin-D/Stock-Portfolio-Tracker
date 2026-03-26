@@ -18,6 +18,7 @@ from .models import AppSettings, BacktestRun, EvidenceSnapshot, Portfolio, Stock
 from .services.backtest_service import ensure_strategy_definitions
 from .services.research_service import build_research_backtest_url
 from .services.watchlist_service import get_momentum_watchlist
+from .strategies.golden_cross import GoldenCrossStrategy
 from .utils import PriceDataError, _cache_set, _make_cache_key, download_n_clean_data
 
 
@@ -709,6 +710,42 @@ class BayesianBacktestApiTests(TestCase):
         self.assertEqual(list(StrategyRun.objects.values_list('sequence_index', flat=True)), [1, 2])
         self.assertIn('workflow_note', payload['ui'])
 
+    @patch('my_app.services.backtest_service.load_training_frames')
+    @patch('my_app.services.backtest_service.load_feature_frame')
+    def test_api_run_backtest_persists_earnings_config(self, mock_feature_frame, mock_training_frames):
+        mock_feature_frame.return_value = self.feature_frame()
+        mock_training_frames.return_value = (
+            [self.feature_frame(phase=0.0), self.feature_frame(phase=1.0)],
+            ['SPY', 'AAPL'],
+            {},
+        )
+
+        payload = self.single_payload()
+        payload['earnings'] = {
+            'mode': 'never_trade',
+            'earnings_dates': ['2020-03-16'],
+            'blackout_before_days': 1,
+            'blackout_after_days': 1,
+        }
+
+        response = self.client.post(
+            reverse('api_run_backtest'),
+            data=json.dumps(payload),
+            content_type='application/json',
+        )
+        body = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(body['valid'])
+        self.assertIn('earnings', body)
+        self.assertEqual(body['earnings']['mode'], 'never_trade')
+        self.assertEqual(body['earnings']['earnings_dates'], ['2020-03-16'])
+
+        persisted_run = BacktestRun.objects.get(id=body['run_id'])
+        self.assertEqual(persisted_run.request_payload['earnings']['mode'], 'never_trade')
+        self.assertEqual(persisted_run.request_payload['earnings']['blackout_before_days'], 1)
+        self.assertEqual(persisted_run.request_payload['earnings']['blackout_after_days'], 1)
+
     def test_api_run_backtest_rejects_multiple_strategies_in_single_mode(self):
         payload = self.multi_payload()
         payload['analysis_mode'] = 'single'
@@ -874,6 +911,47 @@ class BayesianBacktestApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(payload['valid'])
+
+
+class StrategyEarningsFilterTests(TestCase):
+    def test_golden_cross_skips_entries_inside_blackout_window(self):
+        strategy = GoldenCrossStrategy()
+        dates = pd.date_range('2025-01-01', periods=5, freq='D')
+        close = [10.0, 9.0, 11.0, 8.0, 7.0]
+        frame = pd.DataFrame({
+            'Date': dates.view('int64') // 10**9,
+            'Date_dt': dates,
+            'Open': close,
+            'High': close,
+            'Low': close,
+            'Close': close,
+            'Volume': np.full(len(close), 1_000_000),
+        })
+        params = {
+            'fast_sma': 1,
+            'slow_sma': 2,
+            'order_percentage': 100,
+            'starting_cash': 1000,
+            'override_shares': None,
+        }
+
+        strategy_frame = strategy.compute_features(frame, params)
+        baseline = strategy.backtest(strategy_frame, params)
+        self.assertEqual(len(baseline['trades']), 1)
+
+        filtered = strategy.backtest(
+            strategy_frame,
+            params,
+            runtime_context={
+                'earnings_filter': {
+                    'mode': 'never_trade',
+                    'earnings_dates': ['2025-01-03'],
+                    'blackout_before_days': 0,
+                    'blackout_after_days': 0,
+                }
+            },
+        )
+        self.assertEqual(len(filtered['trades']), 0)
 
 
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])

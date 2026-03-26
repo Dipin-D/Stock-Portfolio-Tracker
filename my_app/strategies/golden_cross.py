@@ -75,7 +75,7 @@ class GoldenCrossStrategy(BaseStrategy):
             ],
         }
 
-    def backtest(self, df: pd.DataFrame, params: dict) -> dict:
+    def backtest(self, df: pd.DataFrame, params: dict, runtime_context: dict | None = None) -> dict:
         configured = self.normalize_params(params)
         fast = df["gc_fast"]
         slow = df["gc_slow"]
@@ -83,6 +83,7 @@ class GoldenCrossStrategy(BaseStrategy):
         previous_slow = slow.shift(1)
         buy_signal = (previous_fast < previous_slow) & (fast >= slow)
         sell_signal = (previous_fast > previous_slow) & (fast <= slow)
+        entry_allowed = self.entry_allowed_mask(df, runtime_context)
 
         starting_cash = float(configured["starting_cash"])
         order_percentage = float(configured["order_percentage"]) / 100.0
@@ -100,7 +101,7 @@ class GoldenCrossStrategy(BaseStrategy):
             timestamp = int(row["Date"])
             date_text = row["Date_dt"].date().isoformat()
 
-            if shares == 0 and bool(buy_signal.loc[row.name]):
+            if shares == 0 and bool(buy_signal.loc[row.name]) and bool(entry_allowed.loc[row.name]):
                 cash_before_last_buy = cash
                 requested_shares = int(override_shares) if override_shares not in (None, "", "Auto") else int((cash * order_percentage) // price)
                 if requested_shares > 0:

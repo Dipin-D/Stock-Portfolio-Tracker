@@ -59,6 +59,13 @@
         },
     };
 
+    const EARNINGS_MODE_BY_OPTION = {
+        'Nothing Special': 'nothing_special',
+        'Never Trade Earnings': 'never_trade',
+        'Only Trade Earnings': 'only_trade',
+        'Custom Earnings': 'custom',
+    };
+
     function getCookie(name) {
         const cookieValue = document.cookie
             .split(';')
@@ -454,6 +461,23 @@
             }));
         }
 
+        function selectedEarningsMode() {
+            const activeButton = document.querySelector('#earnings-handling .btn-clickable-active[data-option]');
+            if (!activeButton) {
+                return 'nothing_special';
+            }
+            return EARNINGS_MODE_BY_OPTION[activeButton.dataset.option] || 'nothing_special';
+        }
+
+        function buildEarningsPayload() {
+            return {
+                mode: selectedEarningsMode(),
+                earnings_dates: [],
+                blackout_before_days: 3,
+                blackout_after_days: 2,
+            };
+        }
+
         function buildPayload() {
             return {
                 ticker: tickerInput.value.trim().toUpperCase(),
@@ -464,6 +488,7 @@
                 horizon_days: initialHorizonDays,
                 benchmark: benchmarkInput.value.trim().toUpperCase() || 'SPY',
                 strategy_chain: currentStrategyChain(),
+                earnings: buildEarningsPayload(),
             };
         }
 
@@ -544,6 +569,12 @@
 
         priorModeSelect.addEventListener('change', function () {
             resetRunState('Prior mode updated');
+        });
+
+        document.querySelectorAll('#earnings-handling .btn-clickable[data-option]').forEach((button) => {
+            button.addEventListener('click', function () {
+                resetRunState('Earnings handling updated');
+            });
         });
 
         runButton.addEventListener('click', runBayesianAnalysis);

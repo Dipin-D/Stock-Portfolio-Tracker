@@ -68,13 +68,14 @@ class MomentumStrategy(BaseStrategy):
             ],
         }
 
-    def backtest(self, df: pd.DataFrame, params: dict) -> dict:
+    def backtest(self, df: pd.DataFrame, params: dict, runtime_context: dict | None = None) -> dict:
         configured = self.normalize_params(params)
         buy_threshold = float(configured["buy_threshold"])
         exit_threshold = float(configured["exit_threshold"])
         starting_cash = float(configured["starting_cash"])
         order_percentage = float(configured["order_percentage"]) / 100.0
         override_shares = configured.get("override_shares")
+        entry_allowed = self.entry_allowed_mask(df, runtime_context)
 
         cash = starting_cash
         shares = 0
@@ -91,7 +92,12 @@ class MomentumStrategy(BaseStrategy):
             current_momentum = momentum.loc[index]
 
             if pd.notna(previous_momentum) and pd.notna(current_momentum):
-                if shares == 0 and previous_momentum <= buy_threshold and current_momentum > buy_threshold:
+                if (
+                    shares == 0
+                    and previous_momentum <= buy_threshold
+                    and current_momentum > buy_threshold
+                    and bool(entry_allowed.loc[row.name])
+                ):
                     requested_shares = int(override_shares) if override_shares not in (None, "", "Auto") else int((cash * order_percentage) // price)
                     if requested_shares > 0:
                         shares = requested_shares

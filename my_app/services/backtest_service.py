@@ -4,6 +4,11 @@ from datetime import date, datetime
 
 from django.db import transaction
 
+from my_app.backtesting.earnings import (
+    MODE_NOTHING_SPECIAL,
+    normalize_earnings_config,
+    resolve_earnings_config,
+)
 from my_app.bayes.explanations import build_backtest_explanation
 from my_app.bayes.likelihoods import estimate_binary_likelihood
 from my_app.bayes.posterior import (
@@ -128,6 +133,7 @@ def _validate_request_payload(payload: dict) -> dict:
     start_date_raw = payload.get("start_date")
     end_date_raw = payload.get("end_date")
     horizon_days = int(payload.get("horizon_days") or 126)
+    earnings_config = normalize_earnings_config(payload.get("earnings") or {})
 
     if not ticker:
         raise ValueError("Ticker is required.")
@@ -154,6 +160,7 @@ def _validate_request_payload(payload: dict) -> dict:
         "benchmark": benchmark or "SPY",
         "horizon_days": horizon_days,
         "strategy_chain": strategy_chain,
+        "earnings": earnings_config,
     }
 
 
@@ -297,6 +304,7 @@ def serialize_backtest_run(backtest_run: BacktestRun) -> dict:
         "evidence": evidence_payload if snapshot else {},
         "math": evidence_payload.get("math", {}) if snapshot else {},
         "equity_curve": equity_curve,
+        "earnings": backtest_run.request_payload.get("earnings", {}),
         "ui": {
             "can_add_another_strategy": backtest_run.analysis_mode == BacktestRun.ANALYSIS_MODE_MULTI
             and len(strategy_runs) < len(get_supported_strategies()),
@@ -317,6 +325,21 @@ def run_bayesian_backtest(payload: dict, user=None) -> dict:
     benchmark = request_data["benchmark"]
     horizon_days = request_data["horizon_days"]
     strategy_chain = request_data["strategy_chain"]
+    requested_earnings_config = request_data["earnings"]
+
+    earnings_config = (
+        requested_earnings_config
+        if requested_earnings_config.get("mode") == MODE_NOTHING_SPECIAL
+        else resolve_earnings_config(
+            requested_earnings_config,
+            ticker=ticker,
+            start_date=request_data["start_date"],
+            end_date=request_data["end_date"],
+        )
+    )
+    runtime_context = {
+        "earnings_filter": earnings_config,
+    }
 
     feature_frame = load_feature_frame(ticker, start_date_iso, end_date_iso, benchmark=benchmark, horizon_days=horizon_days)
     training_frames, training_symbols, training_errors = load_training_frames(
@@ -337,7 +360,9 @@ def run_bayesian_backtest(payload: dict, user=None) -> dict:
         golden_cross_strategy = get_strategy("golden_cross")
         golden_cross_params = golden_cross_strategy.normalize_params(golden_cross_chain["params"] if golden_cross_chain else {})
         golden_cross_frame = golden_cross_strategy.compute_features(feature_frame.copy(), golden_cross_params)
-        golden_cross_signal = golden_cross_strategy.generate_signal(golden_cross_frame, golden_cross_params)
+        golden_cross_signal = golden_cross_strategy.generate_signal(golden_cross_frame, golden_cross_params).fillna(False).astype(bool)
+        golden_cross_entry_allowed = golden_cross_strategy.entry_allowed_mask(golden_cross_frame, runtime_context)
+        golden_cross_signal = golden_cross_signal & golden_cross_entry_allowed
         golden_cross_observed = golden_cross_strategy.latest_boolean(golden_cross_signal)
         prior_source = estimate_conditional_prior(
             golden_cross_strategy,
@@ -376,6 +401,7 @@ def run_bayesian_backtest(payload: dict, user=None) -> dict:
                 "benchmark": benchmark,
                 "horizon_days": horizon_days,
                 "strategy_chain": strategy_chain,
+                "earnings": earnings_config,
                 "training_symbols": training_symbols,
                 "training_errors": training_errors,
             },
@@ -386,13 +412,15 @@ def run_bayesian_backtest(payload: dict, user=None) -> dict:
             params = strategy.normalize_params(chain_entry["params"])
             strategy_frame = strategy.compute_features(feature_frame.copy(), params)
             signal_series = strategy.generate_signal(strategy_frame, params)
+            entry_allowed_mask = strategy.entry_allowed_mask(strategy_frame, runtime_context)
+            filtered_signal_series = signal_series.fillna(False).astype(bool) & entry_allowed_mask
             strength_series = strategy.signal_strength(strategy_frame, params)
-            observed_event = strategy.latest_boolean(signal_series)
-            likelihood = estimate_binary_likelihood(signal_series, strategy_frame["target_success"], observed_event)
-            weight = estimate_signal_weight(signal_series, previous_signals)
+            observed_event = strategy.latest_boolean(filtered_signal_series)
+            likelihood = estimate_binary_likelihood(filtered_signal_series, strategy_frame["target_success"], observed_event)
+            weight = estimate_signal_weight(filtered_signal_series, previous_signals)
             prior_before = current_probability
             prior_log_odds = probability_to_log_odds(prior_before)
-            signal_math = strategy.describe_signal_math(strategy_frame, params, signal_series, strength_series)
+            signal_math = strategy.describe_signal_math(strategy_frame, params, filtered_signal_series, strength_series)
             used_as_prior = (
                 prior_mode == BacktestRun.PRIOR_MODE_GOLDEN_CROSS
                 and strategy.slug == "golden_cross"
@@ -411,7 +439,14 @@ def run_bayesian_backtest(payload: dict, user=None) -> dict:
                 current_probability = posterior_after
             posterior_log_odds = probability_to_log_odds(posterior_after)
 
-            backtest_result = strategy.backtest(strategy_frame, params)
+            backtest_result = strategy.backtest(
+                strategy_frame,
+                params,
+                runtime_context={
+                    **runtime_context,
+                    "entry_allowed_mask": entry_allowed_mask,
+                },
+            )
             aggregated_trades.extend([
                 {
                     **trade,
@@ -491,7 +526,7 @@ def run_bayesian_backtest(payload: dict, user=None) -> dict:
                 )
 
             if not used_as_prior:
-                previous_signals.append(signal_series)
+                previous_signals.append(filtered_signal_series)
 
         explanation = build_backtest_explanation(
             prior_probability,
