@@ -4,8 +4,30 @@
 >
     <div class="portfolio-card-toolbar">
         <div class="portfolio-card-actions">
-            <button type="button" class="portfolio-icon-btn clone-btn" title="Clone portfolio">Copy</button>
-            <button type="submit" form="portfolio-form-{{ portfolio.id|default:'new' }}" class="portfolio-icon-btn portfolio-icon-btn-save" title="Save portfolio">Save</button>
+            <button
+                type="button"
+                class="portfolio-icon-btn portfolio-icon-btn-symbol clone-btn"
+                title="Clone portfolio card"
+                aria-label="Clone portfolio card"
+            >
+                <svg class="portfolio-icon-glyph" viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="9" y="8" width="11" height="11" rx="1.8"></rect>
+                    <path d="M7 15H5a1.8 1.8 0 0 1-1.8-1.8V5A1.8 1.8 0 0 1 5 3.2h8.2A1.8 1.8 0 0 1 15 5v2"></path>
+                </svg>
+            </button>
+            <button
+                type="submit"
+                form="portfolio-form-{{ portfolio.id|default:'new' }}"
+                class="portfolio-icon-btn portfolio-icon-btn-symbol portfolio-icon-btn-save"
+                title="Save portfolio card"
+                aria-label="Save portfolio card"
+            >
+                <svg class="portfolio-icon-glyph" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 4v10"></path>
+                    <path d="m8.5 10.5 3.5 3.5 3.5-3.5"></path>
+                    <path d="M5 19h14"></path>
+                </svg>
+            </button>
         </div>
         <div class="portfolio-card-actions">
             <button type="button" class="portfolio-icon-btn portfolio-icon-btn-danger remove-btn" title="Remove portfolio">Delete</button>
@@ -76,8 +98,5 @@
             </div>
         </div>
 
-        <div class="portfolio-form-submit-row">
-            <button type="submit" class="portfolio-btn portfolio-btn-secondary portfolio-save-btn">Save Portfolio</button>
-        </div>
     </form>
 </div>
