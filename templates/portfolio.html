@@ -421,6 +421,13 @@
             background: #eff6ff;
         }
 
+        .portfolio-menu-item.is-disabled,
+        .portfolio-menu-item.is-disabled:hover {
+            cursor: default;
+            color: #94a3b8;
+            background: transparent;
+        }
+
         .portfolio-forms-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -751,6 +758,25 @@
             gap: 0.75rem;
         }
 
+        .portfolio-glidepath-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .portfolio-glidepath-add-toggle.is-disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .portfolio-glidepath-menu {
+            left: auto;
+            right: 0;
+            min-width: 220px;
+        }
+
         .portfolio-glidepath-name {
             border: 1px solid #cbd5e1;
             border-radius: 14px;
@@ -887,6 +913,57 @@
             font-weight: 700;
             letter-spacing: normal;
             text-transform: none;
+        }
+
+        .portfolio-glidepath-portfolio-strip {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+        }
+
+        .portfolio-glidepath-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            border: 1px solid #bfdbfe;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            padding: 0.35rem 0.65rem;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .portfolio-glidepath-chip-remove {
+            border: 0;
+            border-radius: 999px;
+            width: 1.25rem;
+            height: 1.25rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #dbeafe;
+            color: #1d4ed8;
+            font: inherit;
+            font-weight: 800;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+        }
+
+        .portfolio-glidepath-chip-remove:hover {
+            background: #bfdbfe;
+        }
+
+        .portfolio-glidepath-chip-empty {
+            border: 1px dashed #bfd1e7;
+            border-radius: 999px;
+            background: #f8fbff;
+            color: #64748b;
+            padding: 0.35rem 0.65rem;
+            font-size: 0.82rem;
+            font-weight: 700;
         }
 
         .portfolio-default-toggle {
@@ -1039,6 +1116,27 @@
             .portfolio-glidepath-header {
                 align-items: stretch;
                 flex-direction: column;
+            }
+
+            .portfolio-glidepath-actions {
+                justify-content: stretch;
+            }
+
+            .portfolio-glidepath-actions .portfolio-menu {
+                width: 100%;
+            }
+
+            .portfolio-glidepath-actions .portfolio-btn,
+            .portfolio-glidepath-actions .portfolio-icon-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .portfolio-glidepath-menu {
+                left: 0;
+                right: auto;
+                width: 100%;
+                min-width: 0;
             }
 
             .portfolio-glidepath-mobile {
@@ -1262,6 +1360,7 @@
         let portfolioSequence = 0;
         let glidepathSequence = 0;
         const glidepaths = [];
+        const glidepathStorageKey = 'tradingpro.portfolio.glidepaths.v1';
         const chartTarget = document.querySelector('#chart');
         const chartPayloadElement = document.getElementById('portfolio-chart-data');
         const carouselWrapper = document.getElementById('carousel-wrapper');
@@ -1385,9 +1484,16 @@
             updateWorkspaceControls();
         }
 
+        function closeGlidepathMenus() {
+            glidepathContainer?.querySelectorAll('.portfolio-glidepath-menu').forEach((menu) => {
+                menu.classList.add('hidden');
+            });
+        }
+
         function closeMenus() {
             presetMenu.classList.add('hidden');
             savedMenu.classList.add('hidden');
+            closeGlidepathMenus();
         }
 
         function parsePortfolioForm(html) {
@@ -1433,6 +1539,110 @@
 
         function getWorkspacePortfolios() {
             return getCards().map((card, index) => getPortfolioSnapshot(card, index));
+        }
+
+        function dedupeKeys(values) {
+            return Array.from(new Set((values || []).map((value) => String(value || '').trim()).filter(Boolean)));
+        }
+
+        function serializeGlidepaths() {
+            return glidepaths.map((glidepath) => ({
+                id: glidepath.id,
+                name: glidepath.name,
+                excludedPortfolioKeys: dedupeKeys(glidepath.excludedPortfolioKeys),
+                legs: (glidepath.legs || []).map((leg) => ({
+                    key: leg.key,
+                    label: leg.label,
+                    weights: Object.entries(leg.weights || {}).reduce((accumulator, [portfolioKey, rawValue]) => {
+                        const numeric = Number(rawValue || 0);
+                        accumulator[portfolioKey] = Number.isFinite(numeric) ? numeric : 0;
+                        return accumulator;
+                    }, {}),
+                })),
+            }));
+        }
+
+        function persistGlidepaths() {
+            try {
+                window.localStorage.setItem(glidepathStorageKey, JSON.stringify({
+                    sequence: glidepathSequence,
+                    glidepaths: serializeGlidepaths(),
+                }));
+                return true;
+            } catch (error) {
+                console.warn('Unable to save glide paths', error);
+                return false;
+            }
+        }
+
+        function restoreGlidepaths() {
+            try {
+                const raw = window.localStorage.getItem(glidepathStorageKey);
+                if (!raw) {
+                    return;
+                }
+
+                const parsed = JSON.parse(raw);
+                if (!Array.isArray(parsed?.glidepaths)) {
+                    return;
+                }
+
+                const restored = parsed.glidepaths.map((entry, index) => {
+                    const fallbackId = `glidepath-${index + 1}`;
+                    const entryId = String(entry?.id || fallbackId).trim() || fallbackId;
+                    const legsByKey = {};
+
+                    (Array.isArray(entry?.legs) ? entry.legs : []).forEach((leg) => {
+                        if (!leg || typeof leg !== 'object') {
+                            return;
+                        }
+                        const legKey = String(leg.key || '').trim();
+                        if (!legKey) {
+                            return;
+                        }
+                        const weights = {};
+                        if (leg.weights && typeof leg.weights === 'object') {
+                            Object.entries(leg.weights).forEach(([portfolioKey, rawValue]) => {
+                                const numeric = Number(rawValue || 0);
+                                weights[String(portfolioKey)] = Number.isFinite(numeric) ? numeric : 0;
+                            });
+                        }
+                        legsByKey[legKey] = {
+                            key: legKey,
+                            label: leg.label || (legKey === 'start' ? 'Starting Date' : 'Ending Date'),
+                            weights,
+                        };
+                    });
+
+                    return {
+                        id: entryId,
+                        name: String(entry?.name || `Glidepath ${index + 1}`).trim() || `Glidepath ${index + 1}`,
+                        portfolios: [],
+                        excludedPortfolioKeys: dedupeKeys(entry?.excludedPortfolioKeys),
+                        legs: [
+                            legsByKey.start || { key: 'start', label: 'Starting Date', weights: {} },
+                            legsByKey.end || { key: 'end', label: 'Ending Date', weights: {} },
+                        ],
+                    };
+                });
+
+                if (!restored.length) {
+                    return;
+                }
+
+                glidepaths.splice(0, glidepaths.length, ...restored);
+                const parsedSequence = Number(parsed.sequence || 0);
+                const highestIdSequence = restored.reduce((maxValue, glidepath) => {
+                    const match = String(glidepath.id || '').match(/^glidepath-(\d+)$/);
+                    if (!match) {
+                        return maxValue;
+                    }
+                    return Math.max(maxValue, Number(match[1] || 0));
+                }, 0);
+                glidepathSequence = Math.max(glidepathSequence, parsedSequence, highestIdSequence);
+            } catch (error) {
+                console.warn('Unable to restore glide paths', error);
+            }
         }
 
         function normalizeCardMetadata(card) {
@@ -1702,14 +1912,26 @@
 
         function syncGlidepathsWithWorkspace() {
             const portfolios = getWorkspacePortfolios();
+            const workspacePortfolioKeys = new Set(portfolios.map((portfolio) => portfolio.key));
             glidepaths.forEach((glidepath) => {
-                glidepath.portfolios = portfolios;
+                const excludedPortfolioKeys = dedupeKeys(glidepath.excludedPortfolioKeys)
+                    .filter((portfolioKey) => workspacePortfolioKeys.has(portfolioKey));
+                glidepath.excludedPortfolioKeys = excludedPortfolioKeys;
+                const excludedPortfolioKeySet = new Set(excludedPortfolioKeys);
+                glidepath.portfolios = portfolios.filter((portfolio) => !excludedPortfolioKeySet.has(portfolio.key));
                 glidepath.legs.forEach((leg) => {
-                    const nextWeights = {};
+                    if (!leg.weights || typeof leg.weights !== 'object') {
+                        leg.weights = {};
+                    }
                     portfolios.forEach((portfolio) => {
-                        nextWeights[portfolio.key] = Number(leg.weights?.[portfolio.key] || 0);
+                        const nextWeight = Number(leg.weights?.[portfolio.key] || 0);
+                        leg.weights[portfolio.key] = Number.isFinite(nextWeight) ? nextWeight : 0;
                     });
-                    leg.weights = nextWeights;
+                    Object.keys(leg.weights || {}).forEach((portfolioKey) => {
+                        if (!workspacePortfolioKeys.has(portfolioKey)) {
+                            delete leg.weights[portfolioKey];
+                        }
+                    });
                 });
             });
         }
@@ -1726,6 +1948,7 @@
                 id: `glidepath-${glidepathSequence}`,
                 name: `Glidepath ${glidepathSequence}`,
                 portfolios,
+                excludedPortfolioKeys: [],
                 legs: [
                     { key: 'start', label: 'Starting Date', weights: buildDefaultWeights(portfolios, 'start') },
                     { key: 'end', label: 'Ending Date', weights: buildDefaultWeights(portfolios, 'end') },
@@ -1736,6 +1959,11 @@
 
         function getGlidepathById(glidepathId) {
             return glidepaths.find((glidepath) => glidepath.id === glidepathId);
+        }
+
+        function getGlidepathAvailablePortfolios(glidepath, workspacePortfolios) {
+            const activePortfolioKeySet = new Set((glidepath.portfolios || []).map((portfolio) => portfolio.key));
+            return (workspacePortfolios || []).filter((portfolio) => !activePortfolioKeySet.has(portfolio.key));
         }
 
         function renderGlidepaths() {
@@ -1752,16 +1980,74 @@
                 return;
             }
 
+            const workspacePortfolios = getWorkspacePortfolios();
             glidepathContainer.innerHTML = glidepaths.map((glidepath) => {
                 const portfolios = glidepath.portfolios || [];
+                const availablePortfolios = getGlidepathAvailablePortfolios(glidepath, workspacePortfolios);
+                const addPortfolioItems = availablePortfolios.length
+                    ? availablePortfolios.map((portfolio) => `
+                        <button
+                            type="button"
+                            class="portfolio-menu-item glidepath-portfolio-add-btn"
+                            data-glidepath-id="${glidepath.id}"
+                            data-portfolio-key="${escapeHtml(portfolio.key)}"
+                        >
+                            ${escapeHtml(portfolio.name)}
+                        </button>
+                    `).join('')
+                    : '<div class="portfolio-menu-item is-disabled">No portfolios available</div>';
+
+                const selectedPortfolioChips = portfolios.length
+                    ? portfolios.map((portfolio) => `
+                        <span class="portfolio-glidepath-chip">
+                            ${escapeHtml(portfolio.name)}
+                            <button
+                                type="button"
+                                class="portfolio-glidepath-chip-remove glidepath-portfolio-remove-btn"
+                                data-glidepath-id="${glidepath.id}"
+                                data-portfolio-key="${escapeHtml(portfolio.key)}"
+                                title="Remove ${escapeHtml(portfolio.name)}"
+                                aria-label="Remove ${escapeHtml(portfolio.name)}"
+                            >
+                                −
+                            </button>
+                        </span>
+                    `).join('')
+                    : '<span class="portfolio-glidepath-chip-empty">No portfolios selected.</span>';
+
+                const glidepathHeader = `
+                    <div class="portfolio-glidepath-header">
+                        <input type="text" class="portfolio-glidepath-name" value="${escapeHtml(glidepath.name)}">
+                        <div class="portfolio-glidepath-actions">
+                            <div class="portfolio-menu">
+                                <button
+                                    type="button"
+                                    class="portfolio-btn portfolio-btn-accent portfolio-glidepath-add-toggle${availablePortfolios.length ? '' : ' is-disabled'}"
+                                    data-glidepath-id="${glidepath.id}"
+                                    aria-expanded="false"
+                                    ${availablePortfolios.length ? '' : 'disabled'}
+                                >
+                                    Portfolio +
+                                </button>
+                                <div class="portfolio-menu-popover portfolio-glidepath-menu hidden">
+                                    ${addPortfolioItems}
+                                </div>
+                            </div>
+                            <button type="button" class="portfolio-icon-btn portfolio-icon-btn-save glidepath-save-btn" data-glidepath-id="${glidepath.id}">Save</button>
+                            <button type="button" class="portfolio-icon-btn portfolio-icon-btn-danger glidepath-remove-btn">Delete</button>
+                        </div>
+                    </div>
+                `;
+
                 if (!portfolios.length) {
+                    const emptyCopy = workspacePortfolios.length
+                        ? 'All workspace portfolios are currently removed from this glide path. Use Portfolio + to re-add.'
+                        : 'No workspace portfolios are open right now. Reopen portfolio cards to populate this glide path.';
                     return `
                         <div class="portfolio-glidepath-card" data-glidepath-id="${glidepath.id}">
-                            <div class="portfolio-glidepath-header">
-                                <input type="text" class="portfolio-glidepath-name" value="${escapeHtml(glidepath.name)}">
-                                <button type="button" class="portfolio-icon-btn portfolio-icon-btn-danger glidepath-remove-btn">Delete</button>
-                            </div>
-                            <p class="portfolio-empty-state">No workspace portfolios are open right now. Reopen portfolio cards to populate this glide path.</p>
+                            ${glidepathHeader}
+                            <div class="portfolio-glidepath-portfolio-strip">${selectedPortfolioChips}</div>
+                            <p class="portfolio-empty-state">${emptyCopy}</p>
                         </div>
                     `;
                 }
@@ -1837,10 +2123,8 @@
 
                 return `
                     <div class="portfolio-glidepath-card" data-glidepath-id="${glidepath.id}">
-                        <div class="portfolio-glidepath-header">
-                            <input type="text" class="portfolio-glidepath-name" value="${escapeHtml(glidepath.name)}">
-                            <button type="button" class="portfolio-icon-btn portfolio-icon-btn-danger glidepath-remove-btn">Delete</button>
-                        </div>
+                        ${glidepathHeader}
+                        <div class="portfolio-glidepath-portfolio-strip">${selectedPortfolioChips}</div>
                         <div class="portfolio-glidepath-mobile">${mobileLegs}</div>
                         <div class="portfolio-glidepath-table">
                             <table>
@@ -1959,6 +2243,71 @@
                 return;
             }
 
+            const glidepathAddToggle = event.target.closest('.portfolio-glidepath-add-toggle');
+            if (glidepathAddToggle) {
+                const glidepathCard = glidepathAddToggle.closest('[data-glidepath-id]');
+                const menu = glidepathCard?.querySelector('.portfolio-glidepath-menu');
+                if (!menu) {
+                    return;
+                }
+
+                const shouldOpen = menu.classList.contains('hidden');
+                closeGlidepathMenus();
+                if (shouldOpen) {
+                    menu.classList.remove('hidden');
+                }
+                return;
+            }
+
+            const glidepathAddBtn = event.target.closest('.glidepath-portfolio-add-btn');
+            if (glidepathAddBtn) {
+                const glidepath = getGlidepathById(glidepathAddBtn.dataset.glidepathId);
+                const portfolioKey = String(glidepathAddBtn.dataset.portfolioKey || '').trim();
+                if (!glidepath || !portfolioKey) {
+                    return;
+                }
+                glidepath.excludedPortfolioKeys = dedupeKeys(glidepath.excludedPortfolioKeys)
+                    .filter((key) => key !== portfolioKey);
+                closeGlidepathMenus();
+                renderGlidepaths();
+                return;
+            }
+
+            const glidepathPortfolioRemoveBtn = event.target.closest('.glidepath-portfolio-remove-btn');
+            if (glidepathPortfolioRemoveBtn) {
+                const glidepath = getGlidepathById(glidepathPortfolioRemoveBtn.dataset.glidepathId);
+                const portfolioKey = String(glidepathPortfolioRemoveBtn.dataset.portfolioKey || '').trim();
+                if (!glidepath || !portfolioKey) {
+                    return;
+                }
+                const excludedPortfolioKeys = dedupeKeys(glidepath.excludedPortfolioKeys);
+                excludedPortfolioKeys.push(portfolioKey);
+                glidepath.excludedPortfolioKeys = dedupeKeys(excludedPortfolioKeys);
+                closeGlidepathMenus();
+                renderGlidepaths();
+                return;
+            }
+
+            const glidepathSaveBtn = event.target.closest('.glidepath-save-btn');
+            if (glidepathSaveBtn) {
+                const isSaved = persistGlidepaths();
+                if (!isSaved) {
+                    alert('Unable to save glide paths in this browser right now.');
+                    return;
+                }
+                glidepathSaveBtn.textContent = 'Saved';
+                glidepathSaveBtn.disabled = true;
+                window.setTimeout(function () {
+                    const card = glidepathSaveBtn.closest('[data-glidepath-id]');
+                    const nextSaveBtn = card?.querySelector('.glidepath-save-btn');
+                    if (nextSaveBtn) {
+                        nextSaveBtn.textContent = 'Save';
+                        nextSaveBtn.disabled = false;
+                    }
+                }, 1100);
+                return;
+            }
+
             const removeBtn = event.target.closest('.remove-btn');
             if (removeBtn) {
                 const card = removeBtn.closest('.portfolio-form');
@@ -2074,6 +2423,7 @@
                 const index = glidepaths.findIndex((glidepath) => glidepath.id === glidepathId);
                 if (index >= 0) {
                     glidepaths.splice(index, 1);
+                    closeGlidepathMenus();
                     renderGlidepaths();
                 }
                 return;
@@ -2133,6 +2483,7 @@
             }
         });
 
+        restoreGlidepaths();
         renderChart();
         goToSlide(0);
         updateEmptyState();
