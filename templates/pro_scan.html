@@ -3,7 +3,7 @@
 
 {% block head %}
     {{ block.super }}
-    <script src="{% static 'js/pro_scan_page.js' %}?v=20260325b"></script>
+    <script src="{% static 'js/pro_scan_page.js' %}?v=20260326a"></script>
     <style>
         .proscan-page {
             min-height: calc(100vh - 60px);
@@ -213,6 +213,10 @@
 
         .proscan-accordion-panel.hidden {
             display: none;
+        }
+
+        .proscan-hidden {
+            display: none !important;
         }
 
         .proscan-option-item {
@@ -577,77 +581,252 @@
             background: #fff7ed;
         }
 
-        .proscan-holdings-summary {
+        .proscan-portfolio-results {
+            border-top: 1px solid #e2e8f0;
+            padding: 1rem;
+            display: grid;
+            gap: 1rem;
+        }
+
+        .proscan-portfolio-placeholder {
+            border: 1px dashed #cbd5e1;
+            border-radius: 18px;
+            background: #f8fbff;
+            padding: 1.1rem;
+        }
+
+        .proscan-portfolio-overline {
+            margin: 0;
+            color: #475569;
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .proscan-portfolio-overview {
+            border: 1px solid #dbe4f0;
+            border-radius: 20px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            padding: 1rem;
+            display: grid;
+            gap: 0.95rem;
+        }
+
+        .proscan-portfolio-overview-head {
+            display: grid;
+            gap: 0.8rem;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: start;
+        }
+
+        .proscan-portfolio-overview-head h3 {
+            margin: 0.2rem 0 0;
+            color: #0f172a;
+            font-size: 1.2rem;
+            font-weight: 800;
+        }
+
+        .proscan-portfolio-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        .proscan-portfolio-badge {
             display: inline-flex;
             align-items: center;
-            gap: 0.35rem;
-            color: #1d4ed8;
+            border-radius: 999px;
+            padding: 0.34rem 0.7rem;
+            font-size: 0.73rem;
             font-weight: 800;
-            text-decoration: none;
-            cursor: pointer;
+            letter-spacing: 0.04em;
+            background: #dbeafe;
+            color: #1d4ed8;
+            text-transform: uppercase;
         }
 
-        .proscan-holdings-summary:hover {
-            text-decoration: underline;
+        .proscan-portfolio-badge.proscan-portfolio-badge-neutral {
+            background: #e2e8f0;
+            color: #334155;
         }
 
-        .proscan-holdings-details {
+        .proscan-portfolio-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .proscan-portfolio-metric {
+            border: 1px solid #dbe4f0;
+            border-radius: 14px;
+            background: #ffffff;
+            padding: 0.75rem 0.85rem;
+            min-height: 96px;
+        }
+
+        .proscan-portfolio-metric span {
+            display: block;
+            color: #64748b;
+            font-size: 0.74rem;
+            font-weight: 800;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+        }
+
+        .proscan-portfolio-metric strong {
+            display: block;
+            margin-top: 0.35rem;
+            font-size: 1.4rem;
+            line-height: 1.2;
+            color: #0f172a;
+        }
+
+        .proscan-value-positive {
+            color: #047857 !important;
+        }
+
+        .proscan-value-negative {
+            color: #b91c1c !important;
+        }
+
+        .proscan-portfolio-holdings {
+            border: 1px solid #dbe4f0;
+            border-radius: 20px;
+            background: #fff;
+            padding: 1rem;
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .proscan-portfolio-holdings-head {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 0.8rem;
+            align-items: flex-start;
+        }
+
+        .proscan-portfolio-holdings-head h3 {
             margin: 0;
+            color: #0f172a;
+            font-size: 1.05rem;
+            font-weight: 800;
         }
 
-        .proscan-holdings-details[open] {
-            margin-top: 0.3rem;
+        .proscan-portfolio-holdings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 0.75rem;
         }
 
-        .proscan-holdings-panel {
-            margin-top: 0.65rem;
+        .proscan-portfolio-holding-card {
+            border: 1px solid #dbe4f0;
+            border-radius: 16px;
+            background: #f8fbff;
+            padding: 0.85rem 0.9rem;
             display: grid;
             gap: 0.65rem;
         }
 
-        .proscan-holding-card {
-            border: 1px solid #dbe4f0;
-            border-radius: 16px;
-            background: #f8fbff;
-            padding: 0.8rem 0.9rem;
-            display: grid;
-            gap: 0.45rem;
+        .proscan-portfolio-holding-card.is-error {
+            border-color: #fecaca;
+            background: #fff1f2;
         }
 
-        .proscan-holding-card-header {
+        .proscan-portfolio-holding-head {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
             gap: 0.75rem;
-            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: flex-start;
         }
 
-        .proscan-holding-card strong {
+        .proscan-portfolio-holding-head h4 {
+            margin: 0;
+            font-size: 1.05rem;
             color: #0f172a;
         }
 
-        .proscan-holding-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-            gap: 0.55rem;
-        }
-
-        .proscan-holding-metric {
-            display: flex;
-            flex-direction: column;
-            gap: 0.15rem;
-        }
-
-        .proscan-holding-metric span {
+        .proscan-portfolio-holding-head p {
+            margin: 0.25rem 0 0;
             color: #64748b;
-            font-size: 0.76rem;
+            font-size: 0.83rem;
+            line-height: 1.45;
+        }
+
+        .proscan-portfolio-status {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            font-size: 0.7rem;
             font-weight: 800;
+            padding: 0.22rem 0.55rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            background: #dcfce7;
+            color: #166534;
+            white-space: nowrap;
+        }
+
+        .proscan-portfolio-status.is-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .proscan-portfolio-holding-stats {
+            margin: 0;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.5rem 0.75rem;
+        }
+
+        .proscan-portfolio-holding-stats div {
+            min-width: 0;
+        }
+
+        .proscan-portfolio-holding-stats dt {
+            margin: 0;
+            color: #64748b;
+            font-size: 0.72rem;
             letter-spacing: 0.06em;
             text-transform: uppercase;
+            font-weight: 800;
         }
 
-        .proscan-holding-metric strong {
-            font-size: 0.92rem;
+        .proscan-portfolio-holding-stats dd {
+            margin: 0.22rem 0 0;
+            color: #0f172a;
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .proscan-portfolio-error-note {
+            margin: 0;
+            color: #991b1b;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 1024px) {
+            .proscan-portfolio-overview-head {
+                grid-template-columns: 1fr;
+            }
+
+            .proscan-portfolio-badges {
+                justify-content: flex-start;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .proscan-portfolio-results {
+                padding: 0.85rem;
+            }
+
+            .proscan-portfolio-holdings-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .proscan-status-card h3 {
@@ -1131,7 +1310,7 @@
                 <div class="proscan-table-header">
                     <h2 class="proscan-section-title">Scan Results</h2>
                     <p id="proscan-results-copy" class="proscan-muted">Metrics update row by row when a strategy card is run against the selected ticker group.</p>
-                    <div class="proscan-table-toolbar">
+                    <div id="proscan-table-toolbar" class="proscan-table-toolbar">
                         <label class="proscan-field proscan-toolbar-field">
                             <span>Search ticker or company</span>
                             <input id="proscan-filter-query" type="text" class="proscan-input" placeholder="AAPL, Apple, NVDA...">
@@ -1157,7 +1336,7 @@
                     <div id="proscan-results-meta" class="proscan-results-meta">Showing all results</div>
                 </div>
 
-                <div class="proscan-table-wrapper">
+                <div id="proscan-table-wrapper" class="proscan-table-wrapper">
                     <table id="proscan-table" class="proscan-table" data-responsive-table data-responsive-title-col="1" data-responsive-subtitle-col="0">
                         <thead>
                             <tr>
@@ -1189,6 +1368,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div id="proscan-portfolio-results" class="proscan-portfolio-results proscan-hidden" aria-live="polite"></div>
             </section>
         </section>
     </div>

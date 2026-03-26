@@ -16,6 +16,18 @@
         return Number.isFinite(value) ? value.toFixed(digits) : '-';
     }
 
+    function formatCurrency(value, digits = 2) {
+        if (!Number.isFinite(value)) {
+            return '-';
+        }
+        return Number(value).toLocaleString('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits,
+        });
+    }
+
     function numericValue(value) {
         if (typeof value === 'number' && Number.isFinite(value)) {
             return value;
@@ -89,6 +101,9 @@
 
         const table = document.getElementById('proscan-table');
         const tableBody = table ? table.querySelector('tbody') : null;
+        const tableWrapper = document.getElementById('proscan-table-wrapper');
+        const tableToolbar = document.getElementById('proscan-table-toolbar');
+        const portfolioResultsPanel = document.getElementById('proscan-portfolio-results');
         const resultsMeta = document.getElementById('proscan-results-meta');
         const resultsCopy = document.getElementById('proscan-results-copy');
         const currentScanModeValue = document.getElementById('current-scan-mode');
@@ -478,9 +493,34 @@
             window.TradingProResponsive?.refreshResponsiveTables(document);
         }
 
+        function setResultsMode(mode) {
+            const isPortfolioMode = mode === 'portfolio';
+            tableToolbar?.classList.toggle('proscan-hidden', isPortfolioMode);
+            tableWrapper?.classList.toggle('proscan-hidden', isPortfolioMode);
+            portfolioResultsPanel?.classList.toggle('proscan-hidden', !isPortfolioMode);
+        }
+
+        function renderPortfolioPlaceholder(message) {
+            setResultsMode('portfolio');
+            if (portfolioResultsPanel) {
+                portfolioResultsPanel.innerHTML = `
+                    <div class="proscan-portfolio-placeholder">
+                        <p class="proscan-muted">${escapeHtml(message)}</p>
+                    </div>
+                `;
+            }
+            if (resultsMeta) {
+                resultsMeta.textContent = message;
+            }
+        }
+
         function renderEmptyTable(message) {
             if (!tableBody) {
                 return;
+            }
+            setResultsMode('group');
+            if (portfolioResultsPanel) {
+                portfolioResultsPanel.innerHTML = '';
             }
             tableBody.innerHTML = `
                 <tr data-placeholder="1">
@@ -496,7 +536,11 @@
         function handleScanError(message) {
             const finalMessage = message || 'Scan failed.';
             scanStatusValue.textContent = finalMessage;
-            renderEmptyTable(finalMessage);
+            if (state.context.type === 'portfolio') {
+                renderPortfolioPlaceholder(finalMessage);
+            } else {
+                renderEmptyTable(finalMessage);
+            }
         }
 
         async function postJsonWithCsrf(url, payload, fallbackErrorMessage) {
@@ -591,7 +635,7 @@
                 currentScopeValue.textContent = state.context.label || 'No portfolio selected';
                 currentGroupValue.textContent = state.context.selectionType === 'saved' ? 'Saved portfolio' : 'Preset portfolio';
                 if (resultsCopy) {
-                    resultsCopy.textContent = 'Portfolio mode aggregates holding-level results into one portfolio row, with holding drilldown in the last column.';
+                    resultsCopy.textContent = 'Portfolio mode shows an aggregated summary with holding-level cards, instead of ticker-table rows.';
                 }
                 return;
             }
@@ -712,6 +756,10 @@
             if (!tableBody) {
                 return;
             }
+            if (state.context.type === 'portfolio') {
+                return;
+            }
+            setResultsMode('group');
 
             const rows = getDataRows();
             if (!rows.length) {
@@ -800,42 +848,6 @@
             modal.setAttribute('aria-hidden', 'true');
         }
 
-        function buildHoldingDrilldownMarkup(holdings) {
-            const holdingCards = (holdings || []).map((holding) => `
-                <div class="proscan-holding-card">
-                    <div class="proscan-holding-card-header">
-                        <strong>${escapeHtml(holding.ticker || '-')}</strong>
-                        <span>${escapeHtml(holding.allocated_cash_display || '-')}</span>
-                    </div>
-                    <div class="proscan-holding-grid">
-                        <div class="proscan-holding-metric">
-                            <span>Weight</span>
-                            <strong>${escapeHtml(String(holding.weight_pct ?? '-'))}%</strong>
-                        </div>
-                        <div class="proscan-holding-metric">
-                            <span>Trades</span>
-                            <strong>${escapeHtml(String(holding.trade_count ?? 0))}</strong>
-                        </div>
-                        <div class="proscan-holding-metric">
-                            <span>Win Rate</span>
-                            <strong>${formatPercent(Number(holding.win_rate || 0) * 100, 1)}</strong>
-                        </div>
-                        <div class="proscan-holding-metric">
-                            <span>Total Return</span>
-                            <strong>${formatPercent(Number(holding.total_return_pct || 0) * 100, 2)}</strong>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-
-            return `
-                <details class="proscan-holdings-details">
-                    <summary class="proscan-holdings-summary">Holdings drilldown</summary>
-                    <div class="proscan-holdings-panel">${holdingCards || '<p class="proscan-muted">No holding results yet.</p>'}</div>
-                </details>
-            `;
-        }
-
         function buildGroupRow(result) {
             const hasScanData = result.status === 'ok';
             const row = document.createElement('tr');
@@ -872,33 +884,138 @@
             return row;
         }
 
-        function buildPortfolioRow(result) {
-            const row = document.createElement('tr');
-            row.dataset.rowMode = 'portfolio';
-            row.dataset.name = result.portfolio_name || '-';
-            row.dataset.ticker = result.selection_type === 'preset' ? 'Preset Portfolio' : 'Saved Portfolio';
-            row.innerHTML = `
-                <td>${escapeHtml(result.portfolio_name || '-')} ${result.is_default ? '<span class="proscan-default-marker">Default</span>' : ''}</td>
-                <td>${escapeHtml(result.selection_type === 'preset' ? 'Preset Portfolio' : 'Saved Portfolio')}</td>
-                <td>${escapeHtml(String(result.wins || 0))}</td>
-                <td>${escapeHtml(String(result.losses || 0))}</td>
-                <td>${formatPercent(Number(result.win_rate || 0) * 100, 1)}</td>
-                <td>${formatPercent(Number(result.avg_trade_return || 0) * 100, 2)}</td>
-                <td>${formatPercent(Number(result.total_return_pct || 0) * 100, 2)}</td>
-                <td>${escapeHtml(String(result.trade_count || 0))}</td>
-                <td>${buildHoldingDrilldownMarkup(result.holdings || [])}</td>
+        function formatRatioAsPercent(value, digits = 2, showSign = false) {
+            const numeric = Number(value);
+            if (!Number.isFinite(numeric)) {
+                return '-';
+            }
+            const pct = numeric * 100;
+            const sign = showSign && pct > 0 ? '+' : '';
+            return `${sign}${pct.toFixed(digits)}%`;
+        }
+
+        function ratioToneClass(value) {
+            const numeric = Number(value);
+            if (!Number.isFinite(numeric) || numeric === 0) {
+                return '';
+            }
+            return numeric > 0 ? 'proscan-value-positive' : 'proscan-value-negative';
+        }
+
+        function buildPortfolioMetricMarkup(label, value, toneClass = '') {
+            const classAttr = toneClass ? ` class="${toneClass}"` : '';
+            return `
+                <div class="proscan-portfolio-metric">
+                    <span>${escapeHtml(label)}</span>
+                    <strong${classAttr}>${value}</strong>
+                </div>
             `;
-            updateRowDataset(row, {
-                wins: Number(result.wins || 0),
-                losses: Number(result.losses || 0),
-                winRatePct: Number(result.win_rate || 0) * 100,
-                avgTradeReturnPct: Number(result.avg_trade_return || 0) * 100,
-                totalReturnPct: Number(result.total_return_pct || 0) * 100,
-                trades: Number(result.trade_count || 0),
-                hasScanData: true,
-            });
-            row.classList.add(Number(result.total_return_pct || 0) >= 0 ? 'scan-positive' : 'scan-negative');
-            return row;
+        }
+
+        function buildPortfolioHoldingCard(holding) {
+            const status = String(holding.status || 'ok').toLowerCase();
+            const hasError = status !== 'ok';
+            const totalReturnRatio = Number(holding.total_return_pct || 0);
+            const avgTradeReturnRatio = Number(holding.avg_trade_return || 0);
+            const allocatedCashDisplay = holding.allocated_cash_display
+                || formatCurrency(Number(holding.allocated_cash || 0));
+
+            return `
+                <article class="proscan-portfolio-holding-card${hasError ? ' is-error' : ''}">
+                    <div class="proscan-portfolio-holding-head">
+                        <div>
+                            <h4>${escapeHtml(holding.ticker || '-')}</h4>
+                            <p>${escapeHtml(allocatedCashDisplay)} allocated · ${escapeHtml(String(holding.weight_pct ?? 0))}% sleeve</p>
+                        </div>
+                        <span class="proscan-portfolio-status${hasError ? ' is-error' : ''}">
+                            ${hasError ? 'Error' : 'Scanned'}
+                        </span>
+                    </div>
+                    <dl class="proscan-portfolio-holding-stats">
+                        <div>
+                            <dt>Trades</dt>
+                            <dd>${escapeHtml(String(holding.trade_count ?? 0))}</dd>
+                        </div>
+                        <div>
+                            <dt>Wins / Losses</dt>
+                            <dd>${escapeHtml(String(holding.wins ?? 0))} / ${escapeHtml(String(holding.losses ?? 0))}</dd>
+                        </div>
+                        <div>
+                            <dt>Win Rate</dt>
+                            <dd>${formatRatioAsPercent(holding.win_rate, 1)}</dd>
+                        </div>
+                        <div>
+                            <dt>Avg Trade Return</dt>
+                            <dd class="${ratioToneClass(avgTradeReturnRatio)}">${formatRatioAsPercent(avgTradeReturnRatio, 2, true)}</dd>
+                        </div>
+                        <div>
+                            <dt>Total Return</dt>
+                            <dd class="${ratioToneClass(totalReturnRatio)}">${formatRatioAsPercent(totalReturnRatio, 2, true)}</dd>
+                        </div>
+                    </dl>
+                    ${hasError && holding.error ? `<p class="proscan-portfolio-error-note">${escapeHtml(String(holding.error))}</p>` : ''}
+                </article>
+            `;
+        }
+
+        function renderPortfolioResults(result, portfolioMeta, strategyDescriptor) {
+            setResultsMode('portfolio');
+            if (!portfolioResultsPanel) {
+                return;
+            }
+
+            const holdings = Array.isArray(result?.holdings) ? result.holdings.slice() : [];
+            holdings.sort((left, right) => Number(right.weight_pct || 0) - Number(left.weight_pct || 0));
+            const okHoldings = holdings.filter((holding) => String(holding.status || 'ok').toLowerCase() === 'ok').length;
+            const failedHoldings = holdings.length - okHoldings;
+            const selectionLabel = result?.selection_type === 'saved' ? 'Saved Portfolio' : 'Preset Portfolio';
+            const totalReturnRatio = Number(result?.total_return_pct || 0);
+            const avgTradeReturnRatio = Number(result?.avg_trade_return || 0);
+            const notionalBalanceDisplay = portfolioMeta?.notional_balance_display
+                || formatCurrency(Number(portfolioMeta?.notional_balance || 0));
+            const strategyLabel = strategyDescriptor?.label || result?.strategy_name || 'Strategy';
+
+            const holdingsMarkup = holdings.length
+                ? holdings.map((holding) => buildPortfolioHoldingCard(holding)).join('')
+                : '<p class="proscan-muted">No holding-level results were returned for this run.</p>';
+
+            portfolioResultsPanel.innerHTML = `
+                <section class="proscan-portfolio-overview">
+                    <div class="proscan-portfolio-overview-head">
+                        <div>
+                            <p class="proscan-portfolio-overline">Portfolio Scan Summary</p>
+                            <h3>${escapeHtml(result?.portfolio_name || state.context.label || 'Portfolio')}</h3>
+                            <p class="proscan-muted">Strategy ${escapeHtml(strategyLabel)} · ${escapeHtml(strategyDescriptor?.config?.startDate || '-')} to ${escapeHtml(strategyDescriptor?.config?.endDate || '-')}</p>
+                        </div>
+                        <div class="proscan-portfolio-badges">
+                            <span class="proscan-portfolio-badge">${escapeHtml(selectionLabel)}</span>
+                            ${result?.is_default ? '<span class="proscan-portfolio-badge">Default</span>' : ''}
+                            <span class="proscan-portfolio-badge proscan-portfolio-badge-neutral">${escapeHtml(String(holdings.length))} holdings</span>
+                        </div>
+                    </div>
+                    <div class="proscan-portfolio-metrics">
+                        ${buildPortfolioMetricMarkup('Notional Balance', escapeHtml(notionalBalanceDisplay))}
+                        ${buildPortfolioMetricMarkup('Trades', escapeHtml(String(result?.trade_count ?? 0)))}
+                        ${buildPortfolioMetricMarkup('Wins / Losses', `${escapeHtml(String(result?.wins ?? 0))} / ${escapeHtml(String(result?.losses ?? 0))}`)}
+                        ${buildPortfolioMetricMarkup('Win Rate', formatRatioAsPercent(result?.win_rate, 1))}
+                        ${buildPortfolioMetricMarkup('Avg Trade Return', formatRatioAsPercent(avgTradeReturnRatio, 2, true), ratioToneClass(avgTradeReturnRatio))}
+                        ${buildPortfolioMetricMarkup('Total Backtest Return', formatRatioAsPercent(totalReturnRatio, 2, true), ratioToneClass(totalReturnRatio))}
+                    </div>
+                </section>
+                <section class="proscan-portfolio-holdings">
+                    <div class="proscan-portfolio-holdings-head">
+                        <h3>Holdings Breakdown</h3>
+                        <p class="proscan-muted">${escapeHtml(String(okHoldings))} scanned · ${escapeHtml(String(failedHoldings))} errors</p>
+                    </div>
+                    <div class="proscan-portfolio-holdings-grid">
+                        ${holdingsMarkup}
+                    </div>
+                </section>
+            `;
+
+            if (resultsMeta) {
+                resultsMeta.textContent = `Portfolio summary across ${holdings.length} holdings`;
+            }
         }
 
         function syncStrategyCardSummary(card) {
@@ -954,6 +1071,10 @@
 
             scanStatusValue.textContent = `Running ${strategyDescriptor.label}...`;
             currentStrategyValue.textContent = strategyDescriptor.label;
+            setResultsMode('group');
+            if (portfolioResultsPanel) {
+                portfolioResultsPanel.innerHTML = '';
+            }
 
             try {
                 const data = await postJsonWithCsrf('/api/pro-scan/run-group/', {
@@ -1002,19 +1123,18 @@
                     strategy_params: strategyDescriptor.portfolioParams(strategyDescriptor.config),
                 }, 'Portfolio scan failed.');
 
-                tableBody.innerHTML = '';
-                (payload.results || []).forEach((result) => {
-                    tableBody.appendChild(buildPortfolioRow(result));
-                });
+                if (tableBody) {
+                    tableBody.innerHTML = '';
+                }
 
-                if (!payload.results || !payload.results.length) {
-                    renderEmptyTable('No portfolio results were returned for this strategy.');
+                const result = Array.isArray(payload.results) ? payload.results[0] : null;
+                if (!result) {
+                    renderPortfolioPlaceholder('No portfolio results were returned for this strategy.');
                     return;
                 }
 
-                state.currentSort = { key: 'totalReturn', direction: 'desc' };
+                renderPortfolioResults(result, payload.portfolio || {}, strategyDescriptor);
                 scanStatusValue.textContent = `${strategyDescriptor.label} finished successfully`;
-                renderTableState();
             } catch (error) {
                 console.error(error);
                 handleScanError(error.message);
@@ -1076,7 +1196,7 @@
                     option,
                 });
                 collapsePortfolioAccordions(option.type);
-                renderEmptyTable(`Portfolio mode ready for ${option.name}. Run a strategy card to generate aggregated portfolio results.`);
+                renderPortfolioPlaceholder(`Portfolio mode ready for ${option.name}. Run a strategy card to generate summary and holding-level results.`);
                 Array.from(strategyPanelContainer.children).forEach(syncStrategyCardSummary);
                 closeControlsDrawer();
             });
