@@ -766,15 +766,56 @@
             gap: 0.5rem;
         }
 
-        .portfolio-glidepath-add-toggle.is-disabled {
-            opacity: 0.55;
+        .portfolio-glidepath-add-select {
+            appearance: none;
+            border: 0;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            color: #fff;
+            box-shadow: 0 14px 28px rgba(249, 115, 22, 0.22);
+            padding: 0.7rem 2.1rem 0.7rem 0.95rem;
+            font: inherit;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            min-width: 150px;
+            background-image:
+                linear-gradient(135deg, #f97316, #ea580c),
+                linear-gradient(45deg, transparent 50%, #ffffff 50%),
+                linear-gradient(135deg, #ffffff 50%, transparent 50%);
+            background-position:
+                0 0,
+                calc(100% - 16px) 52%,
+                calc(100% - 11px) 52%;
+            background-size:
+                100% 100%,
+                5px 5px,
+                5px 5px;
+            background-repeat: no-repeat;
+        }
+
+        .portfolio-glidepath-add-select:hover {
+            background-image:
+                linear-gradient(135deg, #ea580c, #c2410c),
+                linear-gradient(45deg, transparent 50%, #ffffff 50%),
+                linear-gradient(135deg, #ffffff 50%, transparent 50%);
+        }
+
+        .portfolio-glidepath-add-select:focus-visible {
+            outline: 3px solid rgba(37, 99, 235, 0.2);
+            outline-offset: 2px;
+        }
+
+        .portfolio-glidepath-add-select:disabled {
+            background: #e2e8f0;
+            box-shadow: none;
+            color: #94a3b8;
             cursor: not-allowed;
         }
 
-        .portfolio-glidepath-menu {
-            left: auto;
-            right: 0;
-            min-width: 220px;
+        .portfolio-glidepath-add-select option {
+            color: #0f172a;
+            background: #fff;
         }
 
         .portfolio-glidepath-name {
@@ -1122,21 +1163,11 @@
                 justify-content: stretch;
             }
 
-            .portfolio-glidepath-actions .portfolio-menu {
-                width: 100%;
-            }
-
             .portfolio-glidepath-actions .portfolio-btn,
+            .portfolio-glidepath-actions .portfolio-glidepath-add-select,
             .portfolio-glidepath-actions .portfolio-icon-btn {
                 width: 100%;
                 justify-content: center;
-            }
-
-            .portfolio-glidepath-menu {
-                left: 0;
-                right: auto;
-                width: 100%;
-                min-width: 0;
             }
 
             .portfolio-glidepath-mobile {
@@ -1484,16 +1515,9 @@
             updateWorkspaceControls();
         }
 
-        function closeGlidepathMenus() {
-            glidepathContainer?.querySelectorAll('.portfolio-glidepath-menu').forEach((menu) => {
-                menu.classList.add('hidden');
-            });
-        }
-
         function closeMenus() {
             presetMenu.classList.add('hidden');
             savedMenu.classList.add('hidden');
-            closeGlidepathMenus();
         }
 
         function parsePortfolioForm(html) {
@@ -1984,18 +2008,12 @@
             glidepathContainer.innerHTML = glidepaths.map((glidepath) => {
                 const portfolios = glidepath.portfolios || [];
                 const availablePortfolios = getGlidepathAvailablePortfolios(glidepath, workspacePortfolios);
-                const addPortfolioItems = availablePortfolios.length
+                const addPortfolioPlaceholder = availablePortfolios.length ? 'Portfolio +' : 'No portfolios available';
+                const addPortfolioOptions = availablePortfolios.length
                     ? availablePortfolios.map((portfolio) => `
-                        <button
-                            type="button"
-                            class="portfolio-menu-item glidepath-portfolio-add-btn"
-                            data-glidepath-id="${glidepath.id}"
-                            data-portfolio-key="${escapeHtml(portfolio.key)}"
-                        >
-                            ${escapeHtml(portfolio.name)}
-                        </button>
+                        <option value="${escapeHtml(portfolio.key)}">${escapeHtml(portfolio.name)}</option>
                     `).join('')
-                    : '<div class="portfolio-menu-item is-disabled">No portfolios available</div>';
+                    : '';
 
                 const selectedPortfolioChips = portfolios.length
                     ? portfolios.map((portfolio) => `
@@ -2019,20 +2037,13 @@
                     <div class="portfolio-glidepath-header">
                         <input type="text" class="portfolio-glidepath-name" value="${escapeHtml(glidepath.name)}">
                         <div class="portfolio-glidepath-actions">
-                            <div class="portfolio-menu">
-                                <button
-                                    type="button"
-                                    class="portfolio-btn portfolio-btn-accent portfolio-glidepath-add-toggle${availablePortfolios.length ? '' : ' is-disabled'}"
-                                    data-glidepath-id="${glidepath.id}"
-                                    aria-expanded="false"
-                                    ${availablePortfolios.length ? '' : 'disabled'}
-                                >
-                                    Portfolio +
-                                </button>
-                                <div class="portfolio-menu-popover portfolio-glidepath-menu hidden">
-                                    ${addPortfolioItems}
-                                </div>
-                            </div>
+                            <select
+                                class="portfolio-glidepath-add-select"
+                                data-glidepath-id="${glidepath.id}"
+                            >
+                                <option value="">${addPortfolioPlaceholder}</option>
+                                ${addPortfolioOptions}
+                            </select>
                             <button type="button" class="portfolio-icon-btn portfolio-icon-btn-save glidepath-save-btn" data-glidepath-id="${glidepath.id}">Save</button>
                             <button type="button" class="portfolio-icon-btn portfolio-icon-btn-danger glidepath-remove-btn">Delete</button>
                         </div>
@@ -2211,6 +2222,10 @@
         }
 
         document.addEventListener('click', function (event) {
+            if (!(event.target instanceof Element)) {
+                return;
+            }
+
             if (!event.target.closest('.portfolio-menu')) {
                 closeMenus();
             }
@@ -2243,36 +2258,6 @@
                 return;
             }
 
-            const glidepathAddToggle = event.target.closest('.portfolio-glidepath-add-toggle');
-            if (glidepathAddToggle) {
-                const glidepathCard = glidepathAddToggle.closest('[data-glidepath-id]');
-                const menu = glidepathCard?.querySelector('.portfolio-glidepath-menu');
-                if (!menu) {
-                    return;
-                }
-
-                const shouldOpen = menu.classList.contains('hidden');
-                closeGlidepathMenus();
-                if (shouldOpen) {
-                    menu.classList.remove('hidden');
-                }
-                return;
-            }
-
-            const glidepathAddBtn = event.target.closest('.glidepath-portfolio-add-btn');
-            if (glidepathAddBtn) {
-                const glidepath = getGlidepathById(glidepathAddBtn.dataset.glidepathId);
-                const portfolioKey = String(glidepathAddBtn.dataset.portfolioKey || '').trim();
-                if (!glidepath || !portfolioKey) {
-                    return;
-                }
-                glidepath.excludedPortfolioKeys = dedupeKeys(glidepath.excludedPortfolioKeys)
-                    .filter((key) => key !== portfolioKey);
-                closeGlidepathMenus();
-                renderGlidepaths();
-                return;
-            }
-
             const glidepathPortfolioRemoveBtn = event.target.closest('.glidepath-portfolio-remove-btn');
             if (glidepathPortfolioRemoveBtn) {
                 const glidepath = getGlidepathById(glidepathPortfolioRemoveBtn.dataset.glidepathId);
@@ -2283,7 +2268,6 @@
                 const excludedPortfolioKeys = dedupeKeys(glidepath.excludedPortfolioKeys);
                 excludedPortfolioKeys.push(portfolioKey);
                 glidepath.excludedPortfolioKeys = dedupeKeys(excludedPortfolioKeys);
-                closeGlidepathMenus();
                 renderGlidepaths();
                 return;
             }
@@ -2423,7 +2407,6 @@
                 const index = glidepaths.findIndex((glidepath) => glidepath.id === glidepathId);
                 if (index >= 0) {
                     glidepaths.splice(index, 1);
-                    closeGlidepathMenus();
                     renderGlidepaths();
                 }
                 return;
@@ -2432,6 +2415,10 @@
         });
 
         document.addEventListener('input', function (event) {
+            if (!(event.target instanceof Element)) {
+                return;
+            }
+
             const nameInput = event.target.closest('.portfolio-form input[name="name"]');
             if (nameInput) {
                 renderGlidepaths();
@@ -2471,6 +2458,28 @@
                 leg.weights[glidepathWeightInput.dataset.portfolioKey] = Number.isFinite(nextValue) ? nextValue : 0;
                 renderGlidepaths();
             }
+        });
+
+        document.addEventListener('change', function (event) {
+            if (!(event.target instanceof Element)) {
+                return;
+            }
+
+            const glidepathAddSelect = event.target.closest('.portfolio-glidepath-add-select');
+            if (!glidepathAddSelect) {
+                return;
+            }
+
+            const glidepath = getGlidepathById(glidepathAddSelect.dataset.glidepathId);
+            const portfolioKey = String(glidepathAddSelect.value || '').trim();
+            if (!glidepath || !portfolioKey) {
+                return;
+            }
+
+            glidepath.excludedPortfolioKeys = dedupeKeys(glidepath.excludedPortfolioKeys)
+                .filter((key) => key !== portfolioKey);
+            glidepathAddSelect.value = '';
+            renderGlidepaths();
         });
 
         document.addEventListener('submit', function (event) {
