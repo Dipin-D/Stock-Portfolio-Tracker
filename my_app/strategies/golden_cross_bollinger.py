@@ -188,24 +188,28 @@ class _GoldenCrossBollingerBaseStrategy(BaseStrategy):
         cash_before_last_buy = cash
         trades: list[dict] = []
         equity_curve: list[dict] = []
+        blocked_entry_signals = 0
 
         for _, row in df.iterrows():
             price = float(row["Close"])
             timestamp = int(row["Date"])
             date_text = row["Date_dt"].date().isoformat()
 
-            if shares == 0 and bool(buy_signal.loc[row.name]) and bool(entry_allowed.loc[row.name]):
-                cash_before_last_buy = cash
-                requested_shares = int(override_shares) if override_shares not in (None, "", "Auto") else int((cash * order_percentage) // price)
-                if requested_shares > 0:
-                    shares = requested_shares
-                    cash -= shares * price
-                    open_trade = {
-                        "strategy_slug": self.slug,
-                        "entry_date": date_text,
-                        "entry_price": price,
-                        "shares": shares,
-                    }
+            if shares == 0 and bool(buy_signal.loc[row.name]):
+                if not bool(entry_allowed.loc[row.name]):
+                    blocked_entry_signals += 1
+                else:
+                    cash_before_last_buy = cash
+                    requested_shares = int(override_shares) if override_shares not in (None, "", "Auto") else int((cash * order_percentage) // price)
+                    if requested_shares > 0:
+                        shares = requested_shares
+                        cash -= shares * price
+                        open_trade = {
+                            "strategy_slug": self.slug,
+                            "entry_date": date_text,
+                            "entry_price": price,
+                            "shares": shares,
+                        }
             elif shares > 0 and bool(sell_signal.loc[row.name]) and open_trade:
                 cash += shares * price
                 pnl = (price - open_trade["entry_price"]) * shares
@@ -237,6 +241,7 @@ class _GoldenCrossBollingerBaseStrategy(BaseStrategy):
             "metrics": metrics,
             "equity_curve": equity_curve,
             "final_cash": float(cash),
+            "blocked_entry_signals": int(blocked_entry_signals),
         }
 
 

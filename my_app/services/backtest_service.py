@@ -475,7 +475,6 @@ def run_bayesian_backtest(payload: dict, user=None) -> dict:
             signal_series = strategy.generate_signal(strategy_frame, params).fillna(False).astype(bool)
             entry_allowed_mask = strategy.entry_allowed_mask(strategy_frame, runtime_context)
             filtered_signal_series = signal_series & entry_allowed_mask
-            blocked_entry_signals = int((signal_series & (~entry_allowed_mask)).sum())
             strength_series = strategy.signal_strength(strategy_frame, params)
             observed_event = strategy.latest_boolean(filtered_signal_series)
             likelihood = estimate_binary_likelihood(filtered_signal_series, strategy_frame["target_success"], observed_event)
@@ -509,6 +508,7 @@ def run_bayesian_backtest(payload: dict, user=None) -> dict:
                     "entry_allowed_mask": entry_allowed_mask,
                 },
             )
+            blocked_entry_signals = int(backtest_result.get("blocked_entry_signals", 0))
             aggregated_trades.extend([
                 {
                     **trade,

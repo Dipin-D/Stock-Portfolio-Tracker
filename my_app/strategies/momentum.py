@@ -83,6 +83,7 @@ class MomentumStrategy(BaseStrategy):
         trades: list[dict] = []
         equity_curve: list[dict] = []
         momentum = df["momentum_signal"]
+        blocked_entry_signals = 0
 
         for index, row in df.iterrows():
             price = float(row["Close"])
@@ -96,18 +97,20 @@ class MomentumStrategy(BaseStrategy):
                     shares == 0
                     and previous_momentum <= buy_threshold
                     and current_momentum > buy_threshold
-                    and bool(entry_allowed.loc[row.name])
                 ):
-                    requested_shares = int(override_shares) if override_shares not in (None, "", "Auto") else int((cash * order_percentage) // price)
-                    if requested_shares > 0:
-                        shares = requested_shares
-                        cash -= shares * price
-                        open_trade = {
-                            "strategy_slug": self.slug,
-                            "entry_date": date_text,
-                            "entry_price": price,
-                            "shares": shares,
-                        }
+                    if not bool(entry_allowed.loc[row.name]):
+                        blocked_entry_signals += 1
+                    else:
+                        requested_shares = int(override_shares) if override_shares not in (None, "", "Auto") else int((cash * order_percentage) // price)
+                        if requested_shares > 0:
+                            shares = requested_shares
+                            cash -= shares * price
+                            open_trade = {
+                                "strategy_slug": self.slug,
+                                "entry_date": date_text,
+                                "entry_price": price,
+                                "shares": shares,
+                            }
 
                 elif shares > 0 and previous_momentum >= exit_threshold and current_momentum < exit_threshold and open_trade:
                     cash += shares * price
@@ -152,4 +155,5 @@ class MomentumStrategy(BaseStrategy):
             "metrics": metrics,
             "equity_curve": equity_curve,
             "final_cash": float(cash),
+            "blocked_entry_signals": int(blocked_entry_signals),
         }

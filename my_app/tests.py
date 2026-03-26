@@ -956,6 +956,7 @@ class StrategyEarningsFilterTests(TestCase):
         strategy_frame = strategy.compute_features(frame, params)
         baseline = strategy.backtest(strategy_frame, params)
         self.assertEqual(len(baseline['trades']), 1)
+        self.assertEqual(baseline['blocked_entry_signals'], 0)
 
         filtered = strategy.backtest(
             strategy_frame,
@@ -970,6 +971,7 @@ class StrategyEarningsFilterTests(TestCase):
             },
         )
         self.assertEqual(len(filtered['trades']), 0)
+        self.assertEqual(filtered['blocked_entry_signals'], 1)
 
 
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
