@@ -1,0 +1,584 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    {{ block.super }}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,650&display=swap" rel="stylesheet">
+    <style>
+        .ency-category-page {
+            --ency-display: 'Fraunces', Georgia, serif;
+            --ency-body: 'Space Grotesk', 'Manrope', sans-serif;
+            --ency-ink: #122316;
+            --ency-muted: #4a6455;
+            --ency-border: #cadfd0;
+            --ency-card: #ffffff;
+            --ency-soft: #f4faf5;
+            --ency-accent: #0a7a52;
+            min-height: calc(100vh - 72px);
+            padding: 1.15rem;
+            background:
+                radial-gradient(circle at 88% 8%, rgba(212, 130, 31, 0.13), transparent 24%),
+                radial-gradient(circle at 10% 18%, rgba(10, 122, 82, 0.14), transparent 30%),
+                linear-gradient(180deg, #eef4ee 0%, #f5f8f2 100%);
+            color: var(--ency-ink);
+            font-family: var(--ency-body);
+        }
+
+        .ency-category-shell {
+            max-width: 1320px;
+            margin: 0 auto;
+            display: grid;
+            gap: 1rem;
+        }
+
+        .ency-secondary-nav,
+        .ency-category-header,
+        .ency-filter-bar,
+        .ency-main,
+        .ency-sidebar-stack > section {
+            border: 1px solid var(--ency-border);
+            border-radius: 28px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 18px 42px rgba(14, 32, 21, 0.07);
+        }
+
+        .ency-secondary-nav,
+        .ency-category-header,
+        .ency-filter-bar,
+        .ency-main,
+        .ency-sidebar-stack > section {
+            padding: 1rem 1.1rem;
+        }
+
+        .ency-secondary-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.54rem;
+        }
+
+        .ency-secondary-nav a {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid var(--ency-border);
+            border-radius: 999px;
+            background: #eff6f1;
+            color: #1b3a2b;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 0.42rem 0.78rem;
+        }
+
+        .ency-kicker {
+            margin: 0;
+            color: #517160;
+            font-size: 0.73rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .ency-category-header h1,
+        .ency-pane-title,
+        .ency-article-title {
+            margin: 0;
+            font-family: var(--ency-display);
+            color: #132b1f;
+        }
+
+        .ency-category-header h1 {
+            margin-top: 0.35rem;
+            font-size: clamp(2rem, 4vw, 3rem);
+            line-height: 0.98;
+        }
+
+        .ency-category-header p {
+            margin: 0.8rem 0 0;
+            color: var(--ency-muted);
+            line-height: 1.66;
+            max-width: 74ch;
+        }
+
+        .ency-category-meta {
+            margin-top: 0.9rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+        }
+
+        .ency-chip {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid #c6dbcc;
+            border-radius: 999px;
+            background: #eff8f1;
+            color: #355748;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .ency-filter-bar {
+            position: sticky;
+            top: 88px;
+            z-index: 5;
+            background: rgba(245, 250, 246, 0.97);
+            backdrop-filter: blur(6px);
+        }
+
+        .ency-filter-form {
+            display: grid;
+            gap: 0.6rem;
+            grid-template-columns: minmax(170px, 2fr) repeat(4, minmax(130px, 1fr)) auto;
+            align-items: end;
+        }
+
+        .ency-filter-field {
+            display: grid;
+            gap: 0.35rem;
+        }
+
+        .ency-filter-field label {
+            color: #4f6d5b;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+        }
+
+        .ency-filter-field input,
+        .ency-filter-field select {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #bfd3c2;
+            border-radius: 14px;
+            background: #fff;
+            color: #1a382a;
+            padding: 0.67rem 0.8rem;
+            font: inherit;
+        }
+
+        .ency-filter-field input:focus,
+        .ency-filter-field select:focus {
+            outline: none;
+            border-color: #1b855d;
+            box-shadow: 0 0 0 4px rgba(27, 133, 93, 0.12);
+        }
+
+        .ency-filter-apply {
+            border: 1px solid #0d704d;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #0d704d, #145e44);
+            color: #f6fff8;
+            font: inherit;
+            font-weight: 700;
+            padding: 0.67rem 0.9rem;
+            cursor: pointer;
+            min-height: 42px;
+        }
+
+        .ency-category-layout {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: minmax(0, 1fr) 320px;
+        }
+
+        .ency-main {
+            display: grid;
+            gap: 0.78rem;
+            align-content: start;
+        }
+
+        .ency-main-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .ency-main-header p {
+            margin: 0;
+            color: var(--ency-muted);
+            line-height: 1.55;
+        }
+
+        .ency-article-grid {
+            display: grid;
+            gap: 0.75rem;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .ency-article-card {
+            border: 1px solid #c8dccd;
+            border-radius: 20px;
+            background: var(--ency-card);
+            padding: 0.88rem;
+            box-shadow: 0 12px 28px rgba(14, 32, 21, 0.06);
+        }
+
+        .ency-article-title {
+            font-size: 1.36rem;
+            line-height: 1.1;
+        }
+
+        .ency-article-title a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .ency-article-title a:hover {
+            text-decoration: underline;
+            text-decoration-thickness: 1.5px;
+        }
+
+        .ency-article-summary {
+            margin: 0.55rem 0 0;
+            color: var(--ency-muted);
+            line-height: 1.58;
+            font-size: 0.95rem;
+        }
+
+        .ency-article-meta,
+        .ency-article-tags,
+        .ency-sidebar-meta {
+            margin-top: 0.62rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.34rem;
+        }
+
+        .ency-pill,
+        .ency-date-pill {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid #c5dac9;
+            border-radius: 999px;
+            background: #eef7f1;
+            color: #375b4a;
+            padding: 0.18rem 0.52rem;
+            font-size: 0.71rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .ency-date-pill {
+            background: #f4fbf5;
+            border-color: #cfe2d2;
+        }
+
+        .ency-no-results {
+            border: 1px dashed #b8cdbf;
+            border-radius: 16px;
+            background: #f4faf6;
+            color: #4c6758;
+            padding: 0.86rem;
+            line-height: 1.62;
+        }
+
+        .ency-sidebar-stack {
+            display: grid;
+            gap: 0.76rem;
+            align-content: start;
+            position: sticky;
+            top: 170px;
+            max-height: calc(100vh - 190px);
+            overflow: auto;
+            padding-right: 0.1rem;
+        }
+
+        .ency-sidebar-stack h2 {
+            margin: 0;
+            font-size: 1.06rem;
+            color: #18382a;
+            line-height: 1.2;
+        }
+
+        .ency-sidebar-list {
+            margin: 0.66rem 0 0;
+            display: grid;
+            gap: 0.52rem;
+        }
+
+        .ency-sidebar-item {
+            border: 1px solid #c8dccd;
+            border-radius: 15px;
+            background: #f8fcf8;
+            padding: 0.62rem;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .ency-sidebar-item:hover {
+            border-color: #9fbea9;
+        }
+
+        .ency-sidebar-item h3 {
+            margin: 0;
+            font-size: 0.95rem;
+            color: #19392b;
+            line-height: 1.36;
+        }
+
+        .ency-sidebar-item p {
+            margin: 0.35rem 0 0;
+            color: #4f6a5a;
+            font-size: 0.86rem;
+            line-height: 1.46;
+        }
+
+        .ency-category-page .ency-category-header,
+        .ency-category-page .ency-filter-bar,
+        .ency-category-page .ency-main,
+        .ency-category-page .ency-sidebar-stack > section {
+            opacity: 0;
+            animation: encyLift 560ms ease-out forwards;
+        }
+
+        .ency-category-page .ency-filter-bar { animation-delay: 70ms; }
+        .ency-category-page .ency-main { animation-delay: 130ms; }
+        .ency-category-page .ency-sidebar-stack > section:nth-child(1) { animation-delay: 190ms; }
+        .ency-category-page .ency-sidebar-stack > section:nth-child(2) { animation-delay: 230ms; }
+        .ency-category-page .ency-sidebar-stack > section:nth-child(3) { animation-delay: 270ms; }
+        .ency-category-page .ency-sidebar-stack > section:nth-child(4) { animation-delay: 310ms; }
+
+        @keyframes encyLift {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 1120px) {
+            .ency-filter-form {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .ency-filter-apply {
+                grid-column: span 2;
+            }
+
+            .ency-category-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .ency-sidebar-stack {
+                position: static;
+                max-height: none;
+                overflow: visible;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .ency-category-page {
+                padding: 0.9rem;
+            }
+
+            .ency-secondary-nav,
+            .ency-category-header,
+            .ency-filter-bar,
+            .ency-main,
+            .ency-sidebar-stack > section {
+                border-radius: 22px;
+                padding: 0.9rem;
+            }
+
+            .ency-filter-form {
+                grid-template-columns: 1fr;
+            }
+
+            .ency-filter-apply {
+                grid-column: auto;
+            }
+
+            .ency-article-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block title %}{{ category.name }} | Encyclopedia | Trading Pro{% endblock %}
+
+{% block content %}
+    <div class="ency-category-page">
+        <div class="ency-category-shell">
+            <nav class="ency-secondary-nav" aria-label="Encyclopedia quick navigation">
+                <a href="{% url 'encyclopedia_home' %}">Encyclopedia</a>
+                <a href="#category-list">Categories</a>
+                <a href="{% url 'encyclopedia_home' %}#az-index">A-Z</a>
+                <a href="#filters">Search</a>
+            </nav>
+
+            <header class="ency-category-header">
+                <p class="ency-kicker">Category</p>
+                <h1>{{ category.name }}</h1>
+                <p>{{ category.description }}</p>
+                <div class="ency-category-meta">
+                    <span class="ency-chip">{{ total_article_count }} articles</span>
+                    {% for option in subcategory_options %}
+                        <span class="ency-chip">{{ option }}</span>
+                    {% endfor %}
+                </div>
+            </header>
+
+            <section class="ency-filter-bar" id="filters">
+                <form method="get" class="ency-filter-form">
+                    <div class="ency-filter-field">
+                        <label for="category-search">Search in category</label>
+                        <input id="category-search" type="search" name="q" value="{{ filter_state.search_query }}" placeholder="Search title, summary, tags">
+                    </div>
+
+                    <div class="ency-filter-field">
+                        <label for="subcategory-filter">Subcategory</label>
+                        <select id="subcategory-filter" name="subcategory">
+                            <option value="all" {% if filter_state.subcategory == 'all' %}selected{% endif %}>All subcategories</option>
+                            {% for option in subcategory_options %}
+                                <option value="{{ option }}" {% if filter_state.subcategory == option %}selected{% endif %}>{{ option }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="ency-filter-field">
+                        <label for="difficulty-filter">Difficulty</label>
+                        <select id="difficulty-filter" name="difficulty">
+                            <option value="all" {% if filter_state.difficulty == 'all' %}selected{% endif %}>All levels</option>
+                            {% for option in difficulty_options %}
+                                <option value="{{ option }}" {% if filter_state.difficulty == option %}selected{% endif %}>{{ option }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="ency-filter-field">
+                        <label for="type-filter">Content type</label>
+                        <select id="type-filter" name="content_type">
+                            <option value="all" {% if filter_state.content_type == 'all' %}selected{% endif %}>All content</option>
+                            {% for option in content_type_options %}
+                                <option value="{{ option }}" {% if filter_state.content_type == option %}selected{% endif %}>{{ option }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="ency-filter-field">
+                        <label for="sort-filter">Sort</label>
+                        <select id="sort-filter" name="sort">
+                            {% for option in sort_options %}
+                                <option value="{{ option.value }}" {% if filter_state.sort == option.value %}selected{% endif %}>{{ option.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button class="ency-filter-apply" type="submit">Apply</button>
+                </form>
+            </section>
+
+            <div class="ency-category-layout" id="category-list">
+                <main class="ency-main">
+                    <header class="ency-main-header">
+                        <div>
+                            <p class="ency-kicker">Articles</p>
+                            <h2 class="ency-pane-title">{{ filtered_article_count }} results in {{ category.name }}</h2>
+                        </div>
+                        <p>Showing title, summary, tags, read time, last updated date, and level for each entry.</p>
+                    </header>
+
+                    {% if articles %}
+                        <div class="ency-article-grid">
+                            {% for article in articles %}
+                                <article id="{{ article.slug }}" class="ency-article-card">
+                                    <h3 class="ency-article-title"><a href="{{ article.url }}">{{ article.title }}</a></h3>
+                                    <p class="ency-article-summary">{{ article.summary }}</p>
+                                    <div class="ency-article-meta">
+                                        <span class="ency-pill">{{ article.subcategory }}</span>
+                                        <span class="ency-pill">{{ article.difficulty }}</span>
+                                        <span class="ency-pill">{{ article.content_type }}</span>
+                                        <span class="ency-pill">{{ article.read_time }}</span>
+                                        <span class="ency-date-pill">Updated {{ article.last_updated|date:"M j, Y" }}</span>
+                                    </div>
+                                    <div class="ency-article-tags">
+                                        {% for tag in article.tags %}
+                                            <span class="ency-pill">{{ tag }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="ency-no-results">
+                            No articles match this filter set. Clear one or two filters and try again.
+                        </div>
+                    {% endif %}
+                </main>
+
+                <aside class="ency-sidebar-stack">
+                    <section>
+                        <h2>Featured in {{ category.name }}</h2>
+                        <div class="ency-sidebar-list">
+                            {% for article in featured_articles %}
+                                <a class="ency-sidebar-item" href="{{ article.url }}">
+                                    <h3>{{ article.title }}</h3>
+                                    <p>{{ article.summary|truncatewords:20 }}</p>
+                                    <div class="ency-sidebar-meta">
+                                        <span class="ency-pill">{{ article.subcategory }}</span>
+                                        <span class="ency-pill">{{ article.difficulty }}</span>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </section>
+
+                    <section>
+                        <h2>Related Categories</h2>
+                        <div class="ency-sidebar-list">
+                            {% for related in related_categories %}
+                                <a class="ency-sidebar-item" href="{{ related.url }}">
+                                    <h3>{{ related.name }}</h3>
+                                    <p>{{ related.summary }}</p>
+                                    <div class="ency-sidebar-meta">
+                                        <span class="ency-pill">{{ related.article_count }} articles</span>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </section>
+
+                    <section>
+                        <h2>Beginner Starting Points</h2>
+                        <div class="ency-sidebar-list">
+                            {% for article in beginner_starting_points %}
+                                <a class="ency-sidebar-item" href="{{ article.url }}">
+                                    <h3>{{ article.title }}</h3>
+                                    <p>{{ article.summary|truncatewords:18 }}</p>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </section>
+
+                    <section>
+                        <h2>Recently Updated</h2>
+                        <div class="ency-sidebar-list">
+                            {% for article in recent_articles %}
+                                <a class="ency-sidebar-item" href="{{ article.url }}">
+                                    <h3>{{ article.title }}</h3>
+                                    <div class="ency-sidebar-meta">
+                                        <span class="ency-date-pill">{{ article.last_updated|date:"M j, Y" }}</span>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </section>
+                </aside>
+            </div>
+        </div>
+    </div>
+{% endblock %}

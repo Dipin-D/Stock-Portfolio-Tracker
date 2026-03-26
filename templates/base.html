@@ -139,7 +139,7 @@
             <a href="{% url 'portfolio' %}" class="{% if request.path == '/portfolio/' %}active{% endif %}">Portfolio</a>
             <a href="{% url 'backtest' %}" class="{% if request.path == '/backtest/' %}active{% endif %}">Backtest</a>
             <a href="{% url 'pro_scan' %}" class="{% if request.path == '/pro_scan/' %}active{% endif %}">Pro Scan</a>
-            <a href="{% url 'indicators' %}" class="{% if request.path == '/indicators/' %}active{% endif %}">Indicators</a>
+            <a href="{% url 'encyclopedia_home' %}" class="{% if request.path|slice:':13' == '/encyclopedia' or request.path == '/indicators/' %}active{% endif %}">Encyclopedia</a>
             <a href="{% url 'theMath' %}" class="{% if request.path == '/theMath/' %}active{% endif %}">The Math</a>
             <a href="{% url 'settings' %}" class="{% if request.path == '/settings/' %}active{% endif %}">Settings</a>
             <a href="{% url 'help' %}" class="{% if request.path == '/help/' %}active{% endif %}">Help</a>

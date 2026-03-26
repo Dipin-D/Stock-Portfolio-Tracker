@@ -486,13 +486,18 @@ class WatchlistAndResearchTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Unable to load research data for AAPL right now.')
 
-    def test_indicators_page_renders_indicator_library_content(self):
+    def test_indicators_page_redirects_to_encyclopedia_indicators_category(self):
         response = self.client.get(reverse('indicators'))
+        destination = reverse('encyclopedia_category', kwargs={'category_slug': 'indicators'})
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Indicators')
-        self.assertContains(response, 'Bollinger Bands')
-        self.assertContains(response, 'Relative Strength Index')
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, destination)
+
+        category_response = self.client.get(destination)
+        self.assertEqual(category_response.status_code, 200)
+        self.assertContains(category_response, 'Indicators')
+        self.assertContains(category_response, 'Bollinger Bands')
+        self.assertContains(category_response, 'Relative Strength Index')
 
 
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])

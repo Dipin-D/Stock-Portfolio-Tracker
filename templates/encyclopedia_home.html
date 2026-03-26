@@ -1,0 +1,682 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    {{ block.super }}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,650&display=swap" rel="stylesheet">
+    <style>
+        .ency-home {
+            --ency-display: 'Fraunces', Georgia, serif;
+            --ency-body: 'Space Grotesk', 'Manrope', sans-serif;
+            --ency-ink: #102218;
+            --ency-muted: #455f51;
+            --ency-border: #c9dccf;
+            --ency-card: #f9fbf7;
+            --ency-card-strong: #ffffff;
+            --ency-accent: #0b7a53;
+            --ency-accent-soft: rgba(11, 122, 83, 0.12);
+            min-height: calc(100vh - 72px);
+            padding: 1.25rem;
+            background:
+                radial-gradient(circle at 8% 8%, rgba(11, 122, 83, 0.16), transparent 28%),
+                radial-gradient(circle at 84% 14%, rgba(226, 146, 43, 0.14), transparent 24%),
+                linear-gradient(180deg, #edf4ef 0%, #f5f8f1 100%);
+            color: var(--ency-ink);
+            font-family: var(--ency-body);
+        }
+
+        .ency-home-shell {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            gap: 1.15rem;
+        }
+
+        .ency-secondary-nav,
+        .ency-hero,
+        .ency-section {
+            border: 1px solid var(--ency-border);
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.94);
+            box-shadow: 0 22px 50px rgba(16, 34, 24, 0.08);
+        }
+
+        .ency-secondary-nav,
+        .ency-hero,
+        .ency-section {
+            padding: 1.2rem 1.25rem;
+        }
+
+        .ency-secondary-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+        }
+
+        .ency-secondary-nav a {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            border: 1px solid var(--ency-border);
+            border-radius: 999px;
+            background: #eff6f0;
+            color: var(--ency-ink);
+            text-decoration: none;
+            font-size: 0.84rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 0.46rem 0.82rem;
+            transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+        }
+
+        .ency-secondary-nav a:hover {
+            background: #e5f2e8;
+            border-color: #9fc7b0;
+            transform: translateY(-1px);
+        }
+
+        .ency-kicker,
+        .ency-section-kicker {
+            margin: 0;
+            color: #527362;
+            font-size: 0.74rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .ency-hero h1,
+        .ency-section-title,
+        .ency-card-title {
+            margin: 0;
+            font-family: var(--ency-display);
+            color: #11281c;
+        }
+
+        .ency-hero h1 {
+            margin-top: 0.36rem;
+            font-size: clamp(2rem, 4vw, 3.35rem);
+            line-height: 0.98;
+            max-width: 18ch;
+        }
+
+        .ency-hero p {
+            margin: 0.82rem 0 0;
+            color: var(--ency-muted);
+            line-height: 1.72;
+            max-width: 76ch;
+        }
+
+        .ency-hero-stats {
+            margin-top: 1.1rem;
+            display: grid;
+            gap: 0.75rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        .ency-hero-stat {
+            border: 1px solid var(--ency-border);
+            border-radius: 18px;
+            background: var(--ency-card);
+            padding: 0.75rem 0.88rem;
+        }
+
+        .ency-hero-stat span {
+            display: block;
+            color: #5c7868;
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+        }
+
+        .ency-hero-stat strong {
+            display: block;
+            margin-top: 0.35rem;
+            color: #17372a;
+            font-size: 1.15rem;
+            line-height: 1.25;
+        }
+
+        .ency-search {
+            margin-top: 1rem;
+            display: grid;
+            gap: 0.65rem;
+            grid-template-columns: minmax(0, 1fr) auto;
+        }
+
+        .ency-search input {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #b7ccb9;
+            border-radius: 18px;
+            background: #ffffff;
+            color: #17372a;
+            padding: 0.86rem 1rem;
+            font: inherit;
+        }
+
+        .ency-search input:focus {
+            outline: none;
+            border-color: #1f8b62;
+            box-shadow: 0 0 0 4px rgba(31, 139, 98, 0.12);
+        }
+
+        .ency-search button {
+            border: 1px solid #0d6d4c;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #0d6d4c, #115f44);
+            color: #f5fff8;
+            font: inherit;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            padding: 0.86rem 1.15rem;
+            cursor: pointer;
+        }
+
+        .ency-quick-actions {
+            margin-top: 0.95rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.56rem;
+        }
+
+        .ency-quick-actions a {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid var(--ency-border);
+            border-radius: 999px;
+            background: var(--ency-card);
+            color: #1d3b2d;
+            text-decoration: none;
+            font-size: 0.79rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 0.44rem 0.82rem;
+        }
+
+        .ency-section-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.95rem;
+        }
+
+        .ency-section-title {
+            font-size: clamp(1.55rem, 2.5vw, 2.2rem);
+            line-height: 1.02;
+        }
+
+        .ency-section-subcopy {
+            margin: 0;
+            color: var(--ency-muted);
+            line-height: 1.6;
+            max-width: 66ch;
+        }
+
+        .ency-featured-strip {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(240px, 1fr);
+            gap: 0.8rem;
+            overflow-x: auto;
+            padding-bottom: 0.35rem;
+            scroll-snap-type: x mandatory;
+        }
+
+        .ency-featured-card {
+            border: 1px solid #c8ddcf;
+            border-radius: 22px;
+            background: var(--ency-card-strong);
+            padding: 0.9rem;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: 0 14px 32px rgba(16, 34, 24, 0.06);
+            scroll-snap-align: start;
+        }
+
+        .ency-featured-card:hover {
+            border-color: #8eb8a0;
+        }
+
+        .ency-card-title {
+            font-size: 1.35rem;
+            line-height: 1.12;
+        }
+
+        .ency-card-summary {
+            margin: 0.55rem 0 0;
+            color: var(--ency-muted);
+            font-size: 0.94rem;
+            line-height: 1.56;
+        }
+
+        .ency-card-meta {
+            margin-top: 0.75rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .ency-pill {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid #c5d8ca;
+            border-radius: 999px;
+            background: #eef6f0;
+            color: #375a48;
+            padding: 0.2rem 0.56rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .ency-taxonomy-grid,
+        .ency-categories-grid,
+        .ency-updated-grid,
+        .ency-popular-grid,
+        .ency-results-grid {
+            display: grid;
+            gap: 0.78rem;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        .ency-taxonomy-card,
+        .ency-category-card,
+        .ency-updated-card,
+        .ency-popular-card,
+        .ency-result-card {
+            border: 1px solid #c8ddcf;
+            border-radius: 20px;
+            background: var(--ency-card-strong);
+            padding: 0.86rem;
+        }
+
+        .ency-taxonomy-card h3,
+        .ency-category-card h3,
+        .ency-updated-card h3,
+        .ency-popular-card h3,
+        .ency-result-card h3 {
+            margin: 0;
+            font-size: 1.05rem;
+            color: #16362a;
+            line-height: 1.3;
+        }
+
+        .ency-taxonomy-list {
+            margin: 0.66rem 0 0;
+            padding-left: 1rem;
+            color: #486657;
+            line-height: 1.58;
+            font-size: 0.9rem;
+        }
+
+        .ency-category-card {
+            text-decoration: none;
+            color: inherit;
+            box-shadow: 0 14px 30px rgba(16, 34, 24, 0.05);
+            transition: transform 200ms ease, box-shadow 200ms ease;
+        }
+
+        .ency-category-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 34px rgba(16, 34, 24, 0.09);
+        }
+
+        .ency-category-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2.3rem;
+            border: 1px solid #c6ddcf;
+            border-radius: 10px;
+            background: #eff7f1;
+            color: #2d5341;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            padding: 0.3rem 0.45rem;
+        }
+
+        .ency-category-meta,
+        .ency-updated-meta,
+        .ency-popular-meta,
+        .ency-result-meta {
+            margin-top: 0.62rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .ency-updated-card,
+        .ency-popular-card,
+        .ency-result-card {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .ency-updated-card:hover,
+        .ency-popular-card:hover,
+        .ency-result-card:hover {
+            border-color: #9abcaa;
+        }
+
+        .ency-badge-date {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid #c6ddcf;
+            border-radius: 999px;
+            background: #eef7f1;
+            color: #365947;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 0.2rem 0.54rem;
+        }
+
+        .ency-az-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .ency-az-grid a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2rem;
+            border: 1px solid #c5dccd;
+            border-radius: 10px;
+            background: #f3faf5;
+            color: #2d4e3e;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 0.35rem 0.45rem;
+        }
+
+        .ency-home .ency-hero {
+            animation: encyRiseIn 560ms ease-out both;
+        }
+
+        .ency-home .ency-section {
+            opacity: 0;
+            animation: encyRiseIn 620ms ease-out forwards;
+        }
+
+        .ency-home .ency-section:nth-of-type(3) { animation-delay: 80ms; }
+        .ency-home .ency-section:nth-of-type(4) { animation-delay: 140ms; }
+        .ency-home .ency-section:nth-of-type(5) { animation-delay: 200ms; }
+        .ency-home .ency-section:nth-of-type(6) { animation-delay: 260ms; }
+        .ency-home .ency-section:nth-of-type(7) { animation-delay: 320ms; }
+
+        @keyframes encyRiseIn {
+            from {
+                opacity: 0;
+                transform: translateY(14px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 980px) {
+            .ency-search {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .ency-home {
+                padding: 0.95rem;
+            }
+
+            .ency-secondary-nav,
+            .ency-hero,
+            .ency-section {
+                border-radius: 24px;
+                padding: 1rem;
+            }
+
+            .ency-hero-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .ency-featured-strip {
+                grid-auto-columns: minmax(82vw, 1fr);
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block title %}Encyclopedia | Trading Pro{% endblock %}
+
+{% block content %}
+    <div class="ency-home">
+        <div class="ency-home-shell">
+            <nav class="ency-secondary-nav" aria-label="Encyclopedia quick navigation">
+                <a href="{% url 'encyclopedia_home' %}">Encyclopedia</a>
+                <a href="#browse-categories">Categories</a>
+                <a href="#az-index">A-Z</a>
+                <a href="#search-panel">Search</a>
+            </nav>
+
+            <section class="ency-hero" id="search-panel">
+                <p class="ency-kicker">ENCYCLOPEDIA</p>
+                <h1>Explore concepts, terms, and strategies</h1>
+                <p>Browse clear, structured explanations across markets, indicators, strategies, and more.</p>
+
+                <form class="ency-search" method="get" action="{% url 'encyclopedia_home' %}">
+                    <input
+                        type="search"
+                        name="q"
+                        value="{{ search_query }}"
+                        placeholder="Search topics like RSI, earnings per share, sector rotation, or risk/reward"
+                        aria-label="Search encyclopedia"
+                    >
+                    <button type="submit">Search Encyclopedia</button>
+                </form>
+
+                <div class="ency-quick-actions">
+                    <a href="#az-index">Browse A-Z</a>
+                    <a href="#browse-categories">Explore Categories</a>
+                    <a href="#recently-updated">Recently Updated</a>
+                    <a href="#featured-topics">Featured Topics</a>
+                </div>
+
+                <div class="ency-hero-stats">
+                    <div class="ency-hero-stat">
+                        <span>Domains</span>
+                        <strong>{{ taxonomy_domains|length }}</strong>
+                    </div>
+                    <div class="ency-hero-stat">
+                        <span>Total Entries</span>
+                        <strong>{{ total_article_count }}</strong>
+                    </div>
+                    <div class="ency-hero-stat">
+                        <span>Most Active Section</span>
+                        <strong>Indicators</strong>
+                    </div>
+                </div>
+            </section>
+
+            {% if search_query %}
+                <section class="ency-section" id="search-results">
+                    <div class="ency-section-header">
+                        <div>
+                            <p class="ency-section-kicker">Search</p>
+                            <h2 class="ency-section-title">Results for "{{ search_query }}"</h2>
+                        </div>
+                    </div>
+                    <div class="ency-results-grid">
+                        {% for article in search_results %}
+                            <a class="ency-result-card" href="{{ article.url }}">
+                                <h3>{{ article.title }}</h3>
+                                <p class="ency-card-summary">{{ article.summary }}</p>
+                                <div class="ency-result-meta">
+                                    <span class="ency-pill">{{ article.domain_name }}</span>
+                                    <span class="ency-pill">{{ article.subcategory }}</span>
+                                    <span class="ency-pill">{{ article.difficulty }}</span>
+                                </div>
+                            </a>
+                        {% empty %}
+                            <article class="ency-result-card">
+                                <h3>No matching entries</h3>
+                                <p class="ency-card-summary">Try broader terms such as "momentum", "valuation", or "risk".</p>
+                            </article>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+
+            <section class="ency-section" id="featured-topics">
+                <div class="ency-section-header">
+                    <div>
+                        <p class="ency-section-kicker">Featured Topic Strip</p>
+                        <h2 class="ency-section-title">Start with high-demand concepts</h2>
+                    </div>
+                </div>
+
+                <div class="ency-featured-strip">
+                    {% for topic in featured_topics %}
+                        <a class="ency-featured-card" href="{{ topic.url }}">
+                            <h3 class="ency-card-title">{{ topic.title }}</h3>
+                            <p class="ency-card-summary">{{ topic.summary }}</p>
+                            <div class="ency-card-meta">
+                                <span class="ency-pill">{{ topic.domain_name }}</span>
+                                <span class="ency-pill">{{ topic.difficulty }}</span>
+                                <span class="ency-pill">{{ topic.content_type }}</span>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="ency-section" id="taxonomy">
+                <div class="ency-section-header">
+                    <div>
+                        <p class="ency-section-kicker">Information Architecture</p>
+                        <h2 class="ency-section-title">Clean taxonomy, no content pile-up</h2>
+                        <p class="ency-section-subcopy">Every entry is mapped through Domain -> Subcategory -> Article so users can discover content quickly without learning internal jargon.</p>
+                    </div>
+                </div>
+
+                <div class="ency-taxonomy-grid">
+                    <article class="ency-taxonomy-card">
+                        <h3>Level 1: Domain</h3>
+                        <ul class="ency-taxonomy-list">
+                            {% for domain in taxonomy_domains %}
+                                <li>{{ domain.name }} ({{ domain.article_count }})</li>
+                            {% endfor %}
+                        </ul>
+                    </article>
+                    <article class="ency-taxonomy-card">
+                        <h3>Level 2: Subcategory</h3>
+                        <ul class="ency-taxonomy-list">
+                            <li>Momentum</li>
+                            <li>Trend</li>
+                            <li>Volatility</li>
+                            <li>Volume</li>
+                        </ul>
+                    </article>
+                    <article class="ency-taxonomy-card">
+                        <h3>Level 3: Article</h3>
+                        <ul class="ency-taxonomy-list">
+                            <li>Relative Strength Index (RSI)</li>
+                            <li>MACD</li>
+                            <li>Bollinger Bands</li>
+                        </ul>
+                    </article>
+                </div>
+            </section>
+
+            <section class="ency-section" id="browse-categories">
+                <div class="ency-section-header">
+                    <div>
+                        <p class="ency-section-kicker">Browse by Category</p>
+                        <h2 class="ency-section-title">Choose a lane and dive in</h2>
+                    </div>
+                </div>
+
+                <div class="ency-categories-grid">
+                    {% for category in category_cards %}
+                        <a class="ency-category-card" href="{{ category.url }}">
+                            <span class="ency-category-icon">{{ category.icon }}</span>
+                            <h3>{{ category.title }}</h3>
+                            <p class="ency-card-summary">{{ category.summary }}</p>
+                            <div class="ency-category-meta">
+                                <span class="ency-pill">{{ category.article_count }} articles</span>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="ency-section" id="recently-updated">
+                <div class="ency-section-header">
+                    <div>
+                        <p class="ency-section-kicker">Recently Updated</p>
+                        <h2 class="ency-section-title">Fresh edits and revisions</h2>
+                    </div>
+                </div>
+
+                <div class="ency-updated-grid">
+                    {% for article in recently_updated %}
+                        <a class="ency-updated-card" href="{{ article.url }}">
+                            <h3>{{ article.title }}</h3>
+                            <p class="ency-card-summary">{{ article.summary }}</p>
+                            <div class="ency-updated-meta">
+                                <span class="ency-badge-date">{{ article.last_updated|date:"M j, Y" }}</span>
+                                <span class="ency-pill">{{ article.domain_name }}</span>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="ency-section" id="popular-search">
+                <div class="ency-section-header">
+                    <div>
+                        <p class="ency-section-kicker">Popular in Search</p>
+                        <h2 class="ency-section-title">What users read first</h2>
+                    </div>
+                </div>
+
+                <div class="ency-popular-grid">
+                    {% for article in popular_in_search|slice:":6" %}
+                        <a class="ency-popular-card" href="{{ article.url }}">
+                            <h3>{{ article.title }}</h3>
+                            <p class="ency-card-summary">{{ article.summary }}</p>
+                            <div class="ency-popular-meta">
+                                <span class="ency-pill">{{ article.domain_name }}</span>
+                                <span class="ency-pill">{{ article.views }} views</span>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="ency-section" id="az-index">
+                <div class="ency-section-header">
+                    <div>
+                        <p class="ency-section-kicker">A-Z</p>
+                        <h2 class="ency-section-title">Jump by first letter</h2>
+                    </div>
+                </div>
+                <div class="ency-az-grid">
+                    {% for letter in az_index %}
+                        <a href="{% url 'encyclopedia_home' %}?q={{ letter }}">{{ letter }}</a>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+    </div>
+{% endblock %}

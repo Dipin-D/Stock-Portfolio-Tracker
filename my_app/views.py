@@ -8,7 +8,7 @@ import yfinance as yf
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.views import LoginView
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils import timezone
@@ -16,6 +16,10 @@ from django.urls import reverse
 
 from .forms import AppSettingsForm, CustomLoginForm, PortfolioForm
 from .models import AppSettings, BacktestRun, Portfolio, Stock, Stock_Group
+from .services.encyclopedia_service import (
+    get_encyclopedia_category_context,
+    get_encyclopedia_home_context,
+)
 from .services.indicator_library import get_indicator_library, get_indicator_map
 from .services.backtest_service import (
     list_strategy_definitions,
@@ -206,6 +210,27 @@ def home(request):
     return render(request, 'home.html')
 
 
+def encyclopedia_home(request):
+    context = get_encyclopedia_home_context(
+        search_query=(request.GET.get("q") or "").strip(),
+    )
+    return render(request, "encyclopedia_home.html", context)
+
+
+def encyclopedia_category(request, category_slug: str):
+    context = get_encyclopedia_category_context(
+        category_slug,
+        search_query=(request.GET.get("q") or "").strip(),
+        subcategory=(request.GET.get("subcategory") or "all").strip(),
+        difficulty=(request.GET.get("difficulty") or "all").strip(),
+        content_type=(request.GET.get("content_type") or "all").strip(),
+        sort=(request.GET.get("sort") or "updated").strip(),
+    )
+    if context is None:
+        raise Http404("Encyclopedia category not found.")
+    return render(request, "encyclopedia_category.html", context)
+
+
 def health(request):
     return JsonResponse({
         'status': 'ok',
@@ -218,9 +243,7 @@ def watchlist_view(request):
 
 
 def indicators(request):
-    return render(request, 'indicators.html', {
-        'indicator_library': get_indicator_library(),
-    })
+    return redirect("encyclopedia_category", category_slug="indicators")
 
 
 def research(request, ticker: str):
