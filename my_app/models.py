@@ -37,6 +37,19 @@ class Portfolio(models.Model):
         super(Portfolio, self).save(*args, **kwargs)
 
 
+class SavedGlidepath(models.Model):
+    name = models.CharField(max_length=120)
+    payload = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['name', '-updated_at']
+
+    def __str__(self):
+        return self.name
+
+
 class StrategyDefinition(models.Model):
     slug = models.CharField(max_length=64, unique=True)
     name = models.CharField(max_length=128)

@@ -15,7 +15,7 @@ from django.utils import timezone
 from django.urls import reverse
 
 from .forms import AppSettingsForm, CustomLoginForm, PortfolioForm
-from .models import AppSettings, BacktestRun, Portfolio, Stock, Stock_Group
+from .models import AppSettings, BacktestRun, Portfolio, SavedGlidepath, Stock, Stock_Group
 from .services.encyclopedia_service import (
     get_encyclopedia_category_context,
     get_encyclopedia_home_context,
@@ -387,6 +387,7 @@ def portfolio(request):
         'form': form,
         'saved_forms': saved_forms,
         'preset_portfolios': _preset_portfolio_menu_items(),
+        'saved_glidepaths': _saved_glidepath_menu_items(),
     }
     context.update(_build_portfolio_context(default_portfolio, app_settings))
 
@@ -546,6 +547,111 @@ def _preset_portfolio_menu_items():
         for key, data in PRESET_PORTFOLIOS.items()
     ]
 
+
+def _saved_glidepath_menu_items():
+    return list(
+        SavedGlidepath.objects.order_by('name', '-updated_at')
+        .values('id', 'name')
+    )
+
+
+def _coerce_glidepath_payload(raw_payload):
+    if not isinstance(raw_payload, dict):
+        return None, 'Payload must be a JSON object.'
+
+    name = str(raw_payload.get('name') or '').strip()
+    if not name:
+        return None, 'Glidepath name is required.'
+
+    raw_portfolios = raw_payload.get('portfolios')
+    if not isinstance(raw_portfolios, list) or not raw_portfolios:
+        return None, 'Add at least one portfolio card before saving this glidepath.'
+
+    portfolios = []
+    for index, item in enumerate(raw_portfolios, start=1):
+        if not isinstance(item, dict):
+            return None, f'Portfolio {index} is invalid.'
+
+        slot_key = str(item.get('slot_key') or f'slot_{index}').strip() or f'slot_{index}'
+        portfolio_name = str(item.get('name') or '').strip()
+        ticker_csv = str(item.get('ticker') or '').strip()
+        allocation_csv = str(item.get('allocation') or '').strip()
+
+        if not portfolio_name:
+            return None, f'Portfolio {index} must have a name before saving the glidepath.'
+        if not ticker_csv:
+            return None, f'Portfolio "{portfolio_name}" must include at least one ticker before saving.'
+        if not allocation_csv:
+            return None, f'Portfolio "{portfolio_name}" must include allocations before saving.'
+
+        rebalance_frequency = str(item.get('rebalance_frequency') or 'Yearly').strip()
+        if rebalance_frequency not in {'Yearly', 'Quarterly', 'Monthly'}:
+            rebalance_frequency = 'Yearly'
+
+        try:
+            drag_percentage = float(item.get('drag_percentage') or 0)
+        except (TypeError, ValueError):
+            drag_percentage = 0
+        if drag_percentage < 0:
+            drag_percentage = 0
+
+        portfolios.append({
+            'slot_key': slot_key,
+            'name': portfolio_name,
+            'drag_percentage': drag_percentage,
+            'rebalance_frequency': rebalance_frequency,
+            'total_return': bool(item.get('total_return')),
+            'rebalance_bands': bool(item.get('rebalance_bands')),
+            'ticker': ticker_csv,
+            'allocation': allocation_csv,
+        })
+
+    slot_keys = {item['slot_key'] for item in portfolios}
+    raw_legs = raw_payload.get('legs')
+    if not isinstance(raw_legs, list) or not raw_legs:
+        return None, 'Glidepath legs are required.'
+
+    legs = []
+    for item in raw_legs:
+        if not isinstance(item, dict):
+            continue
+        leg_key = str(item.get('key') or '').strip().lower()
+        if leg_key not in {'start', 'end'}:
+            continue
+        leg_weights = {}
+        weights_payload = item.get('weights') if isinstance(item.get('weights'), dict) else {}
+        for slot_key in slot_keys:
+            try:
+                numeric = float(weights_payload.get(slot_key) or 0)
+            except (TypeError, ValueError):
+                numeric = 0
+            leg_weights[slot_key] = numeric if numeric >= 0 else 0
+        legs.append({
+            'key': leg_key,
+            'label': str(item.get('label') or ('Starting Date' if leg_key == 'start' else 'Ending Date')).strip(),
+            'weights': leg_weights,
+        })
+
+    legs_by_key = {item['key']: item for item in legs}
+    if 'start' not in legs_by_key:
+        legs_by_key['start'] = {
+            'key': 'start',
+            'label': 'Starting Date',
+            'weights': {slot_key: 0 for slot_key in slot_keys},
+        }
+    if 'end' not in legs_by_key:
+        legs_by_key['end'] = {
+            'key': 'end',
+            'label': 'Ending Date',
+            'weights': {slot_key: 0 for slot_key in slot_keys},
+        }
+
+    return {
+        'name': name,
+        'portfolios': portfolios,
+        'legs': [legs_by_key['start'], legs_by_key['end']],
+    }, ''
+
 def get_preset_form(request, preset_name):
     data = PRESET_PORTFOLIOS.get(preset_name)
     if not data:
@@ -577,6 +683,58 @@ def delete_portfolio(request, portfolio_id):
             replacement.save()
 
     return JsonResponse({'deleted': True})
+
+
+@require_POST
+def save_glidepath(request):
+    payload = _parse_strategy_payload(request)
+    if payload is None:
+        return JsonResponse({'valid': False, 'error': 'Request body must be valid JSON.'}, status=400)
+
+    normalized_payload, error = _coerce_glidepath_payload(payload)
+    if error:
+        return JsonResponse({'valid': False, 'error': error}, status=400)
+
+    raw_glidepath_id = payload.get('glidepath_id')
+    glidepath_id = None
+    if raw_glidepath_id not in (None, ''):
+        try:
+            glidepath_id = int(raw_glidepath_id)
+        except (TypeError, ValueError):
+            return JsonResponse({'valid': False, 'error': 'Saved glidepath id is invalid.'}, status=400)
+
+    if glidepath_id is None:
+        glidepath = SavedGlidepath.objects.create(
+            name=normalized_payload['name'],
+            payload=normalized_payload,
+        )
+    else:
+        glidepath = get_object_or_404(SavedGlidepath, id=glidepath_id)
+        glidepath.name = normalized_payload['name']
+        glidepath.payload = normalized_payload
+        glidepath.save(update_fields=['name', 'payload', 'updated_at'])
+
+    return JsonResponse({
+        'valid': True,
+        'glidepath': {
+            'id': glidepath.id,
+            'name': glidepath.name,
+            'payload': glidepath.payload,
+        },
+    })
+
+
+@require_GET
+def get_saved_glidepath(request, glidepath_id):
+    glidepath = get_object_or_404(SavedGlidepath, id=glidepath_id)
+    return JsonResponse({
+        'valid': True,
+        'glidepath': {
+            'id': glidepath.id,
+            'name': glidepath.name,
+            'payload': glidepath.payload,
+        },
+    })
 
 
 def theMath(request):

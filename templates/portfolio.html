@@ -421,6 +421,20 @@
             background: #eff6ff;
         }
 
+        .portfolio-menu-section-title {
+            padding: 0.5rem 0.9rem 0.35rem;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .portfolio-menu-section-divider {
+            margin: 0.35rem 0.5rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
         .portfolio-menu-item.is-disabled,
         .portfolio-menu-item.is-disabled:hover {
             cursor: default;
@@ -753,6 +767,10 @@
             margin-top: 2.5rem;
             padding-top: 0.5rem;
             border-top: 1px solid #e2e8f0;
+        }
+
+        .portfolio-glidepath-shell[hidden] {
+            display: none !important;
         }
 
         .portfolio-glidepath-grid {
@@ -1355,13 +1373,29 @@
                     <div class="portfolio-menu">
                         <button id="saved-toggle" type="button" class="portfolio-btn portfolio-btn-ghost">Add Saved</button>
                         <div id="saved-menu" class="portfolio-menu-popover hidden">
-                            {% for portfolio, form in saved_forms %}
-                                <button type="button" class="portfolio-menu-item saved-portfolio-btn" data-portfolio-id="{{ portfolio.id }}">
-                                    {{ portfolio.name|safe }}
-                                </button>
-                            {% empty %}
-                                <div class="portfolio-menu-item" style="cursor: default; color: #64748b;">No saved portfolios</div>
-                            {% endfor %}
+                            <div class="portfolio-menu-section-title">Saved Portfolios</div>
+                            <div id="saved-portfolio-items">
+                                {% for portfolio, form in saved_forms %}
+                                    <button type="button" class="portfolio-menu-item saved-portfolio-btn" data-portfolio-id="{{ portfolio.id }}">
+                                        {{ portfolio.name|safe }}
+                                    </button>
+                                {% empty %}
+                                    <div class="portfolio-menu-item is-disabled">No saved portfolios</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="portfolio-menu-section-divider"></div>
+
+                            <div class="portfolio-menu-section-title">Saved Glidepaths</div>
+                            <div id="saved-glidepath-items">
+                                {% for glidepath in saved_glidepaths %}
+                                    <button type="button" class="portfolio-menu-item saved-glidepath-btn" data-glidepath-id="{{ glidepath.id }}">
+                                        {{ glidepath.name }}
+                                    </button>
+                                {% empty %}
+                                    <div class="portfolio-menu-item is-disabled">No saved glidepaths</div>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
 
@@ -1380,7 +1414,7 @@
             <div id="portfolio-form-containers" class="portfolio-forms-grid" aria-live="polite"></div>
             <p id="portfolio-empty-state" class="portfolio-empty-state">No portfolio cards are open yet. Use one of the buttons above to start building.</p>
 
-            <div id="glidepath-shell" class="portfolio-glidepath-shell">
+            <div id="glidepath-shell" class="portfolio-glidepath-shell" hidden>
                 <div class="portfolio-builder-header" style="margin-bottom: 1rem;">
                     <div>
                         <p class="portfolio-eyebrow">Glide Path</p>
@@ -1416,7 +1450,6 @@
         let portfolioSequence = 0;
         let glidepathSequence = 0;
         const glidepaths = [];
-        const glidepathStorageKey = 'tradingpro.portfolio.glidepaths.v1';
         const chartTarget = document.querySelector('#chart');
         const chartPayloadElement = document.getElementById('portfolio-chart-data');
         const carouselWrapper = document.getElementById('carousel-wrapper');
@@ -1429,6 +1462,7 @@
         const savedToggleBtn = document.getElementById('saved-toggle');
         const presetMenu = document.getElementById('preset-menu');
         const savedMenu = document.getElementById('saved-menu');
+        const savedGlidepathItems = document.getElementById('saved-glidepath-items');
         const scrollToBuilderBtn = document.getElementById('scroll-to-builder');
         const emptyState = document.getElementById('portfolio-empty-state');
         const glidepathShell = document.getElementById('glidepath-shell');
@@ -1594,104 +1628,117 @@
             return Array.from(new Set((values || []).map((value) => String(value || '').trim()).filter(Boolean)));
         }
 
-        function serializeGlidepaths() {
-            return glidepaths.map((glidepath) => ({
-                id: glidepath.id,
-                name: glidepath.name,
-                excludedPortfolioKeys: dedupeKeys(glidepath.excludedPortfolioKeys),
-                legs: (glidepath.legs || []).map((leg) => ({
-                    key: leg.key,
-                    label: leg.label,
-                    weights: Object.entries(leg.weights || {}).reduce((accumulator, [portfolioKey, rawValue]) => {
-                        const numeric = Number(rawValue || 0);
-                        accumulator[portfolioKey] = Number.isFinite(numeric) ? numeric : 0;
-                        return accumulator;
-                    }, {}),
-                })),
-            }));
+        function getCardByPortfolioKey(portfolioKey) {
+            return getCards().find((card) => card.dataset.portfolioCardKey === portfolioKey) || null;
         }
 
-        function persistGlidepaths() {
-            try {
-                window.localStorage.setItem(glidepathStorageKey, JSON.stringify({
-                    sequence: glidepathSequence,
-                    glidepaths: serializeGlidepaths(),
-                }));
-                return true;
-            } catch (error) {
-                console.warn('Unable to save glide paths', error);
-                return false;
+        function extractPortfolioSpecFromCard(card) {
+            if (!card) {
+                return null;
             }
+
+            syncCardHoldings(card);
+            const form = card.querySelector('form');
+            const nameValue = String(form?.querySelector('input[name="name"]')?.value || '').trim();
+            const tickerCsv = String(card.querySelector('.portfolio-hidden-tickers')?.value || '').trim();
+            const allocationCsv = String(card.querySelector('.portfolio-hidden-allocations')?.value || '').trim();
+
+            return {
+                name: nameValue,
+                drag_percentage: Number(form?.querySelector('input[name="drag_percentage"]')?.value || 0),
+                rebalance_frequency: String(form?.querySelector('select[name="rebalance_frequency"]')?.value || 'Yearly'),
+                total_return: Boolean(form?.querySelector('input[name="total_return"]')?.checked),
+                rebalance_bands: Boolean(form?.querySelector('input[name="rebalance_bands"]')?.checked),
+                ticker: tickerCsv,
+                allocation: allocationCsv,
+            };
         }
 
-        function restoreGlidepaths() {
-            try {
-                const raw = window.localStorage.getItem(glidepathStorageKey);
-                if (!raw) {
-                    return;
-                }
+        function applyPortfolioSpecToForm(formElement, portfolioSpec) {
+            if (!formElement || !portfolioSpec) {
+                return;
+            }
 
-                const parsed = JSON.parse(raw);
-                if (!Array.isArray(parsed?.glidepaths)) {
-                    return;
-                }
+            const form = formElement.querySelector('form');
+            const nameInput = form?.querySelector('input[name="name"]');
+            const dragInput = form?.querySelector('input[name="drag_percentage"]');
+            const rebalanceSelect = form?.querySelector('select[name="rebalance_frequency"]');
+            const totalReturnInput = form?.querySelector('input[name="total_return"]');
+            const rebalanceBandsInput = form?.querySelector('input[name="rebalance_bands"]');
+            const hiddenTickers = formElement.querySelector('.portfolio-hidden-tickers');
+            const hiddenAllocations = formElement.querySelector('.portfolio-hidden-allocations');
+            const portfolioIdInput = form?.querySelector('input[name="portfolio_id"]');
+            const isDefaultInput = form?.querySelector('input[name="is_default"]');
 
-                const restored = parsed.glidepaths.map((entry, index) => {
-                    const fallbackId = `glidepath-${index + 1}`;
-                    const entryId = String(entry?.id || fallbackId).trim() || fallbackId;
-                    const legsByKey = {};
+            if (nameInput) {
+                nameInput.value = String(portfolioSpec.name || '').trim();
+            }
+            if (dragInput) {
+                dragInput.value = Number(portfolioSpec.drag_percentage || 0);
+            }
+            if (rebalanceSelect) {
+                rebalanceSelect.value = String(portfolioSpec.rebalance_frequency || 'Yearly');
+            }
+            if (totalReturnInput) {
+                totalReturnInput.checked = Boolean(portfolioSpec.total_return);
+            }
+            if (rebalanceBandsInput) {
+                rebalanceBandsInput.checked = Boolean(portfolioSpec.rebalance_bands);
+            }
+            if (hiddenTickers) {
+                hiddenTickers.value = String(portfolioSpec.ticker || '').trim();
+            }
+            if (hiddenAllocations) {
+                hiddenAllocations.value = String(portfolioSpec.allocation || '').trim();
+            }
+            if (portfolioIdInput) {
+                portfolioIdInput.value = '';
+            }
+            if (isDefaultInput) {
+                isDefaultInput.checked = false;
+            }
+            formElement.removeAttribute('data-loaded-id');
+            formElement.removeAttribute('data-loaded-preset');
+        }
 
-                    (Array.isArray(entry?.legs) ? entry.legs : []).forEach((leg) => {
-                        if (!leg || typeof leg !== 'object') {
-                            return;
-                        }
-                        const legKey = String(leg.key || '').trim();
-                        if (!legKey) {
-                            return;
-                        }
-                        const weights = {};
-                        if (leg.weights && typeof leg.weights === 'object') {
-                            Object.entries(leg.weights).forEach(([portfolioKey, rawValue]) => {
-                                const numeric = Number(rawValue || 0);
-                                weights[String(portfolioKey)] = Number.isFinite(numeric) ? numeric : 0;
-                            });
-                        }
-                        legsByKey[legKey] = {
-                            key: legKey,
-                            label: leg.label || (legKey === 'start' ? 'Starting Date' : 'Ending Date'),
-                            weights,
-                        };
-                    });
-
-                    return {
-                        id: entryId,
-                        name: String(entry?.name || `Glidepath ${index + 1}`).trim() || `Glidepath ${index + 1}`,
-                        portfolios: [],
-                        excludedPortfolioKeys: dedupeKeys(entry?.excludedPortfolioKeys),
-                        legs: [
-                            legsByKey.start || { key: 'start', label: 'Starting Date', weights: {} },
-                            legsByKey.end || { key: 'end', label: 'Ending Date', weights: {} },
-                        ],
-                    };
+        function fetchEmptyPortfolioFormElement() {
+            return fetch('/get-empty-form/')
+                .then(function (response) {
+                    return response.text();
+                })
+                .then(function (html) {
+                    return parsePortfolioForm(html);
                 });
+        }
 
-                if (!restored.length) {
-                    return;
-                }
-
-                glidepaths.splice(0, glidepaths.length, ...restored);
-                const parsedSequence = Number(parsed.sequence || 0);
-                const highestIdSequence = restored.reduce((maxValue, glidepath) => {
-                    const match = String(glidepath.id || '').match(/^glidepath-(\d+)$/);
-                    if (!match) {
-                        return maxValue;
-                    }
-                    return Math.max(maxValue, Number(match[1] || 0));
-                }, 0);
-                glidepathSequence = Math.max(glidepathSequence, parsedSequence, highestIdSequence);
-            } catch (error) {
-                console.warn('Unable to restore glide paths', error);
+        function upsertSavedGlidepathMenuItem(glidepathSummary) {
+            if (!savedGlidepathItems || !glidepathSummary) {
+                return;
             }
+
+            const glidepathId = String(glidepathSummary.id || '').trim();
+            const glidepathName = String(glidepathSummary.name || '').trim();
+            if (!glidepathId || !glidepathName) {
+                return;
+            }
+
+            const existingButton = savedGlidepathItems.querySelector(`.saved-glidepath-btn[data-glidepath-id="${glidepathId}"]`);
+            if (existingButton) {
+                existingButton.textContent = glidepathName;
+                return;
+            }
+
+            const disabledPlaceholder = savedGlidepathItems.querySelector('.portfolio-menu-item.is-disabled');
+            if (disabledPlaceholder) {
+                disabledPlaceholder.remove();
+            }
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'portfolio-menu-item saved-glidepath-btn';
+            button.dataset.glidepathId = glidepathId;
+            button.textContent = glidepathName;
+            savedGlidepathItems.appendChild(button);
         }
 
         function normalizeCardMetadata(card) {
@@ -1784,13 +1831,14 @@
 
         function appendPortfolioForm(formElement) {
             if (!formElement) {
-                return;
+                return null;
             }
             registerPortfolioCard(formElement);
             getFormContainer().appendChild(formElement);
             updateEmptyState();
             syncGlidepathsWithWorkspace();
             renderGlidepaths();
+            return formElement;
         }
 
         function updateCarousel() {
@@ -1995,6 +2043,7 @@
             glidepathSequence += 1;
             glidepaths.push({
                 id: `glidepath-${glidepathSequence}`,
+                savedId: null,
                 name: `Glidepath ${glidepathSequence}`,
                 portfolios,
                 excludedPortfolioKeys: [],
@@ -2015,16 +2064,262 @@
             return (workspacePortfolios || []).filter((portfolio) => !activePortfolioKeySet.has(portfolio.key));
         }
 
+        function buildGlidepathSavePayload(glidepath) {
+            if (!glidepath) {
+                return { error: 'Selected glidepath is unavailable right now.' };
+            }
+
+            syncGlidepathsWithWorkspace();
+            const activePortfolios = glidepath.portfolios || [];
+            if (!activePortfolios.length) {
+                return { error: 'Add at least one portfolio to the glidepath before saving.' };
+            }
+
+            const slotByPortfolioKey = {};
+            const portfoliosPayload = [];
+
+            for (let index = 0; index < activePortfolios.length; index += 1) {
+                const portfolioEntry = activePortfolios[index];
+                const card = getCardByPortfolioKey(portfolioEntry.key);
+                const cardSpec = extractPortfolioSpecFromCard(card);
+                const displayName = String(portfolioEntry.name || `Portfolio ${index + 1}`).trim();
+
+                if (!cardSpec) {
+                    return { error: `Could not read ${displayName}.` };
+                }
+                if (!cardSpec.name) {
+                    return { error: `Portfolio ${index + 1} must have a name before saving this glidepath.` };
+                }
+                if (!parseCsv(cardSpec.ticker).length) {
+                    return { error: `Portfolio "${cardSpec.name}" must include at least one ticker before saving this glidepath.` };
+                }
+                if (!parseCsv(cardSpec.allocation).length) {
+                    return { error: `Portfolio "${cardSpec.name}" must include allocations before saving this glidepath.` };
+                }
+
+                const slotKey = `slot_${index + 1}`;
+                slotByPortfolioKey[portfolioEntry.key] = slotKey;
+                portfoliosPayload.push({
+                    slot_key: slotKey,
+                    name: cardSpec.name,
+                    drag_percentage: Number(cardSpec.drag_percentage || 0),
+                    rebalance_frequency: cardSpec.rebalance_frequency || 'Yearly',
+                    total_return: Boolean(cardSpec.total_return),
+                    rebalance_bands: Boolean(cardSpec.rebalance_bands),
+                    ticker: cardSpec.ticker,
+                    allocation: cardSpec.allocation,
+                });
+            }
+
+            const legsPayload = (glidepath.legs || []).map((leg) => {
+                const weights = {};
+                Object.entries(slotByPortfolioKey).forEach(([portfolioKey, slotKey]) => {
+                    const numeric = Number(leg?.weights?.[portfolioKey] || 0);
+                    weights[slotKey] = Number.isFinite(numeric) ? Math.max(0, numeric) : 0;
+                });
+                return {
+                    key: String(leg?.key || '').trim(),
+                    label: String(leg?.label || '').trim(),
+                    weights,
+                };
+            });
+
+            return {
+                payload: {
+                    glidepath_id: glidepath.savedId || null,
+                    name: String(glidepath.name || '').trim() || 'Saved Glidepath',
+                    portfolios: portfoliosPayload,
+                    legs: legsPayload,
+                },
+            };
+        }
+
+        function saveGlidepathToServer(glidepath, triggerButton) {
+            const built = buildGlidepathSavePayload(glidepath);
+            if (built.error) {
+                alert(built.error);
+                return;
+            }
+
+            if (triggerButton) {
+                triggerButton.disabled = true;
+            }
+
+            fetch('/api/glidepaths/save/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify(built.payload),
+            })
+                .then(function (response) {
+                    return response.json().then(function (payload) {
+                        return { ok: response.ok, payload };
+                    });
+                })
+                .then(function ({ ok, payload }) {
+                    if (!ok || !payload?.valid) {
+                        throw new Error(payload?.error || 'Unable to save glidepath right now.');
+                    }
+
+                    glidepath.savedId = payload.glidepath.id;
+                    glidepath.name = payload.glidepath.name;
+                    upsertSavedGlidepathMenuItem(payload.glidepath);
+                    renderGlidepaths();
+
+                    const button = triggerButton?.closest('[data-glidepath-id]')?.querySelector('.glidepath-save-btn');
+                    if (button) {
+                        button.textContent = 'Saved';
+                        button.disabled = true;
+                        window.setTimeout(function () {
+                            const refreshButton = button.closest('[data-glidepath-id]')?.querySelector('.glidepath-save-btn');
+                            if (refreshButton) {
+                                refreshButton.textContent = 'Save';
+                                refreshButton.disabled = false;
+                            }
+                        }, 1000);
+                    }
+                })
+                .catch(function (error) {
+                    alert(error.message || 'Unable to save glidepath right now.');
+                })
+                .finally(function () {
+                    if (triggerButton) {
+                        triggerButton.disabled = false;
+                    }
+                });
+        }
+
+        function loadSavedGlidepath(glidepathId) {
+            const normalizedId = String(glidepathId || '').trim();
+            if (!normalizedId) {
+                return;
+            }
+
+            fetch(`/api/glidepaths/${normalizedId}/`)
+                .then(function (response) {
+                    return response.json().then(function (payload) {
+                        return { ok: response.ok, payload };
+                    });
+                })
+                .then(function ({ ok, payload }) {
+                    if (!ok || !payload?.valid) {
+                        throw new Error(payload?.error || 'Unable to load saved glidepath.');
+                    }
+                    return payload.glidepath;
+                })
+                .then(async function (savedGlidepath) {
+                    const glidepathPayload = savedGlidepath?.payload || {};
+                    const portfolioSpecs = Array.isArray(glidepathPayload.portfolios) ? glidepathPayload.portfolios : [];
+                    if (!portfolioSpecs.length) {
+                        throw new Error('Saved glidepath does not include any portfolios.');
+                    }
+
+                    const availableSlots = portfolioLimit - getCurrentPortfolioCount();
+                    if (portfolioSpecs.length > availableSlots) {
+                        throw new Error(`Loading this glidepath needs ${portfolioSpecs.length} portfolio cards, but only ${availableSlots} slots are available.`);
+                    }
+
+                    const slotToWorkspaceKey = {};
+                    const addedPortfolioKeys = [];
+
+                    for (const portfolioSpec of portfolioSpecs) {
+                        const formElement = await fetchEmptyPortfolioFormElement();
+                        if (!formElement) {
+                            continue;
+                        }
+                        applyPortfolioSpecToForm(formElement, portfolioSpec);
+                        const appended = appendPortfolioForm(formElement);
+                        if (!appended) {
+                            continue;
+                        }
+                        const workspaceKey = appended.dataset.portfolioCardKey;
+                        const slotKey = String(portfolioSpec.slot_key || '').trim();
+                        if (slotKey && workspaceKey) {
+                            slotToWorkspaceKey[slotKey] = workspaceKey;
+                        }
+                        if (workspaceKey) {
+                            addedPortfolioKeys.push(workspaceKey);
+                        }
+                    }
+
+                    if (!addedPortfolioKeys.length) {
+                        throw new Error('Unable to create glidepath portfolios in the builder.');
+                    }
+
+                    const workspacePortfolios = getWorkspacePortfolios();
+                    const addedPortfolioSet = new Set(addedPortfolioKeys);
+                    const excludedPortfolioKeys = workspacePortfolios
+                        .map((portfolio) => portfolio.key)
+                        .filter((portfolioKey) => !addedPortfolioSet.has(portfolioKey));
+
+                    const legsByKey = {};
+                    const payloadLegs = Array.isArray(glidepathPayload.legs) ? glidepathPayload.legs : [];
+                    payloadLegs.forEach((legPayload) => {
+                        const legKey = String(legPayload?.key || '').trim().toLowerCase();
+                        if (legKey !== 'start' && legKey !== 'end') {
+                            return;
+                        }
+                        const nextWeights = {};
+                        const sourceWeights = (legPayload && typeof legPayload.weights === 'object') ? legPayload.weights : {};
+                        Object.entries(slotToWorkspaceKey).forEach(([slotKey, workspaceKey]) => {
+                            const numeric = Number(sourceWeights[slotKey] || 0);
+                            nextWeights[workspaceKey] = Number.isFinite(numeric) ? Math.max(0, numeric) : 0;
+                        });
+                        legsByKey[legKey] = {
+                            key: legKey,
+                            label: String(legPayload?.label || (legKey === 'start' ? 'Starting Date' : 'Ending Date')).trim(),
+                            weights: nextWeights,
+                        };
+                    });
+
+                    const firstPortfolioKey = addedPortfolioKeys[0];
+                    const lastPortfolioKey = addedPortfolioKeys[addedPortfolioKeys.length - 1];
+                    if (!legsByKey.start) {
+                        const weights = {};
+                        addedPortfolioKeys.forEach((portfolioKey) => {
+                            weights[portfolioKey] = portfolioKey === firstPortfolioKey ? 100 : 0;
+                        });
+                        legsByKey.start = { key: 'start', label: 'Starting Date', weights };
+                    }
+                    if (!legsByKey.end) {
+                        const weights = {};
+                        addedPortfolioKeys.forEach((portfolioKey) => {
+                            weights[portfolioKey] = portfolioKey === lastPortfolioKey ? 100 : 0;
+                        });
+                        legsByKey.end = { key: 'end', label: 'Ending Date', weights };
+                    }
+
+                    glidepathSequence += 1;
+                    glidepaths.push({
+                        id: `glidepath-${glidepathSequence}`,
+                        savedId: savedGlidepath.id,
+                        name: String(savedGlidepath.name || 'Saved Glidepath').trim() || 'Saved Glidepath',
+                        portfolios: [],
+                        excludedPortfolioKeys,
+                        legs: [legsByKey.start, legsByKey.end],
+                    });
+                    renderGlidepaths();
+                    document.getElementById('glidepath-shell')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                })
+                .catch(function (error) {
+                    alert(error.message || 'Unable to load saved glidepath.');
+                });
+        }
+
         function renderGlidepaths() {
             syncGlidepathsWithWorkspace();
             if (!glidepathContainer || !glidepathEmptyState || !glidepathShell) {
                 return;
             }
 
-            glidepathShell.hidden = false;
-            glidepathEmptyState.hidden = glidepaths.length > 0;
+            const hasGlidepaths = glidepaths.length > 0;
+            glidepathShell.hidden = !hasGlidepaths;
+            glidepathEmptyState.hidden = true;
 
-            if (!glidepaths.length) {
+            if (!hasGlidepaths) {
                 glidepathContainer.innerHTML = '';
                 return;
             }
@@ -2179,6 +2474,19 @@
             }).join('');
         }
 
+        function resetGlidepathWorkspace() {
+            glidepaths.length = 0;
+            if (glidepathContainer) {
+                glidepathContainer.innerHTML = '';
+            }
+            if (glidepathEmptyState) {
+                glidepathEmptyState.hidden = true;
+            }
+            if (glidepathShell) {
+                glidepathShell.hidden = true;
+            }
+        }
+
         prevBtn.addEventListener('click', function () {
             goToSlide(currentSlide - 1);
         });
@@ -2283,6 +2591,13 @@
                 return;
             }
 
+            const savedGlidepathBtn = event.target.closest('.saved-glidepath-btn');
+            if (savedGlidepathBtn) {
+                closeMenus();
+                loadSavedGlidepath(savedGlidepathBtn.dataset.glidepathId);
+                return;
+            }
+
             const glidepathPortfolioRemoveBtn = event.target.closest('.glidepath-portfolio-remove-btn');
             if (glidepathPortfolioRemoveBtn) {
                 const glidepath = getGlidepathById(glidepathPortfolioRemoveBtn.dataset.glidepathId);
@@ -2299,21 +2614,11 @@
 
             const glidepathSaveBtn = event.target.closest('.glidepath-save-btn');
             if (glidepathSaveBtn) {
-                const isSaved = persistGlidepaths();
-                if (!isSaved) {
-                    alert('Unable to save glide paths in this browser right now.');
+                const glidepath = getGlidepathById(glidepathSaveBtn.dataset.glidepathId);
+                if (!glidepath) {
                     return;
                 }
-                glidepathSaveBtn.textContent = 'Saved';
-                glidepathSaveBtn.disabled = true;
-                window.setTimeout(function () {
-                    const card = glidepathSaveBtn.closest('[data-glidepath-id]');
-                    const nextSaveBtn = card?.querySelector('.glidepath-save-btn');
-                    if (nextSaveBtn) {
-                        nextSaveBtn.textContent = 'Save';
-                        nextSaveBtn.disabled = false;
-                    }
-                }, 1100);
+                saveGlidepathToServer(glidepath, glidepathSaveBtn);
                 return;
             }
 
@@ -2517,7 +2822,16 @@
             }
         });
 
-        restoreGlidepaths();
+        window.addEventListener('pageshow', function (event) {
+            if (!event.persisted) {
+                return;
+            }
+            closeMenus();
+            resetGlidepathWorkspace();
+            renderGlidepaths();
+        });
+
+        resetGlidepathWorkspace();
         renderChart();
         goToSlide(0);
         updateEmptyState();
