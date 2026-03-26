@@ -31,6 +31,7 @@
         .proscan-sidebar {
             padding: 1.25rem;
             overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .proscan-main {
@@ -206,6 +207,8 @@
             display: grid;
             gap: 0.55rem;
             padding: 0 0.8rem 0.8rem;
+            min-width: 0;
+            overflow-x: hidden;
         }
 
         .proscan-accordion-panel.hidden {
@@ -222,6 +225,10 @@
             font: inherit;
             text-align: left;
             cursor: pointer;
+            box-sizing: border-box;
+            min-width: 0;
+            max-width: 100%;
+            overflow: hidden;
             transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
         }
 
@@ -241,6 +248,15 @@
             align-items: flex-start;
             justify-content: space-between;
             gap: 0.8rem;
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
+        .proscan-option-item-copy > span:first-child {
+            display: block;
+            flex: 1 1 auto;
+            min-width: 0;
         }
 
         .proscan-option-item-copy strong {
@@ -248,6 +264,10 @@
             font-size: 0.95rem;
             font-weight: 800;
             color: #0f172a;
+            line-height: 1.35;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         .proscan-option-item-copy span {
@@ -256,6 +276,10 @@
             color: #64748b;
             font-size: 0.82rem;
             line-height: 1.45;
+            min-width: 0;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         .proscan-default-marker {
@@ -271,6 +295,7 @@
             letter-spacing: 0.06em;
             text-transform: uppercase;
             white-space: nowrap;
+            flex: 0 0 auto;
         }
 
         .proscan-inline-note,
@@ -1012,10 +1037,9 @@
                 <h3>Strategy</h3>
                 <div class="proscan-option-list">
                     <button id="golden-cross-btn" type="button" class="btn-option">Golden Cross</button>
+                    <button id="golden-cross-bollinger-squeeze-btn" type="button" class="btn-option">Golden Cross + Bollinger Squeeze</button>
+                    <button id="golden-cross-bollinger-breakout-btn" type="button" class="btn-option">Golden Cross + Bollinger Breakout Confirm</button>
                     <button id="momentum-btn" type="button" class="btn-option">Momentum</button>
-                    <button type="button" class="btn-option">Value Investing</button>
-                    <button type="button" class="btn-option">Supply and Demand</button>
-                    <button type="button" class="btn-option">Technical</button>
                 </div>
             </div>
 
@@ -1139,9 +1163,6 @@
                             <tr>
                                 <th data-sort-key="name" data-sort-type="text" data-sort-indicator="">Name</th>
                                 <th data-sort-key="ticker" data-sort-type="text" data-sort-indicator="">Ticker / Scope</th>
-                                <th data-sort-key="gcQuality" data-sort-type="number" data-sort-indicator="">GC Quality</th>
-                                <th data-sort-key="liveGc" data-sort-type="number" data-sort-indicator="">Live GC</th>
-                                <th data-sort-key="consensus" data-sort-type="text" data-sort-indicator="">Consensus</th>
                                 <th data-sort-key="wins" data-sort-type="number" data-sort-indicator=""># Wins</th>
                                 <th data-sort-key="losses" data-sort-type="number" data-sort-indicator=""># Losses</th>
                                 <th data-sort-key="winRate" data-sort-type="number" data-sort-indicator="">Win Rate</th>
@@ -1156,9 +1177,6 @@
                                 <tr data-ticker="{{ stock.symbol }}" data-name="{{ stock.name|default:'-' }}">
                                     <td>{{ stock.name|default:"-" }}</td>
                                     <td>{{ stock.symbol|default:"-" }}</td>
-                                    <td>-</td>
-                                    <td>-</td>
-                                    <td>-</td>
                                     <td>{{ stock.win_count|default:"-" }}</td>
                                     <td>{{ stock.loss_count|default:"-" }}</td>
                                     <td>{{ stock.win_rate|default:"-" }}</td>
@@ -1177,5 +1195,7 @@
 </main>
 
 {% include "partials/strategies/pro-scan_golden_cross_form.html" %}
+{% include "partials/strategies/pro-scan_golden_cross_bollinger_squeeze_form.html" %}
+{% include "partials/strategies/pro-scan_golden_cross_bollinger_breakout_confirm_form.html" %}
 {% include "partials/strategies/pro-scan_momentum_form.html" %}
 {% endblock %}
